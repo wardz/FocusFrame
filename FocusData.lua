@@ -1,6 +1,7 @@
 local focusData = {}
 local raidMemberIndex = 1
 local partyUnitID
+local ScanPartyTargets
 
 function FocusFrame_SetFocusInfo(unitID)
 	if CURR_FOCUS_TARGET and UnitExists(unitID) then
@@ -23,20 +24,29 @@ function FocusFrame_SetFocusInfo(unitID)
 	return false
 end
 
-local function ScanPartyTargets()
-	local groupType = UnitInRaid("player") and "raid" or "party"
-	local members = groupType == "raid" and GetNumRaidMembers() or GetNumPartyMembers()
-	local enemy = focusData[CURR_FOCUS_TARGET] and focusData[CURR_FOCUS_TARGET].enemy
+do
+	local refresh, interval = 0, 0.2
+	function ScanPartyTargets()
+		refresh = refresh - 0.001
+		if refresh > 0 then
+			local groupType = UnitInRaid("player") and "raid" or "party"
+			local members = groupType == "raid" and GetNumRaidMembers() or GetNumPartyMembers()
+			local enemy = focusData[CURR_FOCUS_TARGET] and focusData[CURR_FOCUS_TARGET].enemy
 
-	if members > 0 then
-		local unitID = groupType .. raidMemberIndex .. (enemy and "target" or "")
-		if FocusFrame_SetFocusInfo(unitID) then
-			raidMemberIndex = 1
-			partyUnitID = not enemy and unitID or nil
-			return
-		else
-			partyUnitID = nil
-			raidMemberIndex = raidMemberIndex < members and raidMemberIndex + 1 or 1
+			if members > 0 then
+				local unitID = groupType .. raidMemberIndex .. (enemy and "target" or "")
+				if FocusFrame_SetFocusInfo(unitID) then
+					raidMemberIndex = 1
+					partyUnitID = not enemy and unitID or nil
+					refresh = interval
+					return
+				else
+					partyUnitID = nil
+					raidMemberIndex = raidMemberIndex < members and raidMemberIndex + 1 or 1
+				end
+			end
+
+			refresh = interval
 		end
 	end
 end
@@ -68,7 +78,7 @@ function FocusFrame_DeleteFocusData(name)
 end
 
 do
-	local refresh, interval = 0, 0.19
+	local refresh, interval = 0, 1/60
 
 	local f = CreateFrame("Frame")
 	f:SetScript("OnUpdate", function()
