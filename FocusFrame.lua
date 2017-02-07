@@ -409,6 +409,15 @@ do
 			FocusFrameDebuff11:ClearAllPoints();
 			FocusFrameDebuff11:SetPoint("LEFT", "FocusFrameDebuff10", "RIGHT", 3, 0);
 		end
+
+		-- move castbar
+		local amount = numBuffs + numDebuffs
+		if targetofTarget then
+
+		else
+			local y = amount < 7 and -35 or amount < 13 and -60 or amount < 19 and -85
+			FocusFrame.cast:SetPoint("BOTTOMLEFT", FocusFrame, 15, y)
+		end
 	end
 end
 
