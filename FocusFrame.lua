@@ -3,38 +3,38 @@ CURR_FOCUS_TARGET = nil
 print = function(x) DEFAULT_CHAT_FRAME:AddMessage(x) end
 
 local function UnitIsFocus(unitID)
-    return UnitName(unitID) == CURR_FOCUS_TARGET
+	return UnitName(unitID) == CURR_FOCUS_TARGET
 end
 
 local function GetFocusID()
-    if UnitExists("target") and UnitIsFocus("target") then
-        return "target"
-    elseif UnitExists("mouseover") and UnitIsFocus("mouseover") then
-        return "mouseover"
-    end
+	if UnitExists("target") and UnitIsFocus("target") then
+		return "target"
+	elseif UnitExists("mouseover") and UnitIsFocus("mouseover") then
+		return "mouseover"
+	end
 end
 
 local function ClearFocus()
-    CURR_FOCUS_TARGET = nil
-    FocusFrame_DeleteFocusData()
-    FocusFrame_Update()
+	CURR_FOCUS_TARGET = nil
+	FocusFrame_DeleteFocusData()
+	FocusFrame_Update()
 end
 
 local function FocusAction(func, arg1, arg2)
-    local oldTarget = UnitName("target")
+	local oldTarget = UnitName("target")
 	local alreadyFocus = UnitIsFocus("target")
 
 	--if not alreadyFocus then
-    	TargetByName(CURR_FOCUS_TARGET, true)
+		TargetByName(CURR_FOCUS_TARGET, true)
 	--end
-    
+	
 	if func then
 		-- TODO is there vararg in this lua version?
 		func(arg1, arg2)
 	end
 
 	if --[[not alreadyFocus and]] oldTarget then
-    	--TargetByName(oldTarget, true)
+		--TargetByName(oldTarget, true)
 		--TargetUnit("playertarget")
 		TargetLastTarget()
 	else
@@ -43,14 +43,14 @@ local function FocusAction(func, arg1, arg2)
 end
 
 local function SetFocus(name)
-    CURR_FOCUS_TARGET = name
+	CURR_FOCUS_TARGET = name
 
-    if name then
+	if name then
 		FocusAction() -- Target focus once to update info
-        FocusFrame_Update() -- TODO needed?
+		FocusFrame_Update() -- TODO needed?
 	else
-        ClearFocus()
-    end
+		ClearFocus()
+	end
 end
 
 -- Chat Commands
@@ -58,17 +58,17 @@ end
 SLASH_FOCUS1 = "/focus"
 SlashCmdList["FOCUS"] = function(name)
 	if not name or name == "" then
-        name = UnitName("target")
-    end
+		name = UnitName("target")
+	end
 
-    SetFocus(name)
+	SetFocus(name)
 end
 
 SLASH_MFOCUS1 = "/mfocus"
 SlashCmdList["MFOCUS"] = function()
-    if UnitExists("mouseover") then
-        SetFocus(UnitName("mouseover"))
-    end
+	if UnitExists("mouseover") then
+		SetFocus(UnitName("mouseover"))
+	end
 end
 
 SLASH_FCAST1 = "/fcast"
@@ -154,25 +154,25 @@ function FocusFrame_Update()
 	end
 
 	local unit = GetFocusID()
-    if unit then
-        FocusName:SetText(GetUnitName(unit))
-        SetPortraitTexture(FocusPortrait, unit)
+	if unit then
+		FocusName:SetText(GetUnitName(unit))
+		SetPortraitTexture(FocusPortrait, unit)
 		FocusPortrait:SetAlpha(1.0)
 
-        if UnitIsPartyLeader(unit) then
-            FocusLeaderIcon:Show()
-        else
-            FocusLeaderIcon:Hide()
-        end
+		if UnitIsPartyLeader(unit) then
+			FocusLeaderIcon:Show()
+		else
+			FocusLeaderIcon:Hide()
+		end
 
-        FocusFrame_CheckLevel(unit)
-        FocusFrame_CheckFaction(unit)
-        FocusFrame_CheckClassification(unit)
-        FocusFrame_CheckDead(unit)
-        FocusFrame_CheckDishonorableKill(unit)
+		FocusFrame_CheckLevel(unit)
+		FocusFrame_CheckFaction(unit)
+		FocusFrame_CheckClassification(unit)
+		FocusFrame_CheckDead(unit)
+		FocusFrame_CheckDishonorableKill(unit)
 
 		FocusFrame_SetFocusInfo(unit)
-        FocusDebuffButton_Update(unit)
+		FocusDebuffButton_Update(unit)
 		FocusFrame_HealthUpdate(unit)
 
 		FocusFrame:Show()
@@ -414,7 +414,7 @@ function FocusFrame_OnEvent(event)
 	elseif ( event == "PLAYER_TARGET_CHANGED" or event == "UNIT_PORTRAIT_UPDATE") then
 		FocusFrame_Update();
 	elseif ( event == "UNIT_HEALTH" or event == "UNIT_MANA" or event == "UNIT_RAGE" or event == "UNIT_FOCUS" or event == "UNIT_ENERGY" ) then
-        if UnitIsFocus(arg1) then
+		if UnitIsFocus(arg1) then
 			FocusFrame_CheckDead(arg1);
 			FocusFrame_HealthUpdate(arg1)
 		end
@@ -592,11 +592,11 @@ function FocusFrame_OnClick(button)
 
 	if button == "LeftButton" then
 		if SpellIsTargeting() then
-            FocusAction(SpellTargetUnit, "target")
+			FocusAction(SpellTargetUnit, "target")
 		elseif CursorHasItem() then
-            FocusAction(DropItemOnUnit, "target")
+			FocusAction(DropItemOnUnit, "target")
 		else
-            TargetByName(CURR_FOCUS_TARGET, true)
-        end
+			TargetByName(CURR_FOCUS_TARGET, true)
+		end
 	end
 end

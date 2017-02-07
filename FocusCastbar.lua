@@ -39,55 +39,55 @@ FocusFrame.cast.icon:SetPoint("LEFT", FocusFrame.cast, -35, 0)
 FocusFrame.cast.icon:SetTexture("Interface\\Icons\\Spell_shadow_lifedrain02")
 
 do
-    local GetCastData = FSPELLCASTINGCOREgetCast
-    local castbar = FocusFrame.cast
-    local floor, GetTime, mod = math.floor, GetTime, mod
+	local GetCastData = FSPELLCASTINGCOREgetCast
+	local castbar = FocusFrame.cast
+	local floor, GetTime, mod = math.floor, GetTime, mod
 
-    local function Round(num, idp)
-        local mult = 10^(idp or 0)
+	local function Round(num, idp)
+		local mult = 10^(idp or 0)
 
-        return floor(num * mult + 0.5) / mult
-    end
+		return floor(num * mult + 0.5) / mult
+	end
 
-    local function GetTimerLeft(tEnd)
-        local t = tEnd - GetTime()
+	local function GetTimerLeft(tEnd)
+		local t = tEnd - GetTime()
 
-        return Round(t, t > 3 and 0 or 1)
-    end
+		return Round(t, t > 3 and 0 or 1)
+	end
 
-    function FocusFrame_ScanCast()
-        if not castbar then return end
-        local cast = GetCastData(CURR_FOCUS_TARGET)
+	function FocusFrame_ScanCast()
+		if not castbar then return end
+		local cast = GetCastData(CURR_FOCUS_TARGET)
 
-        if cast then
-            local timeEnd, timeStart = cast.timeEnd, cast.timeStart
-            local gTime = GetTime()
+		if cast then
+			local timeEnd, timeStart = cast.timeEnd, cast.timeStart
+			local gTime = GetTime()
 
-            if gTime < timeEnd then
-                castbar:SetMinMaxValues(0, timeEnd - timeStart)
+			if gTime < timeEnd then
+				castbar:SetMinMaxValues(0, timeEnd - timeStart)
 
-                local sparkPosition
-                if cast.inverse then
-                    castbar:SetValue(mod((timeEnd - gTime), timeEnd - timeStart))
-                    sparkPosition = (timeEnd - gTime) / (timeEnd - timeStart)
-                else
-                    castbar:SetValue(mod((gTime - timeStart), timeEnd - timeStart))
-                    sparkPosition = (gTime - timeStart) / (timeEnd - timeStart)
-                end
+				local sparkPosition
+				if cast.inverse then
+					castbar:SetValue(mod((timeEnd - gTime), timeEnd - timeStart))
+					sparkPosition = (timeEnd - gTime) / (timeEnd - timeStart)
+				else
+					castbar:SetValue(mod((gTime - timeStart), timeEnd - timeStart))
+					sparkPosition = (gTime - timeStart) / (timeEnd - timeStart)
+				end
 
-                if sparkPosition < 0 then
-                    sparkPosition = 0
-                end
-                castbar.spark:SetPoint("CENTER", castbar, "LEFT", sparkPosition * castbar:GetWidth(), 0)
+				if sparkPosition < 0 then
+					sparkPosition = 0
+				end
+				castbar.spark:SetPoint("CENTER", castbar, "LEFT", sparkPosition * castbar:GetWidth(), 0)
 
-                castbar.text:SetText(cast.spell)
-                castbar.timer:SetText(GetTimerLeft(timeEnd) .. "s")
-                castbar.icon:SetTexture(cast.icon)
-                castbar:SetAlpha(castbar:GetAlpha())
-                castbar:Show()
-            end
-        else
-            castbar:Hide()
-        end
-    end
+				castbar.text:SetText(cast.spell)
+				castbar.timer:SetText(GetTimerLeft(timeEnd) .. "s")
+				castbar.icon:SetTexture(cast.icon)
+				castbar:SetAlpha(castbar:GetAlpha())
+				castbar:Show()
+			end
+		else
+			castbar:Hide()
+		end
+	end
 end
