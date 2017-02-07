@@ -1,0 +1,16 @@
+## Interface: 11200
+## Title: FocusFrame
+## Notes: Focus frame support for vanilla.
+## Author: Wardz
+## Version: 0.1
+
+libs\buffs.lua
+libs\globals.lua
+libs\spells.lua
+libs\spellCastingCore.lua
+
+FocusFrame.xml
+FocusHealth.lua
+FocusCastbar.lua
+FocusData.lua
+FocusFrame.lua
