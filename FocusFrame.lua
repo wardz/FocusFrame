@@ -34,9 +34,11 @@ local function FocusAction(func, arg1, arg2)
 	end
 
 	if --[[not alreadyFocus and]] oldTarget then
-		--TargetByName(oldTarget, true)
-		--TargetUnit("playertarget")
 		TargetLastTarget()
+		if UnitName("target") ~= oldTarget then
+			-- TargetLastTarget() may bug out randomly so use this as fallback
+			TargetByName(oldTarget, true)
+		end
 	else
 		ClearTarget()
 	end
@@ -260,7 +262,7 @@ do
 			debuffList = buffs["debuffs"]
 		end
 
-		if (unit and UnitHealth(unit) <= 0) or data and data.health <= 0 then
+		if (unit and UnitHealth(unit) <= 0) or data and data.health and data.health <= 0 then
 			--for i = 1, MAX_FOCUS_BUFFS do getglobal("FocusFrameBuff"..i):Hide() end
 			--for i = 1, MAX_FOCUS_DEBUFFS do getglobal("FocusFrameDebuff"..i):Hide() end
 			FocusFrame_ClearBuffs(CURR_FOCUS_TARGET)
