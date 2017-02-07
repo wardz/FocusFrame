@@ -1,8 +1,7 @@
 # FocusFrame [BETA]
 Provides [focus targeting](http://wowwiki.wikia.com/wiki/Focus_target) & frame support for vanilla World of Warcraft. (1.12.1)
 
-[!Image]
-(http://localhost/asdf.png)
+![alt](http://i.imgur.com/Qziq2wX.jpg)
 
 ### Chat commands
 
