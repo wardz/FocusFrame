@@ -324,7 +324,7 @@ do
 				else
 					debuffCount:Hide();
 				end
-				debuffBorder:SetVertexColor(color[0], color[1], color[2], color[4]);
+				debuffBorder:SetVertexColor(color[0], color[1], color[2], color[3]);
 				button:Show();
 				numDebuffs = numDebuffs + 1;
 			else
