@@ -290,9 +290,10 @@ do
 			end
 		end
 
-		local debuff, debuffButton, debuffStack, debuffType, color;
+		local debuff, debuffButton, debuffStack, debuffType;
 		local debuffCount;
 		local numDebuffs = 0;
+		local color = {}
 		for i=1, MAX_FOCUS_DEBUFFS do
 
 			local debuffBorder = getglobal("FocusFrameDebuff"..i.."Border");
@@ -314,9 +315,9 @@ do
 				getglobal("FocusFrameDebuff"..i.."Icon"):SetTexture(type(debuff) == "table" and debuff.icon or debuff);
 				debuffCount = getglobal("FocusFrameDebuff"..i.."Count");
 				if ( debuffType ) then
-					color = RGB_BORDER_DEBUFFS_COLOR[debuffType] or RGB_BORDER_DEBUFFS_COLOR["none"];
+					color = FRGB_BORDER_DEBUFFS_COLOR[strlower(debuffType)] or {0, 0, 0, 1};
 				else
-					color = RGB_BORDER_DEBUFFS_COLOR["none"];
+					color = {0, 0, 0, 1};
 				end
 				if ( debuffStack and debuffStack > 1 ) then
 					debuffCount:SetText(debuffStack);
@@ -324,6 +325,7 @@ do
 				else
 					debuffCount:Hide();
 				end
+
 				debuffBorder:SetVertexColor(color[0], color[1], color[2], color[3]);
 				button:Show();
 				numDebuffs = numDebuffs + 1;

@@ -12,8 +12,7 @@
 		['holy'] 		= {.9, .4, .9}
 	}
 
-	RGB_BORDER_DEBUFFS_COLOR = RGB_BORDER_DEBUFFS_COLOR or
-	{
+	FRGB_BORDER_DEBUFFS_COLOR = {
 		['none']		= {0, 0, 0, 0},
 		['curse']		= {.6, 0, 1, 1},
 		['disease']		= {.6, .4, 0, 1},
