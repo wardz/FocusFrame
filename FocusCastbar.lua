@@ -39,7 +39,8 @@ FocusFrame.cast.icon:SetPoint("LEFT", FocusFrame.cast, -35, 0)
 FocusFrame.cast.icon:SetTexture("Interface\\Icons\\Spell_shadow_lifedrain02")
 
 do
-	local GetCastData = FSPELLCASTINGCOREgetCast
+	local FSPELLCASTINGCOREgetCast = FSPELLCASTINGCOREgetCast
+	local FSPELLCASTINGCOREgetHeal = FSPELLCASTINGCOREgetHeal
 	local castbar = FocusFrame.cast
 	local floor, GetTime, mod = math.floor, GetTime, mod
 
@@ -57,7 +58,7 @@ do
 
 	function FocusFrame_ScanCast()
 		if not castbar then return end
-		local cast = GetCastData(CURR_FOCUS_TARGET)
+		local cast = FSPELLCASTINGCOREgetCast(CURR_FOCUS_TARGET) --or FSPELLCASTINGCOREgetHeal(CURR_FOCUS_TARGET)
 
 		if cast then
 			local timeEnd, timeStart = cast.timeEnd, cast.timeStart

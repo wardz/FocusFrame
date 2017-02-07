@@ -334,7 +334,7 @@ do
 		local debuffFrame, debuffWrap, debuffSize, debuffFrameSize;
 		local targetofTarget = false --TargetofTargetFrame:IsShown();
 
-		if ( data and data["enemy"] or unit and UnitIsFriend("player", unit) ) then
+		if ( data and not data["enemy"] or unit and UnitIsFriend("player", unit) ) then
 			FocusFrameBuff1:SetPoint("TOPLEFT", "FocusFrame", "BOTTOMLEFT", 5, 32);
 			FocusFrameDebuff1:SetPoint("TOPLEFT", "FocusFrameBuff1", "BOTTOMLEFT", 0, -2);
 		else
