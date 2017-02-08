@@ -5,7 +5,7 @@ FocusFrame.cast:SetHeight(12)
 FocusFrame.cast:SetWidth(151)
 FocusFrame.cast:SetPoint("BOTTOMLEFT", FocusFrame, 15, -35)
 FocusFrame.cast:SetValue(0)
---FocusFrame.cast:Hide()
+FocusFrame.cast:Hide()
 
 FocusFrame.cast.spark = FocusFrame.cast:CreateTexture(nil, "OVERLAY")
 FocusFrame.cast.spark:SetTexture([[Interface\CastingBar\UI-CastingBar-Spark]])
@@ -88,7 +88,7 @@ do
 				castbar:Show()
 			end
 		else
-			--castbar:Hide()
+			castbar:Hide()
 		end
 	end
 end

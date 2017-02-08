@@ -300,7 +300,7 @@ do
 				button.id = i;
 				numBuffs = numBuffs + 1; 
 			else
-				--button:Hide();
+				button:Hide();
 			end
 		end
 
@@ -344,7 +344,7 @@ do
 				button:Show();
 				numDebuffs = numDebuffs + 1;
 			else
-				--button:Hide();
+				button:Hide();
 			end
 			button.id = i;
 		end
