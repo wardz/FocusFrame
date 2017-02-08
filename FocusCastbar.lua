@@ -58,7 +58,7 @@ do
 
 	function FocusFrame_ScanCast()
 		if not castbar then return end
-		local cast = FSPELLCASTINGCOREgetCast(CURR_FOCUS_TARGET) or FSPELLCASTINGCOREgetCast(CURR_FOCUS_TARGET)
+		local cast = FSPELLCASTINGCOREgetCast(CURR_FOCUS_TARGET) --or FSPELLCASTINGCOREgetCast(CURR_FOCUS_TARGET)
 
 		if cast then
 			local timeEnd, timeStart = cast.timeEnd, cast.timeStart

@@ -435,7 +435,7 @@ do
 			--local y = amount < 7 and -35 or amount < 13 and -60 or amount < 19 and -85
 			if data and data.enemy == "1" or unit and UnitIsFriend("player", unit) then
 				if numBuffs >= 1 and numDebuffs >= 1 then
-					FocusFrame.cast:SetPoint("BOTTOMLEFT", FocusFrame, 15, -55)
+					FocusFrame.cast:SetPoint("BOTTOMLEFT", FocusFrame, 15, -74)
 					return
 				end
 			end

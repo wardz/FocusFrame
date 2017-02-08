@@ -779,6 +779,7 @@ local parsingCheck = function(out, display)
 end
 
 function FocusFrame_SyncBuffData(unit)
+	if UnitIsEnemy(unit, "player") == 1 then return end
 	local target = UnitName(unit)
 	if target == CURR_FOCUS_TARGET then
 		--print("ran")
