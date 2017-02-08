@@ -20,38 +20,49 @@ local function ClearFocus()
 	FocusFrame_Update()
 end
 
-local function FocusTargetNpc()
-	local name = string.sub(CURR_FOCUS_TARGET, 1, -2)
-	TargetByName(name, false)
-	-- Removing last character from npc name will make the engine
-	-- do a scan for nearest enemy with similar name.
-	-- If you do target with exact name you may end up targetting a mob
-	-- 40 yards behind you even if there's a mob standing right next to you
+local function TargetUnitOrFocus(name, isNotPlayer)
+	name = name or CURR_FOCUS_TARGET
+	if isNotPlayer == nil then
+		local data = FocusFrame_GetFocusData(name)
+		isNotPlayer = data and data.npc == "2"
+	end
+
+	if isNotPlayer then
+		local _name = string.sub(name, 1, -2)
+		TargetByName(_name, false)
+		-- Removing last char from npc name will make the engine
+		-- do a scan for nearest enemy with similar name.
+		-- If you do target with exact name you may end up targetting a mob
+		-- 40 yards behind you even if there's a mob standing right next to you
+
+		if UnitIsDead("target") == 1 then
+			TargetByName(CURR_FOCUS_TARGET, true)
+			-- Nearest unit is dead, so revert back to old targetting system
+			-- incase it can pickup the mob
+		end
+	else
+		TargetByName(name, true)
+	end
 end
 
 local function FocusAction(func, arg1, arg2)
 	local oldTarget = UnitName("target")
 	local data = FocusFrame_GetFocusData(CURR_FOCUS_TARGET)
-	--local alreadyFocus = UnitIsFocus("target")
+	local isNotPlayer = data and data.npc == "2" and true or false
 
-	--if not alreadyFocus then
-	if data and data.npc == "2" then
-		FocusTargetNpc()
-	else
-		TargetByName(CURR_FOCUS_TARGET, true)
-	end
-	--end
-	
+	TargetUnitOrFocus(nil, isNotPlayer)
+
 	if func then
 		-- TODO is there vararg in this lua version?
 		func(arg1, arg2)
 	end
 
-	if --[[not alreadyFocus and]] oldTarget then
+	if oldTarget then
 		TargetLastTarget()
+
 		if UnitName("target") ~= oldTarget then
 			-- TargetLastTarget() may bug out randomly so use this as fallback
-			TargetByName(oldTarget, true)
+			TargetUnitOrFocus(oldTarget, isNotPlayer)
 		end
 	else
 		ClearTarget()
@@ -131,7 +142,7 @@ end
 SLASH_TARFOCUS1 = "/tarfocus"
 SlashCmdList["TARFOCUS"] = function()
 	if CURR_FOCUS_TARGET then
-		TargetByName(CURR_FOCUS_TARGET, true)
+		TargetUnitOrFocus()
 	else
 		UIErrorsFrame:AddMessage("|cffFF003F You have no focus.|r")
 	end
@@ -146,22 +157,16 @@ function FocusFrame_OnLoad()
 	FocusFrame_Update()
 
 	this:RegisterEvent("PLAYER_ENTERING_WORLD")
+	this:RegisterEvent("PLAYER_FLAGS_CHANGED")
+	this:RegisterEvent("UNIT_CLASSIFICATION_CHANGED")
 	this:RegisterEvent("UNIT_HEALTH")
 	this:RegisterEvent("UNIT_LEVEL")
 	this:RegisterEvent("UNIT_FACTION")
-	this:RegisterEvent("UNIT_CLASSIFICATION_CHANGED")
 	this:RegisterEvent("UNIT_AURA")
-	this:RegisterEvent("PLAYER_FLAGS_CHANGED")
-
 	this:RegisterEvent("UNIT_MANA")
 	this:RegisterEvent("UNIT_RAGE")
 	this:RegisterEvent("UNIT_FOCUS")
 	this:RegisterEvent("UNIT_ENERGY")
-	--this:RegisterEvent("UNIT_DISPLAYPOWER")
-	this:RegisterEvent("UNIT_PORTRAIT_UPDATE")
-
-	--this:RegisterEvent("PARTY_MEMBERS_CHANGED")
-	--this:RegisterEvent("RAID_TARGET_UPDATE")
 end
 
 function FocusFrame_Update()
@@ -247,7 +252,7 @@ do
 	local scantipTextLeft1 = getglobal("FocusScantipTextLeft1")
 	local scantipTextRight1 = getglobal("FocusScantipTextRight1")
 
-	local function StoreBuff(unit, i, texture, debuff)
+	local function StoreBuff(unit, i, texture, debuff, mtype)
 		scantip:ClearLines()
 		if debuff then
 			scantip:SetUnitDebuff(unit, i)
@@ -255,11 +260,11 @@ do
 			scantip:SetUnitBuff(unit, i)
 		end
 
-		local text = scantipTextLeft1:GetText()
-		local magicType = scantipTextRight1:GetText()
-		if text then
+		local name = scantipTextLeft1:GetText()
+		local magicType = mtype or scantipTextRight1:GetText()
+		if name then
 			-- sync buffs
-			FocusFrame_NewBuff(CURR_FOCUS_TARGET, text, texture, debuff, magicType)
+			FocusFrame_NewBuff(CURR_FOCUS_TARGET, name, texture, debuff, magicType)
 		end
 	end
 
@@ -279,10 +284,7 @@ do
 		end
 
 		if (unit and UnitHealth(unit) <= 0) or data and data.health and data.health <= 0 then
-			--for i = 1, MAX_FOCUS_BUFFS do getglobal("FocusFrameBuff"..i):Hide() end
-			--for i = 1, MAX_FOCUS_DEBUFFS do getglobal("FocusFrameDebuff"..i):Hide() end
-			FocusFrame_ClearBuffs(CURR_FOCUS_TARGET)
-			--return
+			FocusFrame_ClearBuffs(CURR_FOCUS_TARGET) -- TODO check if still needed
 		end
 
 		for i=1, MAX_FOCUS_BUFFS do
@@ -317,15 +319,13 @@ do
 			if unit then
 				debuff, debuffStack, debuffType = UnitDebuff(unit, i);
 				if debuff then
-					StoreBuff(unit, i, debuff, true)
+					StoreBuff(unit, i, debuff, true, debuffType)
 				end
 			else
 				debuff = debuffList[i]
 				debuffStack = debuff and debuff.stacks or 0
 				debuffType = debuff and debuff.debuffType or nil
-				--debuffType = nil
 			end
-
 			button = getglobal("FocusFrameDebuff"..i);
 			if ( debuff ) then
 				getglobal("FocusFrameDebuff"..i.."Icon"):SetTexture(type(debuff) == "table" and debuff.icon or debuff);
@@ -607,7 +607,7 @@ function FocusFrame_CheckDead(unit)
 		end
 	else
 		local data = FocusFrame_GetFocusData(CURR_FOCUS_TARGET)
-		if data and data.health <= 0 then
+		if data and data.health and data.health <= 0 then
 			FocusDeadText:Show()
 		else
 			FocusDeadText:Hide()
@@ -632,7 +632,7 @@ function FocusFrame_OnClick(button)
 		elseif CursorHasItem() then
 			FocusAction(DropItemOnUnit, "target")
 		else
-			TargetByName(CURR_FOCUS_TARGET, true)
+			TargetUnitOrFocus()
 		end
 	end
 end

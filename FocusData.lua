@@ -27,7 +27,7 @@ end
 
 do
 	local refresh, interval = 0, 0.2
-	function ScanPartyTargets()
+	function ScanPartyTargets() --local
 		refresh = refresh - 0.001
 		if refresh > 0 then
 			local groupType = UnitInRaid("player") and "raid" or "party"
