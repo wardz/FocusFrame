@@ -548,7 +548,7 @@ local FadeRem = function()
 	local fade 		= '(.+) fades from (.+).'							local ffade = string.find(arg1, fade)
 	local rem 		= '(.+)\'s (.+) is removed'							local frem = string.find(arg1, rem)
 	local prem 		= 'Your (.+) is removed'							local fprem = string.find(arg1, prem)
-	
+
 	-- end channeling based on buffs (evocation ..)
 	if ffade then
 		local m = fade
@@ -787,7 +787,30 @@ local combatlogParser = function()
 	local mEmote	= 'CHAT_MSG_MONSTER_EMOTE'				local fmEmote		= string.find(event, mEmote)
 	
 	--if arg1 then singleEventdebug() end -- testing
-	
+
+	if event == "UNIT_AURA" then
+		-- Certain buffs does not have fade event so we'll have to scan through unit_aura and check diff
+		-- TODO does enemy buff have same log limitation?
+		local target = UnitName(arg1)
+		if target == CURR_FOCUS_TARGET then
+			local buffs = {}
+			local index = 1
+			for k, v in pairs(buffList) do
+				if v.caster == target then
+					buffs[v.icon] = index
+				end
+				index = index + 1
+			end
+
+			for i = 1, 5 do
+				local buff = UnitBuff(arg1, i)
+				if not buffs[buff] then
+					table.remove(buffList, buffs[buff])
+				end
+			end
+		end
+	end
+
 	-- periodic damage/buff spells
 	if fpSpell then	
 		parsingCheck(channelDot() or channelHeal() or GainAfflict() or handleHeal(), false)
@@ -950,13 +973,15 @@ f:RegisterEvent'CHAT_MSG_SPELL_DAMAGESHIELDS_ON_OTHERS'
 f:RegisterEvent'CHAT_MSG_COMBAT_HOSTILE_DEATH'
 f:RegisterEvent'CHAT_MSG_COMBAT_FRIENDLY_DEATH'
 
---f:RegisterAllEvents()
+f:RegisterEvent'UNIT_AURA'
+
+f:RegisterAllEvents()
 
 f:SetScript('OnEvent', function()
 	if event == 'PLAYER_ENTERING_WORLD' then
 		tableMaintenance(true)
-	else 
-		combatlogParser()  
+	else
+		combatlogParser()
 	end
 end)
 
