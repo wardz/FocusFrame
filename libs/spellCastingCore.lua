@@ -128,8 +128,8 @@ end
 local updateDRtimers = function(time, drtab, bufftab)
 	for k, v in pairs(drtab) do
 		for i, j in pairs(bufftab) do
-			if j.target == v.target and SPELLINFO_BUFFS_TO_TRACK[j.spell]['dr'] then
-				if SPELLINFO_BUFFS_TO_TRACK[j.spell]['dr'] == v.type then
+			if j.target == v.target and FSPELLINFO_BUFFS_TO_TRACK[j.spell]['dr'] then
+				if FSPELLINFO_BUFFS_TO_TRACK[j.spell]['dr'] == v.type then
 					v.timeEnd = time + v.k
 				end
 			end
@@ -251,20 +251,20 @@ local newIBuff = function(caster, buff)
 end
 
 local function manageDR(time, tar, b, castOn)
-	if not SPELLINFO_BUFFS_TO_TRACK[b] or SPELLINFO_BUFFS_TO_TRACK[b]['dr'] then return 1 end
+	if not FSPELLINFO_BUFFS_TO_TRACK[b] or FSPELLINFO_BUFFS_TO_TRACK[b]['dr'] then return 1 end
 	
 	for k, v in pairs(dreturnsList) do
-		if v.target == tar and v.type == SPELLINFO_BUFFS_TO_TRACK[b]['dr'] then
+		if v.target == tar and v.type == FSPELLINFO_BUFFS_TO_TRACK[b]['dr'] then
 			v.factor = v.factor > .25 and v.factor / 2 or 0
 			--if v.factor > 0 then
-			--	v.timeEnd = time + SPELLINFO_BUFFS_TO_TRACK[b]['duration'] * v.factor + v.k
+			--	v.timeEnd = time + FSPELLINFO_BUFFS_TO_TRACK[b]['duration'] * v.factor + v.k
 			--end
 			return v.factor
 		end
 	end
 	
 	if castOn then return 0 end		-- avoids creating a new DR entry if none was found
-	local n = dreturns.create(tar, SPELLINFO_BUFFS_TO_TRACK[b]['dr'], SPELLINFO_BUFFS_TO_TRACK[b]['duration'] + time)
+	local n = dreturns.create(tar, FSPELLINFO_BUFFS_TO_TRACK[b]['dr'], FSPELLINFO_BUFFS_TO_TRACK[b]['duration'] + time)
 	table.insert(dreturnsList, n)
 	return 1
 end
@@ -295,7 +295,7 @@ local function newbuff(tar, b, s, castOn, texture, debuff, magictype)
 			end
 		end
 
-		local n = buff.create(tar, b, s, SPELLINFO_BUFFS_TO_TRACK[b], drf, time, texture, debuff, magictype)
+		local n = buff.create(tar, b, s, FSPELLINFO_BUFFS_TO_TRACK[b], drf, time, texture, debuff, magictype)
 		table.insert(buffList, n)
 	--end
 end
@@ -403,7 +403,7 @@ local CastCraftPerform = function()
 		local t = fpcastFin and gsub(arg1, m, '%2') or gsub(arg1, m, '%3')
 		local s = fpcastFin and gsub(arg1, m, '%1') or gsub(arg1, m, '%2')
 		
-		if SPELLINFO_BUFFS_TO_TRACK[s] then
+		if FSPELLINFO_BUFFS_TO_TRACK[s] then
 			newbuff(t, s, true)
 		end]]--
 	end
@@ -485,7 +485,7 @@ local GainAfflict = function()
 		local s = fgain and gsub(arg1, m, '%2') or fpgain and gsub(arg1, m, '%1')
 		
 		-- buffs/debuffs to be displayed
-		if SPELLINFO_BUFFS_TO_TRACK[s] then
+		if FSPELLINFO_BUFFS_TO_TRACK[s] then
 			newbuff(c, s, 1, false)
 		end
 		-- self-cast buffs that interrupt cast (blink, ice block ...)
@@ -509,7 +509,7 @@ local GainAfflict = function()
 		
 		-- rank & stacks
 		local auxS, st = s, 1
-		if not SPELLINFO_BUFFS_TO_TRACK[s] then
+		if not FSPELLINFO_BUFFS_TO_TRACK[s] then
 			--local buffRank = '(.+) (.+)'
 			--if string.find(s, buffRank) then print(gsub(s, buffRank, '%1'))	print(gsub(s, buffRank, '%2'))	end
 			local spellstacks = '(.+) %((.+)%)'	
@@ -517,7 +517,7 @@ local GainAfflict = function()
 			end
 		end
 		-- debuffs to be displayed
-		if SPELLINFO_BUFFS_TO_TRACK[s] then
+		if FSPELLINFO_BUFFS_TO_TRACK[s] then
 			--if st > 1 then
 			--	refreshBuff(c, s, st)
 			--else
@@ -558,7 +558,7 @@ local FadeRem = function()
 		c = c == 'you' and playerName or c
 		
 		-- buffs/debuffs to be displayed
-		--if SPELLINFO_BUFFS_TO_TRACK[s] then
+		--if FSPELLINFO_BUFFS_TO_TRACK[s] then
 			forceHideTableItem(buffList, c, s)
 		--end
 		-- buff channeling casts fading
@@ -575,7 +575,7 @@ local FadeRem = function()
 		local s = frem and gsub(arg1, m, '%2') or fprem and gsub(arg1, m, '%1')
 		
 		-- buffs/debuffs to be displayed
-		--if SPELLINFO_BUFFS_TO_TRACK[s] then
+		--if FSPELLINFO_BUFFS_TO_TRACK[s] then
 			forceHideTableItem(buffList, c, s)
 		--end
 		
