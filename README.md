@@ -37,7 +37,7 @@ Clear current focus:
 ```
 
 ### Important
-When using this addon there are some limitations or caveats you should know about due to the way wow 1.12.1 api works:
+When using this addon there are some limitations or caveats you should know about due to the way WoW 1.12.1 api works:
 
 - **There's no way to distinguish between NPCs with the exact same name, so most of this addon's functionality won't work properly on mobs.**
 - Mana/power for non-party member focus is updated when you or your party members target/mouseover the focus target. (Also every time you use /fcast)
@@ -47,11 +47,10 @@ When using this addon there are some limitations or caveats you should know abou
 - Only works on English game client for now.
 
 ### Installation
-Unzip the downloaded file into your WoW/Interface/AddOns/ folder and remove "-master" prefix from the addon's folder name.
+Unzip the downloaded file into your "WoW/Interface/AddOns/" folder, then remove "-master" suffix from the addon's folder name.
 
 
 ### TODO
 - Add target of target frame.
-- Add raid mark icon support.
 - Add chat commands for customization.
 - Better buff handling.
