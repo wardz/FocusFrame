@@ -13,7 +13,7 @@ function FocusFrame_ScanHealth()
 	local frames = { WorldFrame:GetChildren() }
 
 	for _, plate in ipairs(frames) do
-		if IsPlate(plate) and plate:IsVisible() then
+		if IsPlate(plate) --[[and plate:IsVisible()]] then
 			local _, _, nameFrame = plate:GetRegions()
 			local health = plate:GetChildren():GetValue()
 			local name = nameFrame:GetText()
