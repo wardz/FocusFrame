@@ -1,7 +1,7 @@
 	-- Taken from enemyFrames by kuuurtz
 	-- https://github.com/zetone/enemyFrames
 
-	RGB_SPELL_SCHOOL_COLORS = RGB_SPELL_SCHOOL_COLORS or
+	FRGB_SPELL_SCHOOL_COLORS =
 	{
 		['physical'] 	= {.9, .9, 0},
 		['arcane'] 		= {.9, .4, .9},

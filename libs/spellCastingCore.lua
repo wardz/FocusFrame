@@ -27,7 +27,7 @@ Cast.create = function(caster, spell, info, timeMod, time, inv)
 	acnt.nextTick	= info['tick'] and time + acnt.tick or acnt.timeEnd 
 	acnt.inverse    = inv	
 	acnt.class		= info['class']
-	acnt.school		= info['school'] and RGB_SPELL_SCHOOL_COLORS[info['school']]
+	acnt.school		= info['school'] and FRGB_SPELL_SCHOOL_COLORS[info['school']]
 	acnt.borderClr	= info['immune'] and {.3, .3, .3} or {.1, .1, .1}
 	return acnt
 end
@@ -73,7 +73,7 @@ buff.create = function(tar, t, s, buffType, factor, time, texture, debuff, magic
 	--acnt.timeEnd   	= time + (buffType['duration'] or 0) * factor
 	acnt.timeEnd   	= 0
 	acnt.prio		= buffType['prio'] and buffType['prio'] or 0
-	acnt.border		= buffType['type'] and RGB_BORDER_DEBUFFS_COLOR[buffType.type] or {.1, .1, .1}	-- border rgb values depending on type of buff/debuff
+	acnt.border		= buffType['type'] and FRGB_BORDER_DEBUFFS_COLOR[buffType.type] or {.1, .1, .1}	-- border rgb values depending on type of buff/debuff
 	acnt.display 	= buffType['display'] == nil and true or buffType['display']
 	acnt.btype		= debuff
 	acnt.debuffType = buffType.type
