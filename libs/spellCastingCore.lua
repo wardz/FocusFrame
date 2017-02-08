@@ -778,6 +778,27 @@ local parsingCheck = function(out, display)
 	end
 end
 
+function FocusFrame_SyncBuffData(unit)
+	local target = UnitName(unit)
+	if target == CURR_FOCUS_TARGET then
+		local buffs = {}
+		local index = 1
+		for k, v in pairs(buffList) do
+			if v.caster == target then
+				buffs[v.icon] = index
+			end
+			index = index + 1
+		end
+
+		for i = 1, 5 do
+			local buff = UnitBuff(unit, i)
+			if not buffs[buff] then
+				table.remove(buffList, buffs[buff])
+			end
+		end
+	end
+end
+
 local combatlogParser = function()	
 	local pSpell 	= 'CHAT_MSG_SPELL_PERIODIC_(.+)'		local fpSpell 		= string.find(event, pSpell)
 	local breakAura = 'CHAT_MSG_SPELL_BREAK_AURA'			local fbreakAura 	= string.find(event, breakAura)
@@ -788,28 +809,9 @@ local combatlogParser = function()
 	
 	--if arg1 then singleEventdebug() end -- testing
 
-	if event == "UNIT_AURA" then
-		-- Certain buffs does not have fade event so we'll have to scan through unit_aura and check diff
-		-- TODO does enemy buff have same log limitation?
-		local target = UnitName(arg1)
-		if target == CURR_FOCUS_TARGET then
-			local buffs = {}
-			local index = 1
-			for k, v in pairs(buffList) do
-				if v.caster == target then
-					buffs[v.icon] = index
-				end
-				index = index + 1
-			end
-
-			for i = 1, 5 do
-				local buff = UnitBuff(arg1, i)
-				if not buffs[buff] then
-					table.remove(buffList, buffs[buff])
-				end
-			end
-		end
-	end
+	--if event == "UNIT_AURA" then
+		--FocusFrame_SyncBuffData(arg1)
+	--end
 
 	-- periodic damage/buff spells
 	if fpSpell then	
@@ -836,7 +838,7 @@ end
 -- GLOBAL ACCESS FUNCTIONS
 
 function FocusFrame_NewBuff(tar, b, texture, debuff, magictype)
-	newbuff(tar, b, false, false, texture, debuff, magictype)
+	newbuff(tar, b, 1, false, texture, debuff, magictype)
 end
 
 function FocusFrame_ClearBuffs(caster)

@@ -274,6 +274,8 @@ do
 			data = FocusFrame_GetFocusData(CURR_FOCUS_TARGET)
 			buffList = buffs["buffs"]
 			debuffList = buffs["debuffs"]
+		else
+			FocusFrame_SyncBuffData(unit)
 		end
 
 		if (unit and UnitHealth(unit) <= 0) or data and data.health and data.health <= 0 then
