@@ -13,7 +13,7 @@ function FocusFrame_SetFocusInfo(unitID)
 				['mana'] = UnitMana(unitID),
 				['maxMana'] = UnitManaMax(unitID),
 				['power'] = UnitPowerType(unitID),
-				['enemy'] = UnitIsEnemy(unitID, "player"),
+				['enemy'] = UnitIsFriend(unitID, "player") == 1 and "1" or "2", -- true|false seems to be bugged for some reason
 				['isDead'] = UnitHealth(unitID) <= 0 and UnitIsConnected(unitID) and true or false
 			}
 
@@ -31,7 +31,7 @@ do
 		if refresh > 0 then
 			local groupType = UnitInRaid("player") and "raid" or "party"
 			local members = groupType == "raid" and GetNumRaidMembers() or GetNumPartyMembers()
-			local enemy = focusData[CURR_FOCUS_TARGET] and focusData[CURR_FOCUS_TARGET].enemy
+			local enemy = focusData[CURR_FOCUS_TARGET] and focusData[CURR_FOCUS_TARGET].enemy == "2"
 
 			if members > 0 then
 				local unitID = groupType .. raidMemberIndex .. (enemy and "target" or "")
@@ -65,6 +65,7 @@ end
 
 function FocusFrame_DeleteFocusData(name)
 	raidMemberIndex = 1
+	partyUnitID = nil
 
 	if next(focusData) then
 		if name then

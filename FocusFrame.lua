@@ -286,7 +286,7 @@ do
 				button.id = i;
 				numBuffs = numBuffs + 1; 
 			else
-				button:Hide();
+				--button:Hide();
 			end
 		end
 
@@ -330,15 +330,15 @@ do
 				button:Show();
 				numDebuffs = numDebuffs + 1;
 			else
-				button:Hide();
+				--button:Hide();
 			end
 			button.id = i;
 		end
 
 		local debuffFrame, debuffWrap, debuffSize, debuffFrameSize;
-		local targetofTarget = false --TargetofTargetFrame:IsShown();
+		local targetofTarget = false --FocusTargetofTargetFrame:IsShown();
 
-		if ( data and not data["enemy"] or unit and UnitIsFriend("player", unit) ) then
+		if ( data and data.enemy == "1" or unit and UnitIsFriend("player", unit) ) then
 			FocusFrameBuff1:SetPoint("TOPLEFT", "FocusFrame", "BOTTOMLEFT", 5, 32);
 			FocusFrameDebuff1:SetPoint("TOPLEFT", "FocusFrameBuff1", "BOTTOMLEFT", 0, -2);
 		else
@@ -411,12 +411,19 @@ do
 		end
 
 		-- move castbar
-		local amount = numBuffs + numDebuffs
+		--local amount = numBuffs + numDebuffs
 		if targetofTarget then
 
 		else
-			local y = amount < 7 and -35 or amount < 13 and -60 or amount < 19 and -85
-			FocusFrame.cast:SetPoint("BOTTOMLEFT", FocusFrame, 15, y)
+			--local y = amount < 7 and -35 or amount < 13 and -60 or amount < 19 and -85
+			if data and data.enemy == "1" or unit and UnitIsFriend("player", unit) then
+				if numBuffs >= 1 and numDebuffs >= 1 then
+					FocusFrame.cast:SetPoint("BOTTOMLEFT", FocusFrame, 15, -55)
+					return
+				end
+			end
+			
+			FocusFrame.cast:SetPoint("BOTTOMLEFT", FocusFrame, 15, -35)
 		end
 	end
 end
