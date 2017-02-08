@@ -20,12 +20,26 @@ local function ClearFocus()
 	FocusFrame_Update()
 end
 
+local function FocusTargetNpc()
+	local name = string.sub(CURR_FOCUS_TARGET, 1, -2)
+	TargetByName(name, false)
+	-- Removing last character from npc name will make the engine
+	-- do a scan for nearest enemy with similar name.
+	-- If you do target with exact name you may end up targetting a mob
+	-- 40 yards behind you even if there's a mob standing right next to you
+end
+
 local function FocusAction(func, arg1, arg2)
 	local oldTarget = UnitName("target")
-	local alreadyFocus = UnitIsFocus("target")
+	local data = FocusFrame_GetFocusData(CURR_FOCUS_TARGET)
+	--local alreadyFocus = UnitIsFocus("target")
 
 	--if not alreadyFocus then
+	if data and data.npc == "2" then
+		FocusTargetNpc()
+	else
 		TargetByName(CURR_FOCUS_TARGET, true)
+	end
 	--end
 	
 	if func then

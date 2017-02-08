@@ -14,7 +14,8 @@ function FocusFrame_SetFocusInfo(unitID)
 				['maxMana'] = UnitManaMax(unitID),
 				['power'] = UnitPowerType(unitID),
 				['enemy'] = UnitIsFriend(unitID, "player") == 1 and "1" or "2", -- true|false seems to be bugged for some reason
-				['isDead'] = UnitHealth(unitID) <= 0 and UnitIsConnected(unitID) and true or false
+				['isDead'] = UnitHealth(unitID) <= 0 and UnitIsConnected(unitID) and true or false,
+				['npc'] = UnitIsPlayer(unitID) == 1 and "1" or "2"
 			}
 
 			return true
