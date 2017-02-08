@@ -781,6 +781,7 @@ end
 function FocusFrame_SyncBuffData(unit)
 	local target = UnitName(unit)
 	if target == CURR_FOCUS_TARGET then
+		--print("ran")
 		local buffs = {}
 		local index = 1
 		for k, v in pairs(buffList) do
@@ -809,9 +810,9 @@ local combatlogParser = function()
 	
 	--if arg1 then singleEventdebug() end -- testing
 
-	--if event == "UNIT_AURA" then
-		--FocusFrame_SyncBuffData(arg1)
-	--end
+	if event == "UNIT_AURA" then
+		FocusFrame_SyncBuffData(arg1)
+	end
 
 	-- periodic damage/buff spells
 	if fpSpell then	
