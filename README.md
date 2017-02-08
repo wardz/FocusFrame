@@ -45,6 +45,7 @@ When using this addon there are some limitations or caveats you should know abou
 - Castingbar handler can't tell if focus uses downranked spells.
 - Casts & buffs for focus not in party are only tracked if the focus is within 40 yards range of your character.
 - Only works on English game client for now.
+- Buff/cast tracking is still WIP. Let me know of any issues.
 
 ### Installation
 Unzip the downloaded file into your "WoW/Interface/AddOns/" folder, then remove "-master" suffix from the addon's folder name.
