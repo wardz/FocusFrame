@@ -36,6 +36,19 @@ Clear current focus:
 /clearfocus
 ```
 
+#### Options
+
+Set frame scale: (0.2 - 2.0)
+```
+/foption scale 1.0
+```
+
+Toggle frame dragging:
+(Hold down left mouse button on focus **portrait** to move it)
+```
+/foption lock
+```
+
 ### Important
 When using this addon there are some limitations or caveats you should know about due to the way WoW 1.12.1 api works:
 
@@ -53,5 +66,4 @@ Unzip the downloaded file into your "WoW/Interface/AddOns/" folder, then remove 
 
 ### TODO
 - Add target of target frame.
-- Add chat commands for customization.
 - Better buff handling.

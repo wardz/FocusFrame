@@ -167,10 +167,10 @@ SlashCmdList["FOCUSOPTIONS"] = function(msg)
 		FocusFrame:SetScale(x)
 		FocusFrameDB.scale = x
 	elseif cmd == "lock" then
-		FocusFrameDB.lock = not FocusFrameDB.lock
-		FocusFrame:EnableMouse(not FocusFrameDB.unlock)
+		FocusFrameDB.unlock = not FocusFrameDB.unlock
+		FocusFrame:EnableMouse(FocusFrameDB.unlock)
 	else
-		DEFAULT_CHAT_FRAME:AddMessage("Valid commands are:\n/foption scale 1 - Change frame size\n/foption lock - Toggle dragging of frame")
+		DEFAULT_CHAT_FRAME:AddMessage("Valid commands are:\n/foption scale 1 - Change frame size (0.2 - 2)\n/foption lock - Toggle dragging of frame")
 	end
 end
 
@@ -222,7 +222,7 @@ function FocusFrame_Update(id)
 		FocusFrame_HealthUpdate(unit)
 
 		FocusFrame:SetScale(FocusFrameDB.scale or 1)
-		FocusFrame:EnableMouse(not FocusFrameDB.unlock)
+		FocusFrame:EnableMouse(FocusFrameDB.unlock)
 		FocusFrame:Show()
 	end
 end
@@ -290,6 +290,7 @@ do
 		local name = scantipTextLeft1:GetText()
 		local magicType = mtype or scantipTextRight1:GetText()
 		-- TODO add stacks
+		-- TODO buffs from items does not have fade log event, problem when unit is enemy
 		if name then
 			-- sync targeted unit buffs with buff lib data
 			FocusFrame_NewBuff(CURR_FOCUS_TARGET, name, texture, debuff, magicType)
