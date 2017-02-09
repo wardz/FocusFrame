@@ -39,12 +39,16 @@ Clear current focus:
 #### Options
 
 Set frame scale: (0.2 - 2.0)
+
+Default: 1
 ```
 /foption scale 1.0
 ```
 
 Toggle frame dragging:
 (Hold down left mouse button on focus **portrait** to move it)
+
+Default: unlocked
 ```
 /foption lock
 ```
@@ -62,8 +66,9 @@ When using this addon there are some limitations or caveats you should know abou
 
 ### Installation
 [Download link.](https://github.com/wardz/FocusFrame/archive/master.zip)
+If for some reason the newest version doesn't work, you may download a previous version here: [link](https://github.com/wardz/FocusFrame/releases)
 
-Unzip the downloaded file into your "WoW/Interface/AddOns/" folder, then remove "-master" suffix from the addon's folder name.
+Unzip the downloaded file into your "WoW/Interface/AddOns/" folder, then remove "-master" (or version) suffix from the addon's folder name.
 
 
 ### TODO
