@@ -41,8 +41,8 @@ do
 	local refresh, interval = 0, 0.2
 
 	function ScanPartyTargets() --local
-		refresh = refresh - 0.001
-		if refresh > 0 then
+		refresh = refresh - 0.1
+		if refresh < 0 then
 			local groupType = UnitInRaid("player") and "raid" or "party"
 			local members = groupType == "raid" and GetNumRaidMembers() or GetNumPartyMembers()
 			local enemy = focusData[CURR_FOCUS_TARGET] and focusData[CURR_FOCUS_TARGET].enemy == "2"

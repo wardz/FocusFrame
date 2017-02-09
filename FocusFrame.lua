@@ -3,9 +3,7 @@ local FocusFrame_SetFocusInfo, FocusFrame_GetFocusData = FocusFrame_SetFocusInfo
 
 CURR_FOCUS_TARGET = nil
 
-if not print then
-	print = function(x) DEFAULT_CHAT_FRAME:AddMessage(x) end
-end
+print = function(x) DEFAULT_CHAT_FRAME:AddMessage(x) end
 
 local function UnitIsFocus(unitID)
 	return UnitName(unitID) == CURR_FOCUS_TARGET
