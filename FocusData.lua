@@ -49,10 +49,14 @@ do
 
 			if members > 0 then
 				local unit = groupType .. raidMemberIndex .. (enemy and "target" or "")
+				local unitPet = groupType .. "pet" .. raidMemberIndex .. (enemy and "target" or "")
 
 				if FocusFrame_SetFocusInfo(unit) then
 					raidMemberIndex = 1
-					partyUnit = not enemy and unit or nil
+					partyUnit = unit
+				elseif FocusFrame_SetFocusInfo(unitPet) then
+					raidMemberIndex = 1
+					partyUnit = unitPet
 				else
 					partyUnit = nil
 					raidMemberIndex = raidMemberIndex < members and raidMemberIndex + 1 or 1
@@ -103,7 +107,8 @@ do
 				FocusFrame_ScanCast()
 
 				if partyUnit and CURR_FOCUS_TARGET == UnitName(partyUnit) then
-					return FocusFrame_SetFocusInfo(partyUnit)
+					FocusFrame_Update(partyUnit)
+					return
 				end
 		
 				if CURR_FOCUS_TARGET ~= UnitName("target") and CURR_FOCUS_TARGET ~= UnitName("mouseover") then

@@ -177,12 +177,12 @@ function FocusFrame_OnLoad()
 	this:RegisterEvent("UNIT_ENERGY")
 end
 
-function FocusFrame_Update()
+function FocusFrame_Update(id)
 	if not CURR_FOCUS_TARGET then
 		return FocusFrame:Hide()
 	end
 
-	local unit = GetFocusID()
+	local unit = id or GetFocusID()
 	if unit then
 		FocusName:SetText(GetUnitName(unit))
 		SetPortraitTexture(FocusPortrait, unit)
