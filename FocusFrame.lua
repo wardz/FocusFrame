@@ -2,6 +2,23 @@ CURR_FOCUS_TARGET = nil
 
 print = function(x) DEFAULT_CHAT_FRAME:AddMessage(x) end
 
+do
+	local partyunits
+	for i=1,4 do
+		partyunits["party"..i] = true
+		partyunits["party"..i.."target"] = true
+		partyunits["partypet"..i] = true
+		partyunits["partypet"..i.."target"] = true
+	end
+	local raidunits
+	for i=1,40 do
+		raidunits["raid"..i] = true
+		raidunits["raid"..i.."target"] = true
+		raidunits["raidpet"..i] = true
+		raidunits["raidpet"..i.."target"] = true
+	end
+end
+
 local function UnitIsFocus(unitID)
 	return UnitName(unitID) == CURR_FOCUS_TARGET
 end
@@ -11,6 +28,20 @@ local function GetFocusID()
 		return "target"
 	elseif UnitExists("mouseover") and UnitIsFocus("mouseover") then
 		return "mouseover"
+	end
+	if GetNumPartyMembers() > 0 then
+		for unitID in pairs(partyunits) do
+			if UnitIsFocus(unitID) then
+				return unitID
+			end
+		end
+	end
+	if UnitInRaid("player") then
+		for unitID in pairs(raidunits) do
+			if UnitIsFocus(unitID) then
+				return unitID
+			end
+		end
 	end
 end
 
@@ -170,12 +201,12 @@ function FocusFrame_OnLoad()
 	this:RegisterEvent("UNIT_ENERGY")
 end
 
-function FocusFrame_Update()
+function FocusFrame_Update(unit)
 	if not CURR_FOCUS_TARGET then
 		return FocusFrame:Hide()
 	end
 
-	local unit = GetFocusID()
+	unit = unit or GetFocusID()
 	if unit then
 		FocusName:SetText(GetUnitName(unit))
 		SetPortraitTexture(FocusPortrait, unit)
@@ -207,8 +238,9 @@ do
 		refresh = refresh - elapsed
 		if refresh < 0 then
 			if CURR_FOCUS_TARGET then
-				if GetFocusID() then
-					FocusFrame_Update()
+				local unit = GetFocusID()
+				if unit then
+					FocusFrame_Update(unit)
 				else
 					FocusDebuffButton_Update()
 					FocusFrame_HealthUpdate()
