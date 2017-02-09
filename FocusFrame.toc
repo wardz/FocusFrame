@@ -2,7 +2,8 @@
 ## Title: FocusFrame
 ## Notes: Focus frame support for vanilla.
 ## Author: Wardz
-## Version: 0.1
+## Version: 0.2
+## SavedVariables: FocusFrameDB
 
 libs\buffs.lua
 libs\globals.lua

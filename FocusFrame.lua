@@ -1,3 +1,6 @@
+local UnitName, strsub, TargetByName = UnitName, string.sub, TargetByName
+local FocusFrame_SetFocusInfo, FocusFrame_GetFocusData = FocusFrame_SetFocusInfo, FocusFrame_GetFocusData
+
 CURR_FOCUS_TARGET = nil
 
 print = function(x) DEFAULT_CHAT_FRAME:AddMessage(x) end
@@ -12,6 +15,7 @@ local function GetFocusID()
 	elseif UnitExists("mouseover") and UnitIsFocus("mouseover") then
 		return "mouseover"
 	end
+	-- partyX/raidX is handled elsewhere
 end
 
 local function ClearFocus()
@@ -28,9 +32,9 @@ local function TargetUnitOrFocus(name, isNotPlayer)
 	end
 
 	if isNotPlayer then
-		local _name = string.sub(name, 1, -2)
+		local _name = strsub(name, 1, -2)
 		TargetByName(_name, false)
-		-- Removing last char from npc name will make the engine
+		-- Removing last char from npc name will make the game engine
 		-- do a scan for nearest enemy with similar name.
 		-- If you do target with exact name you may end up targetting a mob
 		-- 40 yards behind you even if there's a mob standing right next to you
@@ -62,6 +66,7 @@ local function FocusAction(func, arg1, arg2)
 
 		if UnitName("target") ~= oldTarget then
 			-- TargetLastTarget() may bug out randomly so use this as fallback
+			-- Note that TargetLastTarget() is able to distinguish between npcs with same name
 			TargetUnitOrFocus(oldTarget, isNotPlayer)
 		end
 	else
@@ -151,11 +156,30 @@ end
 SLASH_CLEARFOCUS1 = "/clearfocus"
 SlashCmdList["CLEARFOCUS"] = ClearFocus
 
+SLASH_FOCUSOPTIONS1 = "/foption"
+SlashCmdList["FOCUSOPTIONS"] = function(msg)
+	local space = string.find(msg or "", " ")
+	local cmd = string.sub(msg, 1, space and (space - 1))
+	local value = tonumber(string.sub(msg, space or -1))
+	
+	if cmd == "scale" and value then
+		local x = value > 0.1 and value <= 2 and value or 1
+		FocusFrame:SetScale(x)
+		FocusFrameDB.scale = x
+	elseif cmd == "lock" then
+		FocusFrameDB.unlock = not FocusFrameDB.unlock
+		FocusFrame:EnableMouse(FocusFrameDB.unlock)
+	elseif cmd == "reset" then
+		
+	else
+		DEFAULT_CHAT_FRAME:AddMessage("Valid commands are:\n/foption scale 1 - Change frame size (0.2 - 2)\n/foption lock - Toggle dragging of frame")
+	end
+end
+
 -- Modified Blizzard targetframe
 -- https://github.com/tekkub/wow-ui-source/blob/1.12.1/FrameXML/TargetFrame.lua
 function FocusFrame_OnLoad()
-	FocusFrame_Update()
-
+	--FocusFrame_Update()
 	this:RegisterEvent("PLAYER_ENTERING_WORLD")
 	this:RegisterEvent("PLAYER_FLAGS_CHANGED")
 	this:RegisterEvent("UNIT_CLASSIFICATION_CHANGED")
@@ -168,14 +192,16 @@ function FocusFrame_OnLoad()
 	this:RegisterEvent("UNIT_RAGE")
 	this:RegisterEvent("UNIT_FOCUS")
 	this:RegisterEvent("UNIT_ENERGY")
+
+	FocusFrameDB = FocusFrameDB or { unlock = true }
 end
 
-function FocusFrame_Update()
+function FocusFrame_Update(id)
 	if not CURR_FOCUS_TARGET then
 		return FocusFrame:Hide()
 	end
 
-	local unit = GetFocusID()
+	local unit = id or GetFocusID()
 	if unit then
 		FocusName:SetText(GetUnitName(unit))
 		SetPortraitTexture(FocusPortrait, unit)
@@ -197,6 +223,8 @@ function FocusFrame_Update()
 		FocusDebuffButton_Update(unit)
 		FocusFrame_HealthUpdate(unit)
 
+		FocusFrame:SetScale(FocusFrameDB.scale or 1)
+		FocusFrame:EnableMouse(FocusFrameDB.unlock)
 		FocusFrame:Show()
 	end
 end
@@ -223,7 +251,6 @@ do
 	end
 end
 
-
 function FocusFrame_HealthUpdate(unit)
 	if unit then
 		-- sync values
@@ -248,6 +275,7 @@ do
 	local MAX_FOCUS_BUFFS = 5;
 
 	local GetAllBuffs = FSPELLCASTINGCOREgetBuffs
+	local FocusFrame_NewBuff, FocusFrame_SyncBuffData = FocusFrame_NewBuff, FocusFrame_SyncBuffData
 
 	local scantip = getglobal("FocusScantip")
 	local scantipTextLeft1 = getglobal("FocusScantipTextLeft1")
@@ -263,11 +291,16 @@ do
 
 		local name = scantipTextLeft1:GetText()
 		local magicType = mtype or scantipTextRight1:GetText()
+		-- TODO add stacks
+		-- TODO buffs from items does not have fade log event, problem when unit is enemy
 		if name then
-			-- sync buffs
+			-- sync targeted unit buffs with buff lib data
 			FocusFrame_NewBuff(CURR_FOCUS_TARGET, name, texture, debuff, magicType)
 		end
 	end
+
+	local getglobal, UnitBuff, type, UnitDebuff = getglobal, UnitBuff, type, UnitDebuff
+	local FRGB_BORDER_DEBUFFS_COLOR, strlower = FRGB_BORDER_DEBUFFS_COLOR, string.lower
 
 	function FocusDebuffButton_Update(unit)
 		local buff, buffButton;
@@ -285,9 +318,10 @@ do
 		end
 
 		if (unit and UnitHealth(unit) <= 0) or data and data.health and data.health <= 0 then
-			FocusFrame_ClearBuffs(CURR_FOCUS_TARGET) -- TODO check if still needed
+			FocusFrame_ClearBuffs(CURR_FOCUS_TARGET)
 		end
 
+		-- TODO check for "Detect Magic"
 		for i=1, MAX_FOCUS_BUFFS do
 			if unit then
 				buff = UnitBuff(unit, i);
@@ -327,6 +361,7 @@ do
 				debuffStack = debuff and debuff.stacks or 0
 				debuffType = debuff and debuff.debuffType or nil
 			end
+
 			button = getglobal("FocusFrameDebuff"..i);
 			if ( debuff ) then
 				getglobal("FocusFrameDebuff"..i.."Icon"):SetTexture(type(debuff) == "table" and debuff.icon or debuff);
@@ -435,7 +470,7 @@ do
 			--local y = amount < 7 and -35 or amount < 13 and -60 or amount < 19 and -85
 			if data and data.enemy == "1" or unit and UnitIsFriend("player", unit) then
 				if numBuffs >= 1 and numDebuffs >= 1 then
-					FocusFrame.cast:SetPoint("BOTTOMLEFT", FocusFrame, 15, -74)
+					FocusFrame.cast:SetPoint("BOTTOMLEFT", FocusFrame, 15, -92)
 					return
 				end
 			end
@@ -448,8 +483,10 @@ end
 function FocusFrame_OnEvent(event)
 	if ( event == "PLAYER_ENTERING_WORLD"  and ( not FocusFrame:IsVisible() ) ) then
 		FocusFrame_Update();
-	elseif ( event == "PLAYER_TARGET_CHANGED" or event == "UNIT_PORTRAIT_UPDATE") then
-		FocusFrame_Update();
+	elseif ( event == "UNIT_PORTRAIT_UPDATE") then
+		if UnitIsFocus(arg1) then
+			SetPortraitTexture(FocusPortrait, arg1)
+		end
 	elseif ( event == "UNIT_HEALTH" or event == "UNIT_MANA" or event == "UNIT_RAGE" or event == "UNIT_FOCUS" or event == "UNIT_ENERGY" ) then
 		if UnitIsFocus(arg1) then
 			FocusFrame_CheckDead(arg1);
