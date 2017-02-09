@@ -169,6 +169,8 @@ SlashCmdList["FOCUSOPTIONS"] = function(msg)
 	elseif cmd == "lock" then
 		FocusFrameDB.unlock = not FocusFrameDB.unlock
 		FocusFrame:EnableMouse(FocusFrameDB.unlock)
+	elseif cmd == "reset" then
+		
 	else
 		DEFAULT_CHAT_FRAME:AddMessage("Valid commands are:\n/foption scale 1 - Change frame size (0.2 - 2)\n/foption lock - Toggle dragging of frame")
 	end
