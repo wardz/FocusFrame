@@ -1,5 +1,6 @@
 -- Modified version of spellCastingCore by kuuurtz
 -- https://github.com/zetone/enemyFrames
+
 local Cast 			= {} 		local casts 		= {}
 local Heal 			= {} 		local heals			= {}
 local InstaBuff 	= {} 		local iBuffs 		= {}
@@ -14,6 +15,13 @@ buffQueue.__index	= buffQueue
 dreturns.__index	= dreturns
 
 local playerName = UnitName'player'
+
+local tinsert, tremove, strfind, gsub, ipairs, pairs, GetTime, GetNetStats, setmetatable =
+	  table.insert, table.remove, string.find, string.gsub, ipairs, pairs, GetTime, GetNetStats, setmetatable
+
+local SPELLINFO_CHANNELED_SPELLCASTS_TO_TRACK, SPELLINFO_INSTANT_SPELLCASTS_TO_TRACK = SPELLINFO_CHANNELED_SPELLCASTS_TO_TRACK, SPELLINFO_INSTANT_SPELLCASTS_TO_TRACK
+local SPELLINFO_CHANNELED_HEALS_SPELLCASTS_TO_TRACK, SPELLINFO_SPELLCASTS_TO_TRACK = SPELLINFO_CHANNELED_HEALS_SPELLCASTS_TO_TRACK, SPELLINFO_SPELLCASTS_TO_TRACK
+local SPELLINFO_TRADECASTS_TO_TRACK = SPELLINFO_TRADECASTS_TO_TRACK
 
 Cast.create = function(caster, spell, info, timeMod, time, inv)
 	local acnt = {}
@@ -119,7 +127,7 @@ local removeExpiredTableEntries = function(time, tab)
 	local i = 1
 	for k, v in pairs(tab) do
 		if time > v.timeEnd then
-			table.remove(tab, i)
+			tremove(tab, i)
 		end
 		i = i + 1
 	end
@@ -146,7 +154,7 @@ local tableMaintenance = function(reset)
 		local i = 1
 		for k, v in pairs(casts) do
 			if time > v.timeEnd or time > v.nextTick + getAvgLatency() then	-- channeling cast verification
-				table.remove(casts, i)
+				tremove(casts, i)
 			end
 			i = i + 1
 		end
@@ -167,7 +175,7 @@ end
 local removeDoubleCast = function(caster)
 	local k = 1
 	for i, j in casts do
-		if j.caster == caster then table.remove(casts, k) end
+		if j.caster == caster then tremove(casts, k) end
 		k = k + 1
 	end
 end
@@ -229,7 +237,7 @@ local newCast = function(caster, spell, channel)
 			local tMod = checkforCastTimeModBuffs(caster, spell)
 			if  tMod > 0 then
 				local n = Cast.create(caster, spell, info, tMod, time, channel)
-				table.insert(casts, n)
+				tinsert(casts, n)
 			end
 		end
 	--else
@@ -241,13 +249,13 @@ end
 local newHeal = function(n, no, crit)
 	local time = GetTime()
 	local h = Heal.create(n, no, crit, time)
-	table.insert(heals, h)
+	tinsert(heals, h)
 end
 
 local newIBuff = function(caster, buff)
 	local time = getTimeMinusPing()--GetTime()
 	local b = InstaBuff.create(caster, buff, SPELLINFO_TIME_MODIFIER_BUFFS_TO_TRACK[buff], time)
-	table.insert(iBuffs, b)
+	tinsert(iBuffs, b)
 end
 
 local function manageDR(time, tar, b, castOn)
@@ -265,7 +273,7 @@ local function manageDR(time, tar, b, castOn)
 	
 	if castOn then return 0 end		-- avoids creating a new DR entry if none was found
 	local n = dreturns.create(tar, FSPELLINFO_BUFFS_TO_TRACK[b]['dr'], FSPELLINFO_BUFFS_TO_TRACK[b]['duration'] + time)
-	table.insert(dreturnsList, n)
+	tinsert(dreturnsList, n)
 	return 1
 end
 
@@ -290,13 +298,13 @@ local function newbuff(tar, b, s, castOn, texture, debuff, magictype)
 		-- remove buff if it exists
 		for k, v in pairs(buffList) do
 			if v.caster == tar and v.spell == b then
-				table.remove(buffList, k)
+				tremove(buffList, k)
 				--return
 			end
 		end
 
 		local n = buff.create(tar, b, s, FSPELLINFO_BUFFS_TO_TRACK[b], drf, time, texture, debuff, magictype)
-		table.insert(buffList, n)
+		tinsert(buffList, n)
 	--end
 end
 
@@ -315,7 +323,7 @@ end
 local function queueBuff(tar, spell, b, d)
 	local time = getTimeMinusPing()--GetTime()
 	local bq = buffQueue.create(tar, spell, b, d, time)
-	table.insert(buffQueueList, bq) 
+	tinsert(buffQueueList, bq) 
 end
 
 local function processQueuedBuff(tar, b)
@@ -324,9 +332,9 @@ local function processQueuedBuff(tar, b)
 	for k, v in pairs(buffQueueList) do
 		if v.target == tar and v.buffName == b then
 			local n = buff.create(v.target, v.buffName, 1, v.buffData, 1, time)
-			table.insert(buffList, n)
+			tinsert(buffList, n)
 			
-			table.remove(buffQueueList, k)
+			tremove(buffQueueList, k)
 			return 
 		end
 	end
@@ -349,10 +357,10 @@ local forceHideTableItem = function(tab, caster, spell)
 	for k, v in pairs(tab) do
 		if (v.caster == caster) then
 			if not spell then
-				table.remove(tab, i)
+				tremove(tab, i)
 			else
 				if v.spell == spell then
-					table.remove(tab, i)
+					tremove(tab, i)
 				end
 			end
 		end
@@ -362,16 +370,16 @@ local forceHideTableItem = function(tab, caster, spell)
 end
 
 local CastCraftPerform = function()
-	local pcast 	= 'You cast (.+).'							local fpcast = string.find(arg1, pcast)	-- standby for now
-	local cast		= '(.+) casts (.+).'						local fcast = string.find(arg1, cast)
-	local bcast 	= '(.+) begins to cast (.+).' 				local fbcast = string.find(arg1, bcast)
-	local craft 	= '(.+) -> (.+).' 							local fcraft = string.find(arg1, craft)
-	local perform 	= '(.+) performs (.+).' 					local fperform = string.find(arg1, perform)
-	local bperform 	= '(.+) begins to perform (.+).' 			local fbperform = string.find(arg1, bperform)
-	local performOn = '(.+) performs (.+) on (.+).' 			local fperformOn = string.find(arg1, performOn)
+	local pcast 	= 'You cast (.+).'							local fpcast = strfind(arg1, pcast)	-- standby for now
+	local cast		= '(.+) casts (.+).'						local fcast = strfind(arg1, cast)
+	local bcast 	= '(.+) begins to cast (.+).' 				local fbcast = strfind(arg1, bcast)
+	local craft 	= '(.+) -> (.+).' 							local fcraft = strfind(arg1, craft)
+	local perform 	= '(.+) performs (.+).' 					local fperform = strfind(arg1, perform)
+	local bperform 	= '(.+) begins to perform (.+).' 			local fbperform = strfind(arg1, bperform)
+	local performOn = '(.+) performs (.+) on (.+).' 			local fperformOn = strfind(arg1, performOn)
 	
-	local pcastFin 	= 'You cast (.+) on (.+).'					local fpcastFin = string.find(arg1, pcastFin)
-	local castFin 	= '(.+) casts (.+) on (.+).'				local fcastFin = string.find(arg1, castFin)
+	local pcastFin 	= 'You cast (.+) on (.+).'					local fpcastFin = strfind(arg1, pcastFin)
+	local castFin 	= '(.+) casts (.+) on (.+).'				local fcastFin = strfind(arg1, castFin)
 	
 	if fbcast or fcraft then
 		local m = fbcast and bcast or fcraft and craft or fperform and perform
@@ -412,18 +420,18 @@ local CastCraftPerform = function()
 end
 
 local handleHeal = function()
-	local h   	 = 'Your (.+) heals (.+) for (.+).'					local fh 	  = string.find(arg1, h)
-	local c   	 = 'Your (.+) critically heals (.+) for (.+).'		local fc 	  = string.find(arg1, c)
-	local hot 	 = '(.+) gains (.+) health from your (.+).'			local fhot 	  = string.find(arg1, hot)
-	local oheal  = '(.+)\'s (.+) heals (.+) for (.+).'				local foheal  = string.find(arg1, oheal)
-	local ocheal = '(.+)\'s (.+) critically heals (.+) for (.+).'	local focheal = string.find(arg1, ocheal)
+	local h   	 = 'Your (.+) heals (.+) for (.+).'					local fh 	  = strfind(arg1, h)
+	local c   	 = 'Your (.+) critically heals (.+) for (.+).'		local fc 	  = strfind(arg1, c)
+	local hot 	 = '(.+) gains (.+) health from your (.+).'			local fhot 	  = strfind(arg1, hot)
+	local oheal  = '(.+)\'s (.+) heals (.+) for (.+).'				local foheal  = strfind(arg1, oheal)
+	local ocheal = '(.+)\'s (.+) critically heals (.+) for (.+).'	local focheal = strfind(arg1, ocheal)
 	
 	if fh or fc then
 		local n  = gsub(arg1, h, '%2')
 		local no = gsub(arg1, h, '%3')
 		newHeal(n, no, fc and 1 or 0)
-	elseif fhot then--or string.find(arg1, totemHot)  then
-		local m = fhot and hot --or  string.find(arg1, totemHot) and totemHot			
+	elseif fhot then--or strfind(arg1, totemHot)  then
+		local m = fhot and hot --or  strfind(arg1, totemHot) and totemHot			
 		local n  = gsub(arg1, m, '%1')
 		local no = gsub(arg1, m, '%2')
 		newHeal(n, no, 0)
@@ -443,7 +451,7 @@ local handleHeal = function()
 end
 
 local processUniqueSpell = function()
-	local vanish = '(.+) performs Vanish'		local fvanish = string.find(arg1, vanish)
+	local vanish = '(.+) performs Vanish'		local fvanish = strfind(arg1, vanish)
 	
 	if fvanish then
 		local m = vanish
@@ -458,8 +466,8 @@ local processUniqueSpell = function()
 end
 
 local DirectInterrupt = function()
-	local pintrr 	= 'You interrupt (.+)\'s (.+).'			local fpintrr  	= string.find(arg1, pintrr)
-	local intrr 	= '(.+) interrupts (.+)\'s (.+).'		local fintrr  	= string.find(arg1, pintrr)
+	local pintrr 	= 'You interrupt (.+)\'s (.+).'			local fpintrr  	= strfind(arg1, pintrr)
+	local intrr 	= '(.+) interrupts (.+)\'s (.+).'		local fintrr  	= strfind(arg1, pintrr)
 
 	if fpintrr  or fintrr then
 		local m = fpintrr and pintrr or intrr
@@ -473,10 +481,10 @@ local DirectInterrupt = function()
 end
 
 local GainAfflict = function()
-	local gain 		= '(.+) gains (.+).' 								local fgain = string.find(arg1, gain)
-	local pgain 	= 'You gain (.+).'									local fpgain = string.find(arg1, pgain)	
-	local afflict 	= '(.+) is afflicted by (.+).' 						local fafflict = string.find(arg1, afflict)
-	local pafflict 	= 'You are afflicted by (.+).' 						local fpafflict = string.find(arg1, pafflict)
+	local gain 		= '(.+) gains (.+).' 								local fgain = strfind(arg1, gain)
+	local pgain 	= 'You gain (.+).'									local fpgain = strfind(arg1, pgain)	
+	local afflict 	= '(.+) is afflicted by (.+).' 						local fafflict = strfind(arg1, afflict)
+	local pafflict 	= 'You are afflicted by (.+).' 						local fpafflict = strfind(arg1, pafflict)
 	
 	-- start channeling based on buffs (evocation, first aid, ..)
 	if fgain or fpgain then
@@ -511,9 +519,9 @@ local GainAfflict = function()
 		local auxS, st = s, 1
 		if not FSPELLINFO_BUFFS_TO_TRACK[s] then
 			--local buffRank = '(.+) (.+)'
-			--if string.find(s, buffRank) then print(gsub(s, buffRank, '%1'))	print(gsub(s, buffRank, '%2'))	end
+			--if strfind(s, buffRank) then print(gsub(s, buffRank, '%1'))	print(gsub(s, buffRank, '%2'))	end
 			local spellstacks = '(.+) %((.+)%)'	
-			if string.find(s, spellstacks) then s = gsub(s, spellstacks, '%1')	st = tonumber(gsub(auxS, spellstacks, '%2'), 10)	--print(s) print(st)	
+			if strfind(s, spellstacks) then s = gsub(s, spellstacks, '%1')	st = tonumber(gsub(auxS, spellstacks, '%2'), 10)	--print(s) print(st)	
 			end
 		end
 		-- debuffs to be displayed
@@ -545,9 +553,9 @@ local GainAfflict = function()
 end
 
 local FadeRem = function()
-	local fade 		= '(.+) fades from (.+).'							local ffade = string.find(arg1, fade)
-	local rem 		= '(.+)\'s (.+) is removed'							local frem = string.find(arg1, rem)
-	local prem 		= 'Your (.+) is removed'							local fprem = string.find(arg1, prem)
+	local fade 		= '(.+) fades from (.+).'							local ffade = strfind(arg1, fade)
+	local rem 		= '(.+)\'s (.+) is removed'							local frem = strfind(arg1, rem)
+	local prem 		= 'Your (.+) is removed'							local fprem = strfind(arg1, prem)
 
 	-- end channeling based on buffs (evocation ..)
 	if ffade then
@@ -588,16 +596,16 @@ local FadeRem = function()
 end
 
 local HitsCrits = function()
-	local hits = '(.+)\'s (.+) hits (.+) for (.+)' 					local fhits = string.find(arg1, hits)
-	local crits = '(.+)\'s (.+) crits (.+) for (.+)' 				local fcrits = string.find(arg1, crits)
-	local absb = '(.+)\'s (.+) is absorbed by (.+).'				local fabsb = string.find(arg1, absb)
+	local hits = '(.+)\'s (.+) hits (.+) for (.+)' 					local fhits = strfind(arg1, hits)
+	local crits = '(.+)\'s (.+) crits (.+) for (.+)' 				local fcrits = strfind(arg1, crits)
+	local absb = '(.+)\'s (.+) is absorbed by (.+).'				local fabsb = strfind(arg1, absb)
 	
-	local phits = 'Your (.+) hits (.+) for (.+)' 					local fphits = string.find(arg1, phits)
-	local pcrits = 'Your (.+) crits (.+) for (.+)' 					local fpcrits = string.find(arg1, pcrits)	
-	local pabsb = 'Your (.+) is absorbed by (.+).'					local fpabsb = string.find(arg1, pabsb)
+	local phits = 'Your (.+) hits (.+) for (.+)' 					local fphits = strfind(arg1, phits)
+	local pcrits = 'Your (.+) crits (.+) for (.+)' 					local fpcrits = strfind(arg1, pcrits)	
+	local pabsb = 'Your (.+) is absorbed by (.+).'					local fpabsb = strfind(arg1, pabsb)
 	
-	local channelDotRes = "(.+)'s (.+) was resisted by (.+)."		local fchannelDotRes = string.find(arg1, channelDotRes)
-	local pchannelDotRes = "(.+)'s (.+) was resisted."				local fpchannelDotRes = string.find(arg1, pchannelDotRes)
+	local channelDotRes = "(.+)'s (.+) was resisted by (.+)."		local fchannelDotRes = strfind(arg1, channelDotRes)
+	local pchannelDotRes = "(.+)'s (.+) was resisted."				local fpchannelDotRes = strfind(arg1, pchannelDotRes)
 	
 	-- other hits/crits
 	if fhits or fcrits or fabsb then
@@ -660,11 +668,11 @@ local HitsCrits = function()
 end
 
 local channelDot = function()
-	local channelDot 	= "(.+) suffers (.+) from (.+)'s (.+)."		local fchannelDot = string.find(arg1, channelDot)
-	local channelpDot 	= '(.+) suffers (.+) from your (.+).'		local fchannelpDot	= string.find(arg1, channelpDot)
-	local pchannelDot 	= "You suffer (.+) from (.+)'s (.+)."		local fpchannelDot = string.find(arg1, pchannelDot)
+	local channelDot 	= "(.+) suffers (.+) from (.+)'s (.+)."		local fchannelDot = strfind(arg1, channelDot)
+	local channelpDot 	= '(.+) suffers (.+) from your (.+).'		local fchannelpDot	= strfind(arg1, channelpDot)
+	local pchannelDot 	= "You suffer (.+) from (.+)'s (.+)."		local fpchannelDot = strfind(arg1, pchannelDot)
 				
-	local MDrain = '(.+)\'s (.+) drains (.+) Mana from' 			local fMDrain = string.find(arg1, MDrain)
+	local MDrain = '(.+)\'s (.+) drains (.+) Mana from' 			local fMDrain = strfind(arg1, MDrain)
 	
 	-- channeling dmg spells on other (mind flay, life drain(?))
 	if fchannelDot then
@@ -704,9 +712,9 @@ local channelDot = function()
 end
 
 local channelHeal = function()
-	local hot  = '(.+) gains (.+) health from (.+)\'s (.+).'		local fhot = string.find(arg1, hot)
-	local phot = 'You gain (.+) health from (.+)\'s (.+).'			local fphot = string.find(arg1, phot)
-	local shot = 'You gain (.+) health from (.+).'					local fshot = string.find(arg1, shot)	
+	local hot  = '(.+) gains (.+) health from (.+)\'s (.+).'		local fhot = strfind(arg1, hot)
+	local phot = 'You gain (.+) health from (.+)\'s (.+).'			local fphot = strfind(arg1, phot)
+	local shot = 'You gain (.+) health from (.+).'					local fshot = strfind(arg1, shot)	
 	
 	if fhot or fphot then
 		local m = fhot and hot or fphot and phot
@@ -731,10 +739,10 @@ local channelHeal = function()
 end
 
 local playerDeath = function()
-	local pdie 		= 'You die.'					local fpdie		= string.find(arg1, pdie)
-	local dies		= '(.+) dies.'					local fdies		= string.find(arg1, dies)
-	local slain 	= '(.+) is slain by (.+).'		local fslain 	= string.find(arg1, slain)
-	local pslain 	= 'You have slain (.+).'		local fpslain 	= string.find(arg1, pslain)
+	local pdie 		= 'You die.'					local fpdie		= strfind(arg1, pdie)
+	local dies		= '(.+) dies.'					local fdies		= strfind(arg1, dies)
+	local slain 	= '(.+) is slain by (.+).'		local fslain 	= strfind(arg1, slain)
+	local pslain 	= 'You have slain (.+).'		local fpslain 	= strfind(arg1, pslain)
 	
 	if fpdie or fdies or fslain or fpslain then
 		local m = fdies and dies or fslain and slain or fpslain and pslain
@@ -750,7 +758,7 @@ local playerDeath = function()
 end
 
 local fear = function()
-	local fear = '(.+) attempts to run away in fear!' 				local ffear = string.find(arg1, fear)
+	local fear = '(.+) attempts to run away in fear!' 				local ffear = strfind(arg1, fear)
 	
 	if ffear then
 		local t = arg2			
@@ -764,7 +772,7 @@ end
 local singleEventdebug = function()
 	local v = '(.+) performs Vanish'
 	
-	if string.find(arg1, v) then
+	if strfind(arg1, v) then
 		print(event)
 		print(arg1)
 	end
@@ -778,8 +786,10 @@ local parsingCheck = function(out, display)
 	end
 end
 
+local UnitIsEnemy, UnitName, UnitBuff = UnitIsEnemy, UnitName, UnitBuff
 function FocusFrame_SyncBuffData(unit)
 	if UnitIsEnemy(unit, "player") == 1 then return end
+
 	local target = UnitName(unit)
 	if target == CURR_FOCUS_TARGET then
 		--print("ran")
@@ -795,25 +805,25 @@ function FocusFrame_SyncBuffData(unit)
 		for i = 1, 5 do
 			local buff = UnitBuff(unit, i)
 			if not buffs[buff] then
-				table.remove(buffList, buffs[buff])
+				tremove(buffList, buffs[buff])
 			end
 		end
 	end
 end
 
 local combatlogParser = function()	
-	local pSpell 	= 'CHAT_MSG_SPELL_PERIODIC_(.+)'		local fpSpell 		= string.find(event, pSpell)
-	local breakAura = 'CHAT_MSG_SPELL_BREAK_AURA'			local fbreakAura 	= string.find(event, breakAura)
-	local auraGone	= 'CHAT_MSG_SPELL_AURA_GONE_(.+)'		local fauraGone 	= string.find(event, auraGone)
-	local dSpell 	= 'CHAT_MSG_SPELL_(.+)'					local fdSpell 		= string.find(event, dSpell)	
-	local death		= 'CHAT_MSG_COMBAT_(.+)_DEATH'			local fdeath 		= string.find(event, death)
-	local mEmote	= 'CHAT_MSG_MONSTER_EMOTE'				local fmEmote		= string.find(event, mEmote)
+	local pSpell 	= 'CHAT_MSG_SPELL_PERIODIC_(.+)'		local fpSpell 		= strfind(event, pSpell)
+	local breakAura = 'CHAT_MSG_SPELL_BREAK_AURA'			local fbreakAura 	= strfind(event, breakAura)
+	local auraGone	= 'CHAT_MSG_SPELL_AURA_GONE_(.+)'		local fauraGone 	= strfind(event, auraGone)
+	local dSpell 	= 'CHAT_MSG_SPELL_(.+)'					local fdSpell 		= strfind(event, dSpell)	
+	local death		= 'CHAT_MSG_COMBAT_(.+)_DEATH'			local fdeath 		= strfind(event, death)
+	local mEmote	= 'CHAT_MSG_MONSTER_EMOTE'				local fmEmote		= strfind(event, mEmote)
 	
 	--if arg1 then singleEventdebug() end -- testing
 
-	if event == "UNIT_AURA" then
+	--[[if event == "UNIT_AURA" then
 		FocusFrame_SyncBuffData(arg1)
-	end
+	end]]
 
 	-- periodic damage/buff spells
 	if fpSpell then	
@@ -869,11 +879,11 @@ end
 local function sortPriobuff(tab, b)
 	for k, v in pairs(tab) do
 		if b.prio > v.prio then	
-			table.insert(tab, k, b)
+			tinsert(tab, k, b)
 			return tab
 		end
 	end
-	table.insert(tab, b)
+	tinsert(tab, b)
 	return tab
 end
 
@@ -887,29 +897,29 @@ FSPELLCASTINGCOREgetPrioBuff = function(name, n)
 	
 	local l = {}
 	for k, v in pairs(b) do
-		table.insert(l, v)
+		tinsert(l, v)
 		if k == n then return l end
 	end
 	return l
 end
 
 FSPELLCASTINGCOREgetBuffs = function(name)
-	local buffs, debuffs = {}, {}
+	local list = {
+		debuffs = {},
+		buffs = {}
+	}
 
 	for j, e in ipairs(buffList) do
 		if e.target == name then
 			if e.btype then
-				table.insert(debuffs, e)
+				tinsert(list.debuffs, e)
 			else
-				table.insert(buffs, e)
+				tinsert(list.buffs, e)
 			end
 		end
 	end
 
-	return {
-		["buffs"] = buffs,
-		["debuffs"] = debuffs
-	}
+	return list
 end
 
 FSPELLCASTINGCORErefreshBuff = function(t, b, s)
@@ -977,9 +987,9 @@ f:RegisterEvent'CHAT_MSG_SPELL_DAMAGESHIELDS_ON_OTHERS'
 f:RegisterEvent'CHAT_MSG_COMBAT_HOSTILE_DEATH'
 f:RegisterEvent'CHAT_MSG_COMBAT_FRIENDLY_DEATH'
 
-f:RegisterEvent'UNIT_AURA'
+--f:RegisterEvent'UNIT_AURA'
 
-f:RegisterAllEvents()
+--f:RegisterAllEvents()
 
 f:SetScript('OnEvent', function()
 	if event == 'PLAYER_ENTERING_WORLD' then
@@ -988,10 +998,3 @@ f:SetScript('OnEvent', function()
 		combatlogParser()
 	end
 end)
-
---
-	
-SLASH_PROCESSCAST1 = '/pct'
-SlashCmdList["PROCESSCAST"] = function(msg)
-
-end
