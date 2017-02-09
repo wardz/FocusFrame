@@ -979,7 +979,7 @@ f:RegisterEvent'CHAT_MSG_COMBAT_FRIENDLY_DEATH'
 
 f:RegisterEvent'UNIT_AURA'
 
-f:RegisterAllEvents()
+--f:RegisterAllEvents()
 
 f:SetScript('OnEvent', function()
 	if event == 'PLAYER_ENTERING_WORLD' then
