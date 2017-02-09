@@ -59,6 +59,7 @@ do
 					partyUnit = unitPet
 				else
 					partyUnit = nil
+					-- Scan for 1 target every frame instead of all at once
 					raidMemberIndex = raidMemberIndex < members and raidMemberIndex + 1 or 1
 				end
 			end

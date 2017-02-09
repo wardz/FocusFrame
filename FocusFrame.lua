@@ -156,11 +156,28 @@ end
 SLASH_CLEARFOCUS1 = "/clearfocus"
 SlashCmdList["CLEARFOCUS"] = ClearFocus
 
+SLASH_FOCUSOPTIONS1 = "/foption"
+SlashCmdList["FOCUSOPTIONS"] = function(msg)
+	local space = string.find(msg or "", " ")
+	local cmd = string.sub(msg, 1, space and (space - 1))
+	local value = tonumber(string.sub(msg, space or -1))
+	
+	if cmd == "scale" and value then
+		local x = value > 0.1 and value <= 2 and value or 1
+		FocusFrame:SetScale(x)
+		FocusFrameDB.scale = x
+	elseif cmd == "lock" then
+		FocusFrameDB.lock = not FocusFrameDB.lock
+		FocusFrame:EnableMouse(not FocusFrameDB.unlock)
+	else
+		DEFAULT_CHAT_FRAME:AddMessage("Valid commands are:\n/foption scale 1 - Change frame size\n/foption lock - Toggle dragging of frame")
+	end
+end
+
 -- Modified Blizzard targetframe
 -- https://github.com/tekkub/wow-ui-source/blob/1.12.1/FrameXML/TargetFrame.lua
 function FocusFrame_OnLoad()
 	--FocusFrame_Update()
-
 	this:RegisterEvent("PLAYER_ENTERING_WORLD")
 	this:RegisterEvent("PLAYER_FLAGS_CHANGED")
 	this:RegisterEvent("UNIT_CLASSIFICATION_CHANGED")
@@ -173,6 +190,8 @@ function FocusFrame_OnLoad()
 	this:RegisterEvent("UNIT_RAGE")
 	this:RegisterEvent("UNIT_FOCUS")
 	this:RegisterEvent("UNIT_ENERGY")
+
+	FocusFrameDB = FocusFrameDB or { unlock = true }
 end
 
 function FocusFrame_Update(id)
@@ -202,6 +221,8 @@ function FocusFrame_Update(id)
 		FocusDebuffButton_Update(unit)
 		FocusFrame_HealthUpdate(unit)
 
+		FocusFrame:SetScale(FocusFrameDB.scale or 1)
+		FocusFrame:EnableMouse(not FocusFrameDB.unlock)
 		FocusFrame:Show()
 	end
 end
@@ -227,7 +248,6 @@ do
 		end
 	end
 end
-
 
 function FocusFrame_HealthUpdate(unit)
 	if unit then
@@ -269,6 +289,7 @@ do
 
 		local name = scantipTextLeft1:GetText()
 		local magicType = mtype or scantipTextRight1:GetText()
+		-- TODO add stacks
 		if name then
 			-- sync targeted unit buffs with buff lib data
 			FocusFrame_NewBuff(CURR_FOCUS_TARGET, name, texture, debuff, magicType)
@@ -297,6 +318,7 @@ do
 			FocusFrame_ClearBuffs(CURR_FOCUS_TARGET)
 		end
 
+		-- TODO check for "Detect Magic"
 		for i=1, MAX_FOCUS_BUFFS do
 			if unit then
 				buff = UnitBuff(unit, i);

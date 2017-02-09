@@ -3,6 +3,7 @@
 ## Notes: Focus frame support for vanilla.
 ## Author: Wardz
 ## Version: 0.1
+## SavedVariables: FocusFrameDB
 
 libs\buffs.lua
 libs\globals.lua
