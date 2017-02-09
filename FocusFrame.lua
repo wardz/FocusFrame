@@ -3,14 +3,14 @@ CURR_FOCUS_TARGET = nil
 print = function(x) DEFAULT_CHAT_FRAME:AddMessage(x) end
 
 do
-	local partyunits
+	local partyunits = {}
 	for i=1,4 do
 		partyunits["party"..i] = true
 		partyunits["party"..i.."target"] = true
 		partyunits["partypet"..i] = true
 		partyunits["partypet"..i.."target"] = true
 	end
-	local raidunits
+	local raidunits = {}
 	for i=1,40 do
 		raidunits["raid"..i] = true
 		raidunits["raid"..i.."target"] = true
