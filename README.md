@@ -48,6 +48,8 @@ When using this addon there are some limitations or caveats you should know abou
 - Buff/cast tracking is still WIP. Let me know of any issues.
 
 ### Installation
+[Download link.](https://github.com/wardz/FocusFrame/archive/master.zip)
+
 Unzip the downloaded file into your "WoW/Interface/AddOns/" folder, then remove "-master" suffix from the addon's folder name.
 
 
@@ -55,3 +57,5 @@ Unzip the downloaded file into your "WoW/Interface/AddOns/" folder, then remove 
 - Add target of target frame.
 - Add chat commands for customization.
 - Better buff handling.
+
+If you want to submit a pull request, please use the dev branch.
