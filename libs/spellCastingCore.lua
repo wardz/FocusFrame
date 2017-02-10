@@ -67,7 +67,7 @@ end
 buff.create = function(tar, t, s, buffType, factor, time, texture, debuff, magictype)
 	local acnt     = {}
 	buffType = buffType or {}
-	if magictype and not buffType.type then
+	if magictype --[[and not buffType.type]] then
 		buffType.type = strlower(magictype)
 	end
 
@@ -81,7 +81,7 @@ buff.create = function(tar, t, s, buffType, factor, time, texture, debuff, magic
 	--acnt.timeEnd   	= time + (buffType['duration'] or 0) * factor
 	acnt.timeEnd   	= 0
 	acnt.prio		= buffType['prio'] and buffType['prio'] or 0
-	acnt.border		= buffType['type'] and FRGB_BORDER_DEBUFFS_COLOR[buffType.type] or {0, 0, 0, 0}	-- border rgb values depending on type of buff/debuff
+	acnt.border		= buffType['type'] and FRGB_BORDER_DEBUFFS_COLOR[buffType.type]	-- border rgb values depending on type of buff/debuff
 	acnt.display 	= buffType['display'] == nil and true or buffType['display']
 	acnt.btype		= debuff
 	acnt.debuffType = buffType.type
@@ -313,7 +313,7 @@ local function refreshBuff(tar, b, s)
 	for i, j in pairs(SPELLINFO_DEBUFF_REFRESHING_SPELLS[b]) do
 		for k, v in pairs(buffList) do
 			if v.caster == tar and v.spell == j then
-				newbuff(tar, j, s, false)
+				newbuff(tar, j, s, false, v.icon, v.btype, v.type)
 				return
 			end
 		end
@@ -331,7 +331,7 @@ local function processQueuedBuff(tar, b)
 
 	for k, v in pairs(buffQueueList) do
 		if v.target == tar and v.buffName == b then
-			local n = buff.create(v.target, v.buffName, 1, v.buffData, 1, time)
+			local n = buff.create(v.target, v.buffName, 1, v.buffData, 1, time, v.icon, v.btype, v.type)
 			tinsert(buffList, n)
 			
 			tremove(buffQueueList, k)

@@ -1,6 +1,8 @@
 # FocusFrame [BETA]
 Provides [focus targeting](http://wowwiki.wikia.com/wiki/Focus_target) & frame support for vanilla World of Warcraft. (1.12.1)
 
+If you have never used focus before, it's basically a secondary target system that keeps track of a second unit other than the currently targeted unit. Once a focus is set, you can use macros to cast spells on the focus without having to lose your current target.
+
 ![alt](http://i.imgur.com/Qziq2wX.jpg)
 
 ### Chat commands
@@ -39,19 +41,16 @@ Clear current focus:
 #### Options
 
 Set frame scale: (0.2 - 2.0)
-
-Default: 1
 ```
 /foption scale 1.0
 ```
 
 Toggle frame dragging:
 (Hold down left mouse button on focus **portrait** to move it)
-
-Default: unlocked
 ```
 /foption lock
 ```
+
 
 ### Important
 When using this addon there are some limitations or caveats you should know about due to the way WoW 1.12.1 api works:
@@ -59,20 +58,21 @@ When using this addon there are some limitations or caveats you should know abou
 - **There's no way to distinguish between NPCs with the exact same name, so most of this addon's functionality won't work properly on mobs.**
 - Mana/power for non-party member focus is updated when you or your party members target/mouseover the focus target. (Also every time you use /fcast)
 - Health is updated same way as mana, but will also update when the focus target's nameplate is in range.
+
 - Castingbar handler can't tell if focus uses downranked spells.
 - Casts & buffs for focus not in party are only tracked if the focus is within 40 yards range of your character.
 - Only works on English game client for now.
-- Buff/cast tracking is still WIP. Let me know of any issues.
+
 
 ### Installation
-[Download link.](https://github.com/wardz/FocusFrame/archive/master.zip)
-If for some reason the newest version doesn't work, you may download a previous version here: [link](https://github.com/wardz/FocusFrame/releases)
+[Download link.](https://github.com/wardz/FocusFrame/releases)
+
 
 Unzip the downloaded file into your "WoW/Interface/AddOns/" folder, then remove "-master" (or version) suffix from the addon's folder name.
 
 
 ### TODO
 - Add target of target frame.
-- Better buff handling.
+- Option to fade/hide frame when focus is out of range
 
-If you want to submit a pull request, please use the dev branch.
+If you want to submit a pull request, please use the dev branch. It has the most up-to-date changes.
