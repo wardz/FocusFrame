@@ -313,7 +313,7 @@ local function refreshBuff(tar, b, s)
 	for i, j in pairs(SPELLINFO_DEBUFF_REFRESHING_SPELLS[b]) do
 		for k, v in pairs(buffList) do
 			if v.caster == tar and v.spell == j then
-				newbuff(tar, j, s, false)
+				newbuff(tar, j, s, false, v.icon, v.btype, v.type)
 				return
 			end
 		end
