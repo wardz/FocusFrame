@@ -294,6 +294,8 @@ do
 
 		local name = scantipTextLeft1:GetText()
 		local magicType = mtype or scantipTextRight1:GetText()
+		if not magicType or magicType == "" then magicType = "none" end
+
 		-- TODO add stacks
 		-- TODO buffs from items does not have fade log event, problem when unit is enemy
 		if name then
@@ -349,7 +351,7 @@ do
 		local debuff, debuffButton, debuffStack, debuffType;
 		local debuffCount;
 		local numDebuffs = 0;
-		local color = {}
+		local color
 		for i=1, MAX_FOCUS_DEBUFFS do
 
 			local debuffBorder = getglobal("FocusFrameDebuff"..i.."Border");
@@ -357,6 +359,7 @@ do
 			if unit then
 				debuff, debuffStack, debuffType = UnitDebuff(unit, i);
 				if debuff then
+					if not debuffType then debuffType = "none" end
 					StoreBuff(unit, i, debuff, true, debuffType)
 				end
 			else
@@ -370,9 +373,11 @@ do
 				getglobal("FocusFrameDebuff"..i.."Icon"):SetTexture(type(debuff) == "table" and debuff.icon or debuff);
 				debuffCount = getglobal("FocusFrameDebuff"..i.."Count");
 				if ( debuffType ) then
-					color = FRGB_BORDER_DEBUFFS_COLOR[strlower(debuffType)] or {0, 0, 0, 1};
+					color = FRGB_BORDER_DEBUFFS_COLOR[strlower(debuffType)] or {0, 0, 0, 0};
+					-- ran when no target
 				else
-					color = {0, 0, 0, 1};
+					color = {0, 0, 0, 0};
+					-- ran when focus is targeted
 				end
 				if ( debuffStack and debuffStack > 1 ) then
 					debuffCount:SetText(debuffStack);
@@ -381,7 +386,7 @@ do
 					debuffCount:Hide();
 				end
 
-				debuffBorder:SetVertexColor(color[0], color[1], color[2], color[3]);
+				debuffBorder:SetVertexColor(color[1], color[2], color[3], color[4]);
 				button:Show();
 				numDebuffs = numDebuffs + 1;
 			else
