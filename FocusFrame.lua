@@ -53,15 +53,19 @@ local function FocusAction(func, arg1, arg2)
 	local oldTarget = UnitName("target")
 	local data = FocusFrame_GetFocusData(CURR_FOCUS_TARGET)
 	local isNotPlayer = data and data.npc == "2" and true or false
+	local retarget = false
 
-	TargetUnitOrFocus(nil, isNotPlayer)
+	if oldTarget ~= CURR_FOCUS_TARGET then
+		TargetUnitOrFocus(nil, isNotPlayer)
+		retarget = true
+	end
 
 	if func then
 		-- TODO is there vararg in this lua version?
 		func(arg1, arg2)
 	end
 
-	if oldTarget then
+	if oldTarget and retarget then
 		TargetLastTarget()
 
 		if UnitName("target") ~= oldTarget then
@@ -70,7 +74,7 @@ local function FocusAction(func, arg1, arg2)
 			TargetUnitOrFocus(oldTarget, isNotPlayer)
 		end
 	else
-		ClearTarget()
+		--ClearTarget()
 	end
 end
 
