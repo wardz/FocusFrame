@@ -331,7 +331,7 @@ local function processQueuedBuff(tar, b)
 
 	for k, v in pairs(buffQueueList) do
 		if v.target == tar and v.buffName == b then
-			local n = buff.create(v.target, v.buffName, 1, v.buffData, 1, time)
+			local n = buff.create(v.target, v.buffName, 1, v.buffData, 1, time, v.icon, v.btype, v.type)
 			tinsert(buffList, n)
 			
 			tremove(buffQueueList, k)
