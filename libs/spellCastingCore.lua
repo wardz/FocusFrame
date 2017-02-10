@@ -748,8 +748,12 @@ local playerDeath = function()
 		local m = fdies and dies or fslain and slain or fpslain and pslain
 		local c = fpdie and playerName or gsub(arg1, m, '%1')
 		
-		forceHideTableItem(casts, c, nil)
-		forceHideTableItem(buffList, c, nil)
+		if fpdie then
+			tableMaintenance(true)
+		else
+			forceHideTableItem(casts, c, nil)
+			forceHideTableItem(buffList, c, nil)
+		end
 
 		FocusFrame_SetUnitHealth(c, 0)
 	end
