@@ -64,7 +64,7 @@ InstaBuff.create = function(c, b, list, time)
    return acnt
 end
 
-buff.create = function(tar, t, s, buffType, factor, time, texture, debuff, magictype)
+buff.create = function(tar, t, s, buffType, factor, time, texture, debuff, magictype, debuffStack)
 	local acnt     = {}
 	buffType = buffType or {}
 	if magictype --[[and not buffType.type]] then
@@ -75,7 +75,7 @@ buff.create = function(tar, t, s, buffType, factor, time, texture, debuff, magic
 	acnt.target    	= tar
 	acnt.caster    	= tar	-- facilitate entry removal
 	acnt.spell      = t
-	acnt.stacks		= s
+	acnt.stacks		= debuffStack or s
 	acnt.icon      	= texture and texture or buffType['icon']
 	acnt.timeStart 	= time
 	--acnt.timeEnd   	= time + (buffType['duration'] or 0) * factor
@@ -286,7 +286,7 @@ local function checkQueueBuff(tar, b)
 	return false
 end
 
-local function newbuff(tar, b, s, castOn, texture, debuff, magictype)
+local function newbuff(tar, b, s, castOn, texture, debuff, magictype, debuffStack)
 	local time = getTimeMinusPing()--GetTime()
 
 	-- check buff queue
@@ -303,7 +303,7 @@ local function newbuff(tar, b, s, castOn, texture, debuff, magictype)
 			end
 		end
 
-		local n = buff.create(tar, b, s, FSPELLINFO_BUFFS_TO_TRACK[b], drf, time, texture, debuff, magictype)
+		local n = buff.create(tar, b, s, FSPELLINFO_BUFFS_TO_TRACK[b], drf, time, texture, debuff, magictype, debuffStack)
 		tinsert(buffList, n)
 	--end
 end
@@ -331,7 +331,7 @@ local function processQueuedBuff(tar, b)
 
 	for k, v in pairs(buffQueueList) do
 		if v.target == tar and v.buffName == b then
-			local n = buff.create(v.target, v.buffName, 1, v.buffData, 1, time, v.icon, v.btype, v.type)
+			local n = buff.create(v.target, v.buffName, 1, v.buffData, 1, time, v.icon, v.btype, v.type, v.stacks)
 			tinsert(buffList, n)
 			
 			tremove(buffQueueList, k)
@@ -849,8 +849,8 @@ end
 
 -- GLOBAL ACCESS FUNCTIONS
 
-function FocusFrame_NewBuff(tar, b, texture, debuff, magictype)
-	newbuff(tar, b, 1, false, texture, debuff, magictype)
+function FocusFrame_NewBuff(tar, b, texture, debuff, magictype, debuffStack)
+	newbuff(tar, b, 1, false, texture, debuff, magictype, debuffStack)
 end
 
 function FocusFrame_ClearBuffs(caster)

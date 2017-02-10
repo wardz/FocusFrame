@@ -284,7 +284,7 @@ do
 	local scantipTextLeft1 = getglobal("FocusScantipTextLeft1")
 	local scantipTextRight1 = getglobal("FocusScantipTextRight1")
 
-	local function StoreBuff(unit, i, texture, debuff, mtype)
+	local function StoreBuff(unit, i, texture, debuff, mtype, debuffStack)
 		scantip:ClearLines()
 		if debuff then
 			scantip:SetUnitDebuff(unit, i)
@@ -300,7 +300,7 @@ do
 		-- TODO buffs from items does not have fade log event, problem when unit is enemy
 		if name then
 			-- sync targeted unit buffs with buff lib data
-			FocusFrame_NewBuff(CURR_FOCUS_TARGET, name, texture, debuff, magicType)
+			FocusFrame_NewBuff(CURR_FOCUS_TARGET, name, texture, debuff, magicType, debuffStack)
 		end
 	end
 
@@ -360,7 +360,7 @@ do
 				debuff, debuffStack, debuffType = UnitDebuff(unit, i);
 				if debuff then
 					if not debuffType then debuffType = "none" end
-					StoreBuff(unit, i, debuff, true, debuffType)
+					StoreBuff(unit, i, debuff, true, debuffType, debuffStack)
 				end
 			else
 				debuff = debuffList[i]
