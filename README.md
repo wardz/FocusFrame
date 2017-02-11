@@ -46,6 +46,7 @@ Set frame scale: (0.2 - 2.0)
 ```
 
 Toggle frame dragging:
+
 Hold down left mouse button on focus **portrait** to move it.
 
 If you lock the frame, then targetting focus by clicking on portrait is no longer possible. (Will fix this later)
