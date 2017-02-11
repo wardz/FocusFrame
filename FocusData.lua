@@ -27,6 +27,7 @@ function FocusFrame_SetFocusInfo(unit)
 			data.isDead = UnitHealth(unit) <= 0 and UnitIsConnected(unit) and true or false
 			data.enemy = UnitIsFriend(unit, "player") == 1 and "1" or "2" -- true|false seems to be bugged for some reason
 			data.npc = UnitIsPlayer(unit) == 1 and "1" or "2"
+			data.raidmark = GetRaidTargetIndex(unit)
 
 			return true
 		end
@@ -113,7 +114,7 @@ do
 				end
 		
 				if CURR_FOCUS_TARGET ~= UnitName("target") and CURR_FOCUS_TARGET ~= UnitName("mouseover") then
-					FocusFrame_ScanHealth()
+					FocusFrame_ScanPlates()
 					ScanPartyTargets()
 				else
 					FocusFrame_SetFocusInfo("target")

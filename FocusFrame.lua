@@ -191,6 +191,7 @@ function FocusFrame_OnLoad()
 	--FocusFrame_Update()
 	this:RegisterEvent("PLAYER_ENTERING_WORLD")
 	this:RegisterEvent("PLAYER_FLAGS_CHANGED")
+	this:RegisterEvent("RAID_TARGET_UPDATE")
 	this:RegisterEvent("UNIT_CLASSIFICATION_CHANGED")
 	this:RegisterEvent("UNIT_PORTRAIT_UPDATE")
 	this:RegisterEvent("UNIT_HEALTH")
@@ -227,6 +228,7 @@ function FocusFrame_Update(id)
 		FocusFrame_CheckClassification(unit)
 		FocusFrame_CheckDead(unit)
 		FocusFrame_CheckDishonorableKill(unit)
+		FocusFrame_UpdateRaidTargetIcon(unit)
 
 		FocusFrame_SetFocusInfo(unit)
 		FocusDebuffButton_Update(unit)
@@ -260,22 +262,36 @@ do
 	end
 end
 
-function FocusFrame_HealthUpdate(unit)
-	if unit then
-		-- sync values
-		FocusFrame_SetFocusInfo(unit)
+do
+	local function SetStatusText(health, maxHealth, mana, maxMana)
+		--if GetCVar("statusBarText") == "1" then
+			--local healthText = MobHealth_PPP and MobHealth_PPP(CURR_FOCUS_TARGET) or (health .. " / " .. maxHealth)
+
+			--TextStatusBar_UpdateTextString(FocusFrameManaBar);
+			SetTextStatusBarText(FocusFrameHealthBar, FocusFrameHealthBarText);
+			SetTextStatusBarText(FocusFrameManaBar, FocusFrameManaBarText);
+		--end
 	end
 
-	local data = FocusFrame_GetFocusData(CURR_FOCUS_TARGET)
+	function FocusFrame_HealthUpdate(unit)
+		if unit then
+			-- sync values
+			FocusFrame_SetFocusInfo(unit)
+		end
 
-	FocusFrameHealthBar:SetMinMaxValues(0, data.maxHealth or 100)
-	FocusFrameHealthBar:SetValue(data.health or 100)
-	FocusFrameManaBar:SetMinMaxValues(0, data.maxMana or 100)
-	FocusFrameManaBar:SetValue(data.mana or 0)
+		local data = FocusFrame_GetFocusData(CURR_FOCUS_TARGET)
 
-	local info = ManaBarColor[data.power]
-	if info then
-		FocusFrameManaBar:SetStatusBarColor(info.r, info.g, info.b)
+		FocusFrameHealthBar:SetMinMaxValues(0, data.maxHealth or 100)
+		FocusFrameHealthBar:SetValue(data.health or 100)
+		FocusFrameManaBar:SetMinMaxValues(0, data.maxMana or 100)
+		FocusFrameManaBar:SetValue(data.mana or 0)
+
+		local info = ManaBarColor[data.power]
+		if info then
+			FocusFrameManaBar:SetStatusBarColor(info.r, info.g, info.b)
+		end
+
+		SetStatusText(data.health or 0, data.maxHealth or 100, data.mana or 0, data.maxMana or 100)
 	end
 end
 
@@ -534,7 +550,7 @@ function FocusFrame_OnEvent(event)
 	elseif ( event == "PARTY_MEMBERS_CHANGED" ) then
 		--FocusFrame_CheckFaction();
 	elseif ( event == "RAID_TARGET_UPDATE" ) then
-		--FocusFrame_UpdateRaidTargetIcon();
+		FocusFrame_UpdateRaidTargetIcon()
 	end
 end
 
@@ -686,5 +702,22 @@ function FocusFrame_OnClick(button)
 		else
 			TargetUnitOrFocus()
 		end
+	end
+end
+
+function FocusFrame_UpdateRaidTargetIcon(unit)
+	local index
+	if not unit then
+		local data = FocusFrame_GetFocusData()
+		index = data and data.raidmark
+	else
+		index = GetRaidTargetIndex(unit)
+	end
+
+	if ( index ) then
+		SetRaidTargetIconTexture(FocusRaidTargetIcon, index);
+		FocusRaidTargetIcon:Show();
+	else
+		FocusRaidTargetIcon:Hide();
 	end
 end
