@@ -16,8 +16,8 @@ dreturns.__index	= dreturns
 
 local playerName = UnitName'player'
 
-local tinsert, tremove, strfind, gsub, ipairs, pairs, GetTime, GetNetStats, setmetatable =
-	  table.insert, table.remove, string.find, string.gsub, ipairs, pairs, GetTime, GetNetStats, setmetatable
+local tinsert, tremove, strfind, gsub, ipairs, pairs, GetTime, GetNetStats, setmetatable, tgetn =
+	  table.insert, table.remove, string.find, string.gsub, ipairs, pairs, GetTime, GetNetStats, setmetatable, table.getn
 
 local SPELLINFO_CHANNELED_SPELLCASTS_TO_TRACK, SPELLINFO_INSTANT_SPELLCASTS_TO_TRACK = SPELLINFO_CHANNELED_SPELLCASTS_TO_TRACK, SPELLINFO_INSTANT_SPELLCASTS_TO_TRACK
 local SPELLINFO_CHANNELED_HEALS_SPELLCASTS_TO_TRACK, SPELLINFO_SPELLCASTS_TO_TRACK = SPELLINFO_CHANNELED_HEALS_SPELLCASTS_TO_TRACK, SPELLINFO_SPELLCASTS_TO_TRACK
@@ -749,7 +749,7 @@ local playerDeath = function()
 		local c = fpdie and playerName or gsub(arg1, m, '%1')
 		
 		if fpdie then
-			tableMaintenance(true)
+			--tableMaintenance(true)
 		else
 			forceHideTableItem(casts, c, nil)
 			forceHideTableItem(buffList, c, nil)
@@ -762,14 +762,14 @@ local playerDeath = function()
 end
 
 local fear = function()
-	local fear = '(.+) attempts to run away in fear!' 				local ffear = strfind(arg1, fear)
+	local fear = strfind(arg1, "(.+) attempts to run away in fear!")
 	
-	if ffear then
-		local t = arg2			
-		forceHideTableItem(casts, t)	
+	if fear then
+		local target = arg2			
+		forceHideTableItem(casts, target)	
 	end
 	
-	return ffear
+	return fear
 end
 
 ----------------------------------------------------------------------------
@@ -790,31 +790,6 @@ local parsingCheck = function(out, display)
 	end
 end
 
-local UnitIsEnemy, UnitName, UnitBuff = UnitIsEnemy, UnitName, UnitBuff
-function FocusFrame_SyncBuffData(unit)
-	if UnitIsEnemy(unit, "player") == 1 then return end
-
-	local target = UnitName(unit)
-	if target == CURR_FOCUS_TARGET then
-		--print("ran")
-		local buffs = {}
-		local index = 1
-		for k, v in pairs(buffList) do
-			if v.caster == target then
-				buffs[v.icon] = index
-			end
-			index = index + 1
-		end
-
-		for i = 1, 5 do
-			local buff = UnitBuff(unit, i)
-			if not buffs[buff] then
-				tremove(buffList, buffs[buff])
-			end
-		end
-	end
-end
-
 local combatlogParser = function()	
 	local pSpell 	= 'CHAT_MSG_SPELL_PERIODIC_(.+)'		local fpSpell 		= strfind(event, pSpell)
 	local breakAura = 'CHAT_MSG_SPELL_BREAK_AURA'			local fbreakAura 	= strfind(event, breakAura)
@@ -822,12 +797,6 @@ local combatlogParser = function()
 	local dSpell 	= 'CHAT_MSG_SPELL_(.+)'					local fdSpell 		= strfind(event, dSpell)	
 	local death		= 'CHAT_MSG_COMBAT_(.+)_DEATH'			local fdeath 		= strfind(event, death)
 	local mEmote	= 'CHAT_MSG_MONSTER_EMOTE'				local fmEmote		= strfind(event, mEmote)
-	
-	--if arg1 then singleEventdebug() end -- testing
-
-	--[[if event == "UNIT_AURA" then
-		FocusFrame_SyncBuffData(arg1)
-	end]]
 
 	-- periodic damage/buff spells
 	if fpSpell then	
@@ -845,9 +814,8 @@ local combatlogParser = function()
 	elseif fmEmote then
 		parsingCheck(fear(), false)
 	else
-		--unparsed event!
-		--print('untreated event')
-		--parsingCheck(false, true)
+		--print(event)
+		--print(arg1)
 	end
 end
 
@@ -861,64 +829,78 @@ function FocusFrame_ClearBuffs(caster)
 	forceHideTableItem(buffList, caster)
 end
 
+local UnitIsFriend, UnitName, UnitBuff = UnitIsFriend, UnitName, UnitBuff
+function FocusFrame_SyncBuffData(unit)
+	local target = UnitName(unit)
+	if target == CURR_FOCUS_TARGET then
+		local buffs = {}
+		local index = 1
+		for k, v in pairs(buffList) do
+			if v.caster == target then
+				buffs[v.icon] = index
+			end
+			index = index + 1
+		end
+
+		if UnitIsFriend(unit, "player") == 1 then
+			for i = 1, 5 do
+				local buff = UnitBuff(unit, i)
+				if not buff then break end
+
+				if not buffs[buff] then
+					tremove(buffList, buffs[buff])
+				end
+			end
+		end
+
+		for i = 1, 16 do
+			local buff = UnitDebuff(unit, i)
+			if not buff then break end
+
+			if not buffs[buff] then
+				tremove(buffList, buffs[buff])
+			end
+		end
+	end
+end
+
 FSPELLCASTINGCOREgetCast = function(caster)
-	if caster == nil then return nil end
-	for k, v in pairs(casts) do
-		if v.caster == caster then
-			return v
+	if caster then
+		for k, v in pairs(casts) do
+			if v.caster == caster then
+				return v
+			end
 		end
 	end
+
 	return nil
 end
 
-FSPELLCASTINGCOREgetHeal = function(target)
-	for k, v in pairs(heals) do
-		if v.target == target then
-			return v
-		end
-	end
-	return nil
-end
-
-local function sortPriobuff(tab, b)
-	for k, v in pairs(tab) do
-		if b.prio > v.prio then	
-			tinsert(tab, k, b)
-			return tab
-		end
-	end
-	tinsert(tab, b)
-	return tab
-end
-
-FSPELLCASTINGCOREgetPrioBuff = function(name, n)
-	local b = {}
-	for j, e in pairs(buffList) do
-		if e.target == name and e.display then
-			b = sortPriobuff(b, e)
-		end
-	end
-	
-	local l = {}
-	for k, v in pairs(b) do
-		tinsert(l, v)
-		if k == n then return l end
-	end
-	return l
-end
-
-FSPELLCASTINGCOREgetBuffs = function(name)
+FSPELLCASTINGCOREgetBuffs = function(caster)
 	local list = {
 		debuffs = {},
 		buffs = {}
 	}
 
-	for j, e in ipairs(buffList) do
-		if e.target == name then
-			if e.btype then
-				tinsert(list.debuffs, e)
-			else
-				tinsert(list.buffs, e)
+	if caster then
+		--[[for k, v in ipairs(buffList) do
+			if v.target == caster then
+				if v.btype then
+					tinsert(list.debuffs, v)
+				else
+					tinsert(list.buffs, v)
+				end
+			end
+		end]]
+
+		for i = 1, tgetn(buffList) do
+			local buff = buffList[i]
+			if buff.target == caster then
+				if buff.btype then
+					tinsert(list.debuffs, buff)
+				else
+					tinsert(list.buffs, buff)
+				end
 			end
 		end
 	end
@@ -926,79 +908,70 @@ FSPELLCASTINGCOREgetBuffs = function(name)
 	return list
 end
 
-FSPELLCASTINGCORErefreshBuff = function(t, b, s)
-	if SPELLINFO_DEBUFF_REFRESHING_SPELLS[b] then
-		refreshBuff(t, b, s)
-	end
-end
-
-FSPELLCASTINGCOREqueueBuff = function(t, b, d)
-	if SPELLINFO_UNIQUE_DEBUFFS[b] then	
-		queueBuff(t, b, SPELLINFO_UNIQUE_DEBUFFS[b], d)
-		return true
-	end
-	return false
-end
 ------------------------------------
 
-local f = CreateFrame('Frame', 'FSPELLCASTINGCORE', UIParent)
-f:SetScript('OnUpdate', function()
-	tableMaintenance(false)
-end)
-
-f:RegisterEvent'PLAYER_ENTERING_WORLD'
-f:RegisterEvent'CHAT_MSG_MONSTER_EMOTE'--[[
-f:RegisterEvent'CHAT_MSG_COMBAT_SELF_HITS'
-f:RegisterEvent'CHAT_MSG_COMBAT_SELF_MISSES'
-f:RegisterEvent'CHAT_MSG_COMBAT_PARTY_HITS'
-f:RegisterEvent'CHAT_MSG_COMBAT_PARTY_MISSES'
-f:RegisterEvent'CHAT_MSG_COMBAT_FRIENDLYPLAYER_HITS'
-f:RegisterEvent'CHAT_MSG_COMBAT_FRIENDLYPLAYER_MISSES'
-f:RegisterEvent'CHAT_MSG_COMBAT_HOSTILEPLAYER_HITS'
-f:RegisterEvent'CHAT_MSG_COMBAT_HOSTILEPLAYER_MISSES'
-f:RegisterEvent'CHAT_MSG_COMBAT_CREATURE_VS_PARTY_HITS']]--
-f:RegisterEvent'CHAT_MSG_SPELL_SELF_BUFF'
-f:RegisterEvent'CHAT_MSG_SPELL_SELF_DAMAGE'
-f:RegisterEvent'CHAT_MSG_SPELL_FRIENDLYPLAYER_DAMAGE'
-f:RegisterEvent'CHAT_MSG_SPELL_FRIENDLYPLAYER_BUFF'
-f:RegisterEvent'CHAT_MSG_SPELL_HOSTILEPLAYER_DAMAGE'
-f:RegisterEvent'CHAT_MSG_SPELL_HOSTILEPLAYER_BUFF'
-f:RegisterEvent'CHAT_MSG_SPELL_CREATURE_VS_CREATURE_BUFF'
-f:RegisterEvent'CHAT_MSG_SPELL_CREATURE_VS_CREATURE_DAMAGE'
-f:RegisterEvent'CHAT_MSG_SPELL_CREATURE_VS_PARTY_BUFF'
-f:RegisterEvent'CHAT_MSG_SPELL_CREATURE_VS_PARTY_DAMAGE'
-f:RegisterEvent'CHAT_MSG_SPELL_CREATURE_VS_SELF_BUFF'
-f:RegisterEvent'CHAT_MSG_SPELL_CREATURE_VS_SELF_DAMAGE'
-f:RegisterEvent'CHAT_MSG_SPELL_PARTY_BUFF'
-f:RegisterEvent'CHAT_MSG_SPELL_PARTY_DAMAGE'    
-f:RegisterEvent'CHAT_MSG_SPELL_PERIODIC_HOSTILEPLAYER_BUFFS'
-f:RegisterEvent'CHAT_MSG_SPELL_PERIODIC_FRIENDLYPLAYER_BUFFS'
-f:RegisterEvent'CHAT_MSG_SPELL_PERIODIC_HOSTILEPLAYER_DAMAGE'
-f:RegisterEvent'CHAT_MSG_SPELL_PERIODIC_FRIENDLYPLAYER_DAMAGE'
-f:RegisterEvent'CHAT_MSG_SPELL_PERIODIC_SELF_BUFFS'
-f:RegisterEvent'CHAT_MSG_SPELL_PERIODIC_SELF_DAMAGE'
-f:RegisterEvent'CHAT_MSG_SPELL_PERIODIC_PARTY_BUFFS'
-f:RegisterEvent'CHAT_MSG_SPELL_PERIODIC_PARTY_DAMAGE'    
-f:RegisterEvent'CHAT_MSG_SPELL_PERIODIC_CREATURE_DAMAGE'
-f:RegisterEvent'CHAT_MSG_SPELL_PERIODIC_CREATURE_BUFFS'
-f:RegisterEvent'CHAT_MSG_SPELL_BREAK_AURA'
-f:RegisterEvent'CHAT_MSG_SPELL_AURA_GONE_SELF'
-f:RegisterEvent'CHAT_MSG_SPELL_AURA_GONE_PARTY'
-f:RegisterEvent'CHAT_MSG_SPELL_AURA_GONE_OTHER'
-f:RegisterEvent'CHAT_MSG_SPELL_DAMAGESHIELDS_ON_SELF'
-f:RegisterEvent'CHAT_MSG_SPELL_DAMAGESHIELDS_ON_OTHERS'
-
-f:RegisterEvent'CHAT_MSG_COMBAT_HOSTILE_DEATH'
-f:RegisterEvent'CHAT_MSG_COMBAT_FRIENDLY_DEATH'
-
---f:RegisterEvent'UNIT_AURA'
-
---f:RegisterAllEvents()
-
-f:SetScript('OnEvent', function()
-	if event == 'PLAYER_ENTERING_WORLD' then
+do
+	local refresh, interval = 0, 0.1
+	local events = CreateFrame("Frame")
+	events:RegisterEvent("PLAYER_ENTERING_WORLD")
+	events:RegisterEvent("PLAYER_ALIVE") -- Releases from death to a graveyard
+	events:SetScript("OnEvent", function()
 		tableMaintenance(true)
-	else
-		combatlogParser()
-	end
-end)
+	end)
+
+	events:SetScript("OnUpdate", function()
+		refresh = refresh - arg1
+		if refresh < 0 then
+			tableMaintenance(false)
+			refresh = interval
+		end
+	end)
+
+	-- Use seperate event frames so we can call combatlogParser() directly here for better performance
+	-- (avoids calling extra func)
+	local f = CreateFrame("Frame")
+	f:SetScript("OnEvent", combatlogParser)
+
+	f:RegisterEvent'CHAT_MSG_MONSTER_EMOTE'--[[
+	f:RegisterEvent'CHAT_MSG_COMBAT_SELF_HITS'
+	f:RegisterEvent'CHAT_MSG_COMBAT_SELF_MISSES'
+	f:RegisterEvent'CHAT_MSG_COMBAT_PARTY_HITS'
+	f:RegisterEvent'CHAT_MSG_COMBAT_PARTY_MISSES'
+	f:RegisterEvent'CHAT_MSG_COMBAT_FRIENDLYPLAYER_HITS'
+	f:RegisterEvent'CHAT_MSG_COMBAT_FRIENDLYPLAYER_MISSES'
+	f:RegisterEvent'CHAT_MSG_COMBAT_HOSTILEPLAYER_HITS'
+	f:RegisterEvent'CHAT_MSG_COMBAT_HOSTILEPLAYER_MISSES'
+	f:RegisterEvent'CHAT_MSG_COMBAT_CREATURE_VS_PARTY_HITS']]
+	f:RegisterEvent'CHAT_MSG_SPELL_SELF_BUFF'
+	f:RegisterEvent'CHAT_MSG_SPELL_SELF_DAMAGE'
+	f:RegisterEvent'CHAT_MSG_SPELL_FRIENDLYPLAYER_DAMAGE'
+	f:RegisterEvent'CHAT_MSG_SPELL_FRIENDLYPLAYER_BUFF'
+	f:RegisterEvent'CHAT_MSG_SPELL_HOSTILEPLAYER_DAMAGE'
+	f:RegisterEvent'CHAT_MSG_SPELL_HOSTILEPLAYER_BUFF'
+	f:RegisterEvent'CHAT_MSG_SPELL_CREATURE_VS_CREATURE_BUFF'
+	f:RegisterEvent'CHAT_MSG_SPELL_CREATURE_VS_CREATURE_DAMAGE'
+	f:RegisterEvent'CHAT_MSG_SPELL_CREATURE_VS_PARTY_BUFF'
+	f:RegisterEvent'CHAT_MSG_SPELL_CREATURE_VS_PARTY_DAMAGE'
+	f:RegisterEvent'CHAT_MSG_SPELL_CREATURE_VS_SELF_BUFF'
+	f:RegisterEvent'CHAT_MSG_SPELL_CREATURE_VS_SELF_DAMAGE'
+	f:RegisterEvent'CHAT_MSG_SPELL_PARTY_BUFF'
+	f:RegisterEvent'CHAT_MSG_SPELL_PARTY_DAMAGE'    
+	f:RegisterEvent'CHAT_MSG_SPELL_PERIODIC_HOSTILEPLAYER_BUFFS'
+	f:RegisterEvent'CHAT_MSG_SPELL_PERIODIC_FRIENDLYPLAYER_BUFFS'
+	f:RegisterEvent'CHAT_MSG_SPELL_PERIODIC_HOSTILEPLAYER_DAMAGE'
+	f:RegisterEvent'CHAT_MSG_SPELL_PERIODIC_FRIENDLYPLAYER_DAMAGE'
+	f:RegisterEvent'CHAT_MSG_SPELL_PERIODIC_SELF_BUFFS'
+	f:RegisterEvent'CHAT_MSG_SPELL_PERIODIC_SELF_DAMAGE'
+	f:RegisterEvent'CHAT_MSG_SPELL_PERIODIC_PARTY_BUFFS'
+	f:RegisterEvent'CHAT_MSG_SPELL_PERIODIC_PARTY_DAMAGE'    
+	f:RegisterEvent'CHAT_MSG_SPELL_PERIODIC_CREATURE_DAMAGE'
+	f:RegisterEvent'CHAT_MSG_SPELL_PERIODIC_CREATURE_BUFFS'
+	f:RegisterEvent'CHAT_MSG_SPELL_BREAK_AURA'
+	f:RegisterEvent'CHAT_MSG_SPELL_AURA_GONE_SELF'
+	f:RegisterEvent'CHAT_MSG_SPELL_AURA_GONE_PARTY'
+	f:RegisterEvent'CHAT_MSG_SPELL_AURA_GONE_OTHER'
+	f:RegisterEvent'CHAT_MSG_SPELL_DAMAGESHIELDS_ON_SELF'
+	f:RegisterEvent'CHAT_MSG_SPELL_DAMAGESHIELDS_ON_OTHERS'
+	f:RegisterEvent'CHAT_MSG_COMBAT_HOSTILE_DEATH'
+	f:RegisterEvent'CHAT_MSG_COMBAT_FRIENDLY_DEATH'
+end

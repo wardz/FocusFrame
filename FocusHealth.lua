@@ -9,6 +9,26 @@ local function IsPlate(frame)
 	return true
 end
 
+function FocusFrame_ScanPlates()
+	local frames = { WorldFrame:GetChildren() }
+
+	for i, plate in pairs(frames) do
+		if IsPlate(plate) and plate:IsVisible() then
+			local _, _, nameFrame, _, _, raidIcon = plate:GetRegions()
+			local health = plate:GetChildren():GetValue()
+			local name = nameFrame:GetText()
+			--plate.mobID = plate.mobID or i
+
+			if name == CURR_FOCUS_TARGET then
+				FocusFrame_SetUnitHealth(name, health)
+				if raidIcon then
+					FocusFrame_SetUnitRaidIcon(name, raidIcon)
+				end
+				return
+			end
+		end
+	end
+end
 
 --/run targettest("Fireball", 4)
 --[[function targettest(spell, id)
@@ -41,20 +61,3 @@ function FocusFrame_GetMobID()
 		end
 	end
 end]]
-
-function FocusFrame_ScanPlates()
-	local frames = { WorldFrame:GetChildren() }
-
-	for i, plate in pairs(frames) do
-		if IsPlate(plate) and plate:IsVisible() then
-			local _, _, nameFrame = plate:GetRegions()
-			local health = plate:GetChildren():GetValue()
-			local name = nameFrame:GetText()
-			--plate.mobID = plate.mobID or i
-
-			if name == CURR_FOCUS_TARGET then
-				return FocusFrame_SetUnitHealth(name, health)
-			end
-		end
-	end
-end
