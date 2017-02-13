@@ -25,8 +25,18 @@ function FocusFrame_SetFocusInfo(unit)
 			data.maxMana = UnitManaMax(unit)
 			data.power = UnitPowerType(unit)
 			data.isDead = UnitHealth(unit) <= 0 and UnitIsConnected(unit) and true or false
-			data.enemy = UnitIsFriend(unit, "player") == 1 and "1" or "2" -- true|false seems to be bugged for some reason
+			data.enemy = UnitIsFriend(unit, "player") == 1 and "1" or "2" -- true|false here seems to be bugged for some reason
 			data.npc = UnitIsPlayer(unit) == 1 and "1" or "2"
+			data.raidmark = GetRaidTargetIndex(unit)
+
+			--[[
+			data.unitClassification = UnitClassification(unit)
+			data.unitIsCivilian = UnitIsCivilian(unit)
+			data.unitLevel = UnitLevel(unit)
+			data.unitCanAttack = UnitCanAttack(unit, "player")
+			data.unitIsCorpse = UnitIsCorpse(unit)
+			data.unitIsPVP = UnitIsPvP(unit)
+			data.unitIsPartyLeader = UnitIsPartyLeader(unit)]]
 
 			return true
 		end
@@ -48,7 +58,7 @@ do
 			local enemy = focusData[CURR_FOCUS_TARGET] and focusData[CURR_FOCUS_TARGET].enemy == "2"
 
 			if members > 0 then
-				local unit = groupType .. raidMemberIndex .. (enemy and "target" or "")
+				local unit = groupType .. raidMemberIndex .. (enemy and "target" or "") -- if focus is enemy, scan partytargets only
 				local unitPet = groupType .. "pet" .. raidMemberIndex .. (enemy and "target" or "")
 
 				if FocusFrame_SetFocusInfo(unit) then
@@ -75,6 +85,14 @@ function FocusFrame_SetUnitHealth(name, health)
 	end
 
 	focusData[name].health = health
+end
+
+function FocusFrame_SetUnitRaidIcon(name, icon)
+	if not focusData[name] then
+		focusData[name] = {}
+	end
+
+	focusData[name].raidmark = icon
 end
 
 function FocusFrame_GetFocusData(name)
@@ -106,14 +124,12 @@ do
 		if refresh < 0 then
 			if CURR_FOCUS_TARGET then
 				FocusFrame_ScanCast()
-
-				if partyUnit and CURR_FOCUS_TARGET == UnitName(partyUnit) then
-					FocusFrame_Update(partyUnit)
-					return
-				end
 		
 				if CURR_FOCUS_TARGET ~= UnitName("target") and CURR_FOCUS_TARGET ~= UnitName("mouseover") then
-					FocusFrame_ScanHealth()
+					if partyUnit and CURR_FOCUS_TARGET == UnitName(partyUnit) then
+						return FocusFrame_Refresh(partyUnit)
+					end
+					FocusFrame_ScanPlates()
 					ScanPartyTargets()
 				else
 					FocusFrame_SetFocusInfo("target")

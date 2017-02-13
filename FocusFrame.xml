@@ -146,6 +146,24 @@
 								</Anchor>
 							</Anchors>
 						</FontString>
+						<FontString name="FocusFrameHealthBarText" inherits="TextStatusBarText">
+							<Anchors>
+								<Anchor point="CENTER">
+									<Offset>
+										<AbsDimension x="-50" y="4"/>
+									</Offset>
+								</Anchor>
+							</Anchors>
+						</FontString>
+						<FontString name="FocusFrameManaBarText" inherits="TextStatusBarText">
+							<Anchors>
+								<Anchor point="CENTER">
+									<Offset>
+										<AbsDimension x="-50" y="-8"/>
+									</Offset>
+								</Anchor>
+							</Anchors>
+						</FontString>
 						<FontString name="FocusDeadText" inherits="GameFontNormalSmall" text="DEAD">
 							<Anchors>
 								<Anchor point="CENTER">
@@ -452,10 +470,14 @@
 				FocusFrame_OnClick(arg1);
 			</OnClick>
 			<OnDragStart>
-				FocusFrame:StartMoving();
+				if FocusFrameDB.unlock then
+					FocusFrame:StartMoving();
+				end
 			</OnDragStart>
 			<OnDragStop>
-				FocusFrame:StopMovingOrSizing();
+				if FocusFrameDB.unlock then
+					FocusFrame:StopMovingOrSizing();
+				end
 			</OnDragStop>
 		</Scripts>
 	</Button>

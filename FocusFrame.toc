@@ -2,7 +2,7 @@
 ## Title: FocusFrame
 ## Notes: Focus frame support for vanilla.
 ## Author: Wardz
-## Version: 0.4
+## Version: 0.5
 ## SavedVariables: FocusFrameDB
 
 libs\buffs.lua
@@ -11,7 +11,7 @@ libs\spells.lua
 libs\spellCastingCore.lua
 
 FocusFrame.xml
-FocusHealth.lua
-FocusCastbar.lua
+nameplate.lua
+castbar.lua
 FocusData.lua
 FocusFrame.lua
