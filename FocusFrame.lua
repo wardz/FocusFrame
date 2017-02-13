@@ -413,7 +413,7 @@ do
 
 		else
 			if enemy == "2" or unit and UnitIsFriend("player", unit) ~= 1 then
-				if numBuffs >= 1 and numDebuffs >= 1 then
+				if numBuffs >= 1 then
 					FocusFrame.cast:SetPoint("BOTTOMLEFT", FocusFrame, 15, -100)
 					return
 				end
@@ -434,20 +434,20 @@ do
 		local isFriend = unit and UnitIsFriend(unit, "player") == 1
 
 		if unit then
-			if (unit and UnitHealth(unit) <= 0) or data and data.health and data.health <= 0 then
-				-- Delete any existing buffs if unit is dead
+			if isFriend then
+				-- Delete all buffs
 				FocusFrame_ClearBuffs(CURR_FOCUS_TARGET)
 			else
-				if isFriend then
-					-- Delete all buffs
-					FocusFrame_ClearBuffs(CURR_FOCUS_TARGET)
-				else
-					-- Delete debuffs
-					FocusFrame_ClearBuffs(CURR_FOCUS_TARGET, true)
-				end
+				-- Delete debuffs
+				FocusFrame_ClearBuffs(CURR_FOCUS_TARGET, true)
 			end
 		end
 
+		if (unit and UnitHealth(unit) <= 0) or data and data.health and data.health <= 0 then
+			-- Delete any existing buffs if unit is dead
+			FocusFrame_ClearBuffs(CURR_FOCUS_TARGET)
+		end
+	
 		if not unit or not isFriend then
 			local buffs = GetAllBuffs(CURR_FOCUS_TARGET)
 			buffList = buffs["buffs"]
