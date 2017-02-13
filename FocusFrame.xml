@@ -470,10 +470,14 @@
 				FocusFrame_OnClick(arg1);
 			</OnClick>
 			<OnDragStart>
-				FocusFrame:StartMoving();
+				if FocusFrameDB.unlock then
+					FocusFrame:StartMoving();
+				end
 			</OnDragStart>
 			<OnDragStop>
-				FocusFrame:StopMovingOrSizing();
+				if FocusFrameDB.unlock then
+					FocusFrame:StopMovingOrSizing();
+				end
 			</OnDragStop>
 		</Scripts>
 	</Button>

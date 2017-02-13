@@ -177,7 +177,6 @@ SlashCmdList["FOCUSOPTIONS"] = function(msg)
 		print("Scale set to " .. x)
 	elseif cmd == "lock" then
 		FocusFrameDB.unlock = not FocusFrameDB.unlock
-		FocusFrame:EnableMouse(FocusFrameDB.unlock)
 		print("Frame is now " .. (FocusFrameDB.unlock and "un" or "") .. "locked.")
 	elseif cmd == "reset" then
 		
@@ -235,7 +234,6 @@ function FocusFrame_Refresh(unitID)
 		FocusFrame_HealthUpdate(unit)
 
 		FocusFrame:SetScale(FocusFrameDB.scale or 1)
-		FocusFrame:EnableMouse(FocusFrameDB.unlock)
 		FocusFrame:Show()
 	end
 end
