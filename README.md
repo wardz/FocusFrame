@@ -49,7 +49,7 @@ Set frame scale: (0.2 - 2.0)
 
 Toggle frame dragging:
 
-Hold down left mouse button on focus **portrait** to move it.
+<sup>Hold down left mouse button on focus **portrait** to move it.</sup>
 ```
 /foption lock
 ```
@@ -59,7 +59,7 @@ When using this addon there are some limitations or caveats you should know abou
 
 - **There's no way to distinguish between NPCs with the exact same name. So most of this addon's functionality won't work properly on mobs.**
 - Power for a non-party member focus is updated when you or your party members targets the focus target. (Also every time you use /fcast)
-- Health is updated same way as mana, but will also update when the focus target's nameplate is in range.
+- Health is updated same way as power, but will also update when the focus target's nameplate is in range.
 - Casts & buffs for focus are only tracked if the focus is within 40 yards range of your character.
 
 ## Installation
