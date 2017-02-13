@@ -25,7 +25,7 @@ function FocusFrame_SetFocusInfo(unit)
 			data.maxMana = UnitManaMax(unit)
 			data.power = UnitPowerType(unit)
 			data.isDead = UnitHealth(unit) <= 0 and UnitIsConnected(unit) and true or false
-			data.enemy = UnitIsFriend(unit, "player") == 1 and "1" or "2" -- true|false seems to be bugged for some reason
+			data.enemy = UnitIsFriend(unit, "player") == 1 and "1" or "2" -- true|false here seems to be bugged for some reason
 			data.npc = UnitIsPlayer(unit) == 1 and "1" or "2"
 			data.raidmark = GetRaidTargetIndex(unit)
 
@@ -115,12 +115,11 @@ do
 		if refresh < 0 then
 			if CURR_FOCUS_TARGET then
 				FocusFrame_ScanCast()
-
-				if partyUnit and CURR_FOCUS_TARGET == UnitName(partyUnit) then
-					return FocusFrame_Refresh(partyUnit)
-				end
 		
 				if CURR_FOCUS_TARGET ~= UnitName("target") and CURR_FOCUS_TARGET ~= UnitName("mouseover") then
+					if partyUnit and CURR_FOCUS_TARGET == UnitName(partyUnit) then
+						return FocusFrame_Refresh(partyUnit)
+					end
 					FocusFrame_ScanPlates()
 					ScanPartyTargets()
 				else

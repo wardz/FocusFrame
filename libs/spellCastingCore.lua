@@ -830,6 +830,7 @@ function FocusFrame_ClearBuffs(caster)
 end
 
 local UnitIsFriend, UnitName, UnitBuff = UnitIsFriend, UnitName, UnitBuff
+
 function FocusFrame_SyncBuffData(unit)
 	local target = UnitName(unit)
 	if target == CURR_FOCUS_TARGET then
@@ -883,23 +884,12 @@ FSPELLCASTINGCOREgetBuffs = function(caster)
 	}
 
 	if caster then
-		--[[for k, v in ipairs(buffList) do
+		for k, v in ipairs(buffList) do
 			if v.target == caster then
 				if v.btype then
 					tinsert(list.debuffs, v)
 				else
 					tinsert(list.buffs, v)
-				end
-			end
-		end]]
-
-		for i = 1, tgetn(buffList) do
-			local buff = buffList[i]
-			if buff.target == caster then
-				if buff.btype then
-					tinsert(list.debuffs, buff)
-				else
-					tinsert(list.buffs, buff)
 				end
 			end
 		end
