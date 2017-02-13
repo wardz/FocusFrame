@@ -296,11 +296,12 @@ local function newbuff(tar, b, s, castOn, texture, debuff, magictype, debuffStac
 	
 	--if drf > 0 then		
 		-- remove buff if it exists
+		local i = 1
 		for k, v in pairs(buffList) do
 			if v.caster == tar and v.spell == b then
-				tremove(buffList, k)
-				--return
+				tremove(buffList, i)
 			end
+			i = i + 1
 		end
 
 		local n = buff.create(tar, b, s, FSPELLINFO_BUFFS_TO_TRACK[b], drf, time, texture, debuff, magictype, debuffStack)
@@ -341,7 +342,7 @@ local function processQueuedBuff(tar, b)
 end
 -----handleCast subfunctions-----------------------------------------------
 ---------------------------------------------------------------------------
-local forceHideTableItem = function(tab, caster, spell)
+local forceHideTableItem = function(tab, caster, spell, debuffsOnly)
 	--local time = GetTime()
 	--[[for k, v in pairs(tab) do
 		if (time < v.timeEnd) and (v.caster == caster) then
@@ -355,12 +356,24 @@ local forceHideTableItem = function(tab, caster, spell)
 	local i = 1
 
 	for k, v in pairs(tab) do
-		if (v.caster == caster) then
+		if v.caster == caster then
 			if not spell then
-				tremove(tab, i)
+				if debuffsOnly then
+					if v.btype then
+						tremove(tab, i)
+					end
+				else
+					tremove(tab, i)
+				end
 			else
 				if v.spell == spell then
-					tremove(tab, i)
+					if debuffsOnly then
+						if v.btype then
+							tremove(tab, i)
+						end
+					else
+						tremove(tab, i)
+					end
 				end
 			end
 		end
@@ -825,18 +838,18 @@ function FocusFrame_NewBuff(tar, b, texture, debuff, magictype, debuffStack)
 	newbuff(tar, b, 1, false, texture, debuff, magictype, debuffStack)
 end
 
-function FocusFrame_ClearBuffs(caster)
-	forceHideTableItem(buffList, caster)
+function FocusFrame_ClearBuffs(caster, debuffsOnly)
+	forceHideTableItem(buffList, caster, nil, debuffsOnly)
 end
 
 local UnitIsFriend, UnitName, UnitBuff = UnitIsFriend, UnitName, UnitBuff
 
-function FocusFrame_SyncBuffData(unit)
+--[[function FocusFrame_SyncBuffData(unit)
 	local target = UnitName(unit)
 	if target == CURR_FOCUS_TARGET then
 		local buffs = {}
 		local index = 1
-		for k, v in pairs(buffList) do
+		for k, v in ipairs(buffList) do
 			if v.caster == target then
 				buffs[v.icon] = index
 			end
@@ -845,11 +858,11 @@ function FocusFrame_SyncBuffData(unit)
 
 		if UnitIsFriend(unit, "player") == 1 then
 			for i = 1, 5 do
-				local buff = UnitBuff(unit, i)
-				if not buff then break end
+				local buff = UnitBuff(unit, i) or ""
 
 				if not buffs[buff] then
 					tremove(buffList, buffs[buff])
+					print("remove " .. buff)
 				end
 			end
 		end
@@ -863,7 +876,7 @@ function FocusFrame_SyncBuffData(unit)
 			end
 		end
 	end
-end
+end]]
 
 FSPELLCASTINGCOREgetCast = function(caster)
 	if caster then

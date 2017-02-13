@@ -81,6 +81,7 @@ local function FocusAction(func, arg1, arg2)
 	end
 end
 
+--SlashCmdList.FOCUS(name)
 local function SetFocus(name)
 	CURR_FOCUS_TARGET = name
 
@@ -275,7 +276,7 @@ do
 
 	function FocusFrame_HealthUpdate(unit)
 		if unit then
-			-- sync values
+			-- sync values first to avoid calling UnitHealth() stuff below
 			FocusFrame_SetFocusInfo(unit)
 		end
 
@@ -428,14 +429,20 @@ do
 		local buffList, debuffList
 		local data = FocusFrame_GetFocusData(CURR_FOCUS_TARGET)
 
-		if not unit or UnitIsFriend(unit, "player") ~= 1 then
+		local isFriend = unit and UnitIsFriend(unit, "player") == 1
+
+		if unit then
+			if isFriend then
+				FocusFrame_ClearBuffs(CURR_FOCUS_TARGET)
+			else
+				FocusFrame_ClearBuffs(CURR_FOCUS_TARGET, true)
+			end
+		end
+
+		if not unit or not isFriend then
 			local buffs = GetAllBuffs(CURR_FOCUS_TARGET)
 			buffList = buffs["buffs"]
 			debuffList = buffs["debuffs"]
-		else
-			-- Sometimes buffs won't be removed because no combat log event is found
-			-- (i.e focus out of range) so resync buff data with current target
-			FocusFrame_SyncBuffData(unit)
 		end
 
 		if (unit and UnitHealth(unit) <= 0) or data and data.health and data.health <= 0 then
@@ -447,7 +454,7 @@ do
 		-- Buffs
 		-------------------------------------------------------------
 		for i = 1, MAX_FOCUS_BUFFS do
-			if unit and UnitIsFriend(unit, "player") == 1 then
+			if unit and isFriend then
 				-- TODO check for Detect Magic
 				buff = UnitBuff(unit, i);
 				if buff then

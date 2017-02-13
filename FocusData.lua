@@ -29,6 +29,15 @@ function FocusFrame_SetFocusInfo(unit)
 			data.npc = UnitIsPlayer(unit) == 1 and "1" or "2"
 			data.raidmark = GetRaidTargetIndex(unit)
 
+			--[[
+			data.unitClassification = UnitClassification(unit)
+			data.unitIsCivilian = UnitIsCivilian(unit)
+			data.unitLevel = UnitLevel(unit)
+			data.unitCanAttack = UnitCanAttack(unit, "player")
+			data.unitIsCorpse = UnitIsCorpse(unit)
+			data.unitIsPVP = UnitIsPvP(unit)
+			data.unitIsPartyLeader = UnitIsPartyLeader(unit)]]
+
 			return true
 		end
 	end
