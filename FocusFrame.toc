@@ -11,7 +11,7 @@ libs\spells.lua
 libs\spellCastingCore.lua
 
 FocusFrame.xml
-FocusHealth.lua
-FocusCastbar.lua
+nameplate.lua
+castbar.lua
 FocusData.lua
 FocusFrame.lua

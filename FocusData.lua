@@ -117,7 +117,7 @@ do
 				FocusFrame_ScanCast()
 
 				if partyUnit and CURR_FOCUS_TARGET == UnitName(partyUnit) then
-					return FocusFrame_Update(partyUnit)
+					return FocusFrame_Refresh(partyUnit)
 				end
 		
 				if CURR_FOCUS_TARGET ~= UnitName("target") and CURR_FOCUS_TARGET ~= UnitName("mouseover") then
