@@ -5,8 +5,6 @@ Provides [focus targeting](http://wowwiki.wikia.com/wiki/Focus_target) & frame s
 
 The focus frame works for both friendly and enemy units.
 
-The focus frame works for both friendly and enemy units.
-
 ![alt](http://i.imgur.com/Qziq2wX.jpg)
 
 ## Chat commands
@@ -52,8 +50,6 @@ Set frame scale: (0.2 - 2.0)
 Toggle frame dragging:
 
 Hold down left mouse button on focus **portrait** to move it.
-
-If you lock the frame, then targetting focus by clicking on portrait is no longer possible. (Will fix this later)
 ```
 /foption lock
 ```
