@@ -58,7 +58,7 @@ local function FocusAction(func, arg1, arg2)
 	local isNotPlayer = data and data.npc == "2" and true or false
 	local retarget = false
 
-	if oldTarget ~= CURR_FOCUS_TARGET then
+	if not oldTarget or oldTarget ~= CURR_FOCUS_TARGET then
 		TargetUnitOrFocus(nil, isNotPlayer)
 		retarget = true
 	end
@@ -86,8 +86,7 @@ local function SetFocus(name)
 	CURR_FOCUS_TARGET = name
 
 	if name then
-		FocusAction() -- Target focus once to update info
-		FocusFrame_Refresh()
+		FocusAction(FocusFrame_Refresh, "target")
 	else
 		ClearFocus()
 	end
@@ -99,6 +98,9 @@ SLASH_FOCUS1 = "/focus"
 SlashCmdList["FOCUS"] = function(name)
 	if not name or name == "" then
 		name = UnitName("target")
+	else
+		name = strlower(name)
+		name = string.gsub(name, "^%l", string.upper)
 	end
 
 	SetFocus(name)
@@ -231,8 +233,8 @@ function FocusFrame_Refresh(unitID)
 		FocusFrame_UpdateRaidTargetIcon(unit)
 
 		FocusFrame_SetFocusInfo(unit)
-		FocusDebuffButton_Update(unit)
 		FocusFrame_HealthUpdate(unit)
+		FocusDebuffButton_Update(unit)
 
 		FocusFrame:SetScale(FocusFrameDB.scale or 1)
 		FocusFrame:Show()

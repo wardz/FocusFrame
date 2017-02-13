@@ -29,7 +29,7 @@ function FocusFrame_ScanPlates()
 			if name == CURR_FOCUS_TARGET then
 				FocusFrame_SetUnitHealth(name, health)
 
-				if raidIcon then
+				if raidIcon and raidIcon:IsVisible() then
 					local ux, uy = raidIcon:GetTexCoord()
 					local icon = RaidIconCoordinate[ux][uy]
 					FocusFrame_SetUnitRaidIcon(name, icon)
