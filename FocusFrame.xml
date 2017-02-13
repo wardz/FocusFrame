@@ -71,7 +71,7 @@
 			</Anchor>
 		</Anchors>
 		<HitRectInsets>
-			<AbsInset left="96" right="6" top="4" bottom="9"/>
+			<AbsInset left="6" right="0" top="4" bottom="9"/>
 		</HitRectInsets>
 
 		<Layers>

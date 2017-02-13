@@ -432,10 +432,17 @@ do
 		local isFriend = unit and UnitIsFriend(unit, "player") == 1
 
 		if unit then
-			if isFriend then
+			if (unit and UnitHealth(unit) <= 0) or data and data.health and data.health <= 0 then
+				-- Delete any existing buffs if unit is dead
 				FocusFrame_ClearBuffs(CURR_FOCUS_TARGET)
 			else
-				FocusFrame_ClearBuffs(CURR_FOCUS_TARGET, true)
+				if isFriend then
+					-- Delete all buffs
+					FocusFrame_ClearBuffs(CURR_FOCUS_TARGET)
+				else
+					-- Delete debuffs
+					FocusFrame_ClearBuffs(CURR_FOCUS_TARGET, true)
+				end
 			end
 		end
 
@@ -443,11 +450,6 @@ do
 			local buffs = GetAllBuffs(CURR_FOCUS_TARGET)
 			buffList = buffs["buffs"]
 			debuffList = buffs["debuffs"]
-		end
-
-		if (unit and UnitHealth(unit) <= 0) or data and data.health and data.health <= 0 then
-			-- Delete any existing buffs if unit is dead
-			FocusFrame_ClearBuffs(CURR_FOCUS_TARGET)
 		end
 
 		-------------------------------------------------------------
