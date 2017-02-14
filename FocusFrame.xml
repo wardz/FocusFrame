@@ -448,21 +448,16 @@
 				</Anchors>
 			</Button>
 		</Frames>
+
 		<Scripts>
 			<OnLoad>
 				FocusFrame:RegisterForDrag("LeftButton");
 				FocusFrameHealthBar:SetStatusBarColor(0, 1, 0, 1);
-				FocusFrame_OnLoad();
+				FocusFrame:Hide();
 			</OnLoad>
-			<OnEvent>
-				FocusFrame_OnEvent(event);
-			</OnEvent>
 			<OnShow>
 				FocusFrame_OnShow();
 			</OnShow>
-			<OnUpdate>
-				FocusFrame_OnUpdate(arg1);
-			</OnUpdate>
 			<OnHide>
 				FocusFrame_OnHide();
 			</OnHide>
