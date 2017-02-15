@@ -172,8 +172,7 @@ do
 				getglobal("FocusFrameDebuff" .. i .. "Icon"):SetTexture(debuff.icon)
 				debuffCount = getglobal("FocusFrameDebuff" .. i .. "Count")
 
-				-- TODO add to API
-				color = debuffType and FRGB_BORDER_DEBUFFS_COLOR[strlower(debuffType)] or {0, 0, 0, 0}
+				color = Focus:GetDebuffColor(debuffType)
 
 				if debuffStack and debuffStack > 1 then
 					debuffCount:SetText(debuffStack)

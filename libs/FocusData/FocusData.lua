@@ -1,6 +1,10 @@
 local _G = getfenv(0)
 if _G.FocusData then return end
 
+if not FSPELLCASTINGCOREgetDebuffs then
+    return print("spellcastingCore.lua is required for FocusFrame")
+end
+
 local Focus = CreateFrame("Frame")
 local data = {}
 local focusTargetName = nil
@@ -9,12 +13,8 @@ local CallHooks
 
 local tgetn = table.getn
 
-if not FSPELLCASTINGCOREgetDebuffs then
-    return print("spellcastingCore.lua is required for FocusFrame")
-end
-
 if not print then
-    function print(msg)
+    print = function(msg)
         if DEFAULT_CHAT_FRAME then
             DEFAULT_CHAT_FRAME:AddMessage(msg or "nil")
         end
@@ -34,11 +34,15 @@ local function SetFocusHealth(unit)
     data.power = UnitMana(unit)
     data.maxPower = UnitManaMax(unit)
     data.powerType = UnitPowerType(unit)
+
     CallHooks("UNIT_HEALTH_OR_POWER", unit)
 end
 
 -- Aura unit scanning
 do
+    local FSPELLCASTINGCOREClearBuffs = FSPELLCASTINGCOREClearBuffs
+    local FSPELLCASTINGCORENewBuff = FSPELLCASTINGCORENewBuff
+
     local scantip = _G["FocusDataScantip"]
     local scantipTextLeft1 = _G["FocusDataScantipTextLeft1"]
     local scantipTextRight1 = _G["FocusDataScantipTextRight1"]
@@ -104,7 +108,7 @@ local function SetFocusInfo(unit)
         data.playerCanAttack = UnitCanAttack("player", unit)
         data.raidIcon = GetRaidTargetIndex(unit)
         data.unit = unit
-        data.refreshed = true
+        data.refreshed = GetTime()
 
         data.unitName = GetUnitName(unit)
         data.unitIsEnemy = UnitIsEnemy(unit, "player") == 1 and true or false
@@ -236,8 +240,8 @@ end
 --------------------------------------
 
 -- Display user error
-function Focus:ShowError()
-    UIErrorsFrame:AddMessage("|cffFF003F You have no focus.|r")
+function Focus:ShowError(msg)
+    UIErrorsFrame:AddMessage("|cffFF003F " .. (msg or "You have no focus.") .. "|r")
 end
 
 -- Check if unitID matches focus target
@@ -294,6 +298,10 @@ end
 -- Get statusbar color for power. I.e mana is blue.
 function Focus:GetPowerColor()
     return ManaBarColor[data.powerType] or { r = 0, g = 0, b = 0 }
+end
+
+function Focus:GetDebuffColor(debuffType)
+    return debuffType and FRGB_BORDER_DEBUFFS_COLOR[strlower(debuffType)] or {0, 0, 0, 0}
 end
 
 -- Get table containing all buff data for focus.
@@ -364,8 +372,8 @@ function Focus:SetFocus(name)
     focusTargetName = name
     if focusTargetName then
         self:TargetFocus()
-        self:TargetPrevious()
         CallHooks("FOCUS_SET", "target")
+        self:TargetPrevious()
     else
         self:ClearFocus()
     end
@@ -391,7 +399,7 @@ end
 
 -- Check if focus is friendly.
 function Focus:IsFriendly()
-    return not self:IsEnemy()
+    return not data.unitIsEnemy
 end
 
 -- Get UnitReactionColor for focus.
@@ -455,6 +463,7 @@ end
 -- Event handling
 do
     local hookEvents = {}
+    local events = CreateFrame("frame")
 
     function CallHooks(event, arguments, recursive) --local
         local hooks = hookEvents[event]
@@ -473,19 +482,19 @@ do
         end
     end
 
-    Focus:SetScript("OnEvent", function(self)
+    events:SetScript("OnEvent", function()
         if strfind(event, "UNIT_") or strfind(event, "PLAYER_") then
             if not Focus:UnitIsFocus(arg1) then return end
         end
 
-        if event == "UNIT_DIES" or event == "UNIT_HEALTH" or event == "UNIT_MANA" or event == "UNIT_RAGE" or event == "UNIT_FOCUS" or event == "UNIT_ENERGY" then
+        if event == "UNIT_HEALTH" or event == "UNIT_MANA" or event == "UNIT_RAGE" or event == "UNIT_FOCUS" or event == "UNIT_ENERGY" then
             Focus:UNIT_HEALTH_OR_POWER(event, arg1)
             CallHooks("UNIT_HEALTH_OR_POWER", arg1)
             return
         end
 
-        if Focus[event] then
-            Focus[event](Focus, event, arg1, arg2, arg3) -- self arg?
+        if events[event] then
+            events[event](Focus, event, arg1, arg2, arg3)
             CallHooks(event, {arg1, arg2, arg3})
         end
     end)
@@ -494,6 +503,7 @@ do
         if not hookEvents[eventName] then
             hookEvents[eventName] = {}
         end
+
         table.insert(hookEvents[eventName], callback)
     end
 
@@ -504,57 +514,36 @@ do
         end
     end
 
-    do
-        local refresh, interval = 0, 0.3
-
-        Focus:SetScript("OnUpdate", function()
-            refresh = refresh - arg1
-            if refresh < 0 then
-                if not data.refreshed then return end
-
-                -- Call any hooks for OnUpdate script
-                local hooks = hookEvents["OnUpdate"]
-                if hooks then
-                    for i = 1, tgetn(hooks) do
-                        hooks[i]()
-                    end
-                end
-
-                refresh = interval
-            end
-        end)
+    function events:UNIT_HEALTH_OR_POWER(event, unit)
+        SetFocusHealth(unit)
     end
-end
 
-function Focus:UNIT_HEALTH_OR_POWER(event, unit)
-    SetFocusHealth(unit)
-end
+    function events:UNIT_AURA(event, unit, test)
+        SetFocusAuras(unit)
+    end
 
-function Focus:UNIT_AURA(event, unit, test)
-    SetFocusAuras(unit)
-end
+    function events:UNIT_LEVEL(event, unit)
+        data.unitLevel = UnitLevel(unit)
+    end
 
-function Focus:UNIT_LEVEL(event, unit)
-    data.unitLevel = UnitLevel(unit)
-end
+    function events:UNIT_CLASSIFICATION_CHANGED(event, unit)
+        data.unitClassification = UnitClassification(unit)
+    end
 
-function Focus:UNIT_CLASSIFICATION_CHANGED(event, unit)
-    data.unitClassification = UnitClassification(unit)
-end
+    function events:PLAYER_FLAGS_CHANGED(event, unit)
+        data.unitIsPartyLeader = UnitIsPartyLeader(unit)
+    end
 
-function Focus:PLAYER_FLAGS_CHANGED(event, unit)
-    data.unitIsPartyLeader = UnitIsPartyLeader(unit)
+    events:RegisterEvent("PLAYER_FLAGS_CHANGED")
+    events:RegisterEvent("RAID_TARGET_UPDATE")
+    events:RegisterEvent("UNIT_CLASSIFICATION_CHANGED")
+    events:RegisterEvent("UNIT_HEALTH")
+    events:RegisterEvent("UNIT_LEVEL")
+    events:RegisterEvent("UNIT_AURA")
+    events:RegisterEvent("UNIT_MANA")
+    events:RegisterEvent("UNIT_RAGE")
+    events:RegisterEvent("UNIT_FOCUS")
+    events:RegisterEvent("UNIT_ENERGY")
 end
-
-Focus:RegisterEvent("PLAYER_FLAGS_CHANGED")
-Focus:RegisterEvent("RAID_TARGET_UPDATE")
-Focus:RegisterEvent("UNIT_CLASSIFICATION_CHANGED")
-Focus:RegisterEvent("UNIT_HEALTH")
-Focus:RegisterEvent("UNIT_LEVEL")
-Focus:RegisterEvent("UNIT_AURA")
-Focus:RegisterEvent("UNIT_MANA")
-Focus:RegisterEvent("UNIT_RAGE")
-Focus:RegisterEvent("UNIT_FOCUS")
-Focus:RegisterEvent("UNIT_ENERGY")
 
 _G.FocusData = Focus
