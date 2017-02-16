@@ -1,32 +1,50 @@
 local _G = getfenv(0)
-if _G.FocusData then return end
-
-if not FSPELLCASTINGCOREgetDebuffs then
-    return print("spellcastingCore.lua is required for FocusFrame")
-end
+local tgetn = table.getn
+print = print or function(msg) DEFAULT_CHAT_FRAME:AddMessage(msg or "nil") end
 
 local Focus = CreateFrame("Frame")
-local data = {}
-local focusTargetName = nil
-local partyUnit = nil
-local CallHooks
+local focusTargetName
+local partyUnit
+local data
 
-local tgetn = table.getn
-
-if not print then
-    print = function(msg)
-        if DEFAULT_CHAT_FRAME then
-            DEFAULT_CHAT_FRAME:AddMessage(msg or "nil")
-        end
-    end
-end
-
---------------------------------------
--- Core
---------------------------------------
+-- Functions
 local NameplateScanner
 local PartyScanner
 local SetFocusAuras
+local CallHooks
+
+do
+    local userdata = {}
+
+    local events = {
+        health = "UNIT_HEALTH_OR_POWER",
+        maxHealth = "UNIT_HEALTH_OR_POWER",
+        power = "UNIT_HEALTH_OR_POWER",
+        maxPower = "UNIT_HEALTH_OR_POWER",
+        unitLevel = "UNIT_LEVEL",
+        unitClassification = "UNIT_CLASSIFICATION_CHANGED",
+        unitIsPartyLeader = "PLAYER_FLAGS_CHANGED",
+        raidIcon = "RAID_TARGET_UPDATE",
+        auras = "UNIT_AURA",
+    }
+
+    data = setmetatable({}, {
+        __index = function(self, key)
+            return userdata[key]
+        end,
+
+        __newindex = function(self, key, value)
+            rawset(userdata, key, value)
+
+            if events[key] then
+                -- TODO throttle + compare val
+                if not userdata.init then
+                    CallHooks(events[key])
+                end
+            end
+        end
+    })
+end
 
 local function SetFocusHealth(unit)
     data.health = UnitHealth(unit)
@@ -34,14 +52,12 @@ local function SetFocusHealth(unit)
     data.power = UnitMana(unit)
     data.maxPower = UnitManaMax(unit)
     data.powerType = UnitPowerType(unit)
-
-    CallHooks("UNIT_HEALTH_OR_POWER", unit)
 end
 
 -- Aura unit scanning
 do
-    local FSPELLCASTINGCOREClearBuffs = FSPELLCASTINGCOREClearBuffs
-    local FSPELLCASTINGCORENewBuff = FSPELLCASTINGCORENewBuff
+    local ClearBuffs = FSPELLCASTINGCOREClearBuffs
+    local NewBuff = FSPELLCASTINGCORENewBuff
 
     local scantip = _G["FocusDataScantip"]
     local scantipTextLeft1 = _G["FocusDataScantipTextLeft1"]
@@ -49,36 +65,28 @@ do
 
     local function DeleteExistingAuras()
         if data.health <= 0 then
-            FSPELLCASTINGCOREClearBuffs(focusTargetName)
-            return
+            return ClearBuffs(focusTargetName)
         end
 
-        if not data.unitIsEnemy then
-            -- Delete all buffs
-            FSPELLCASTINGCOREClearBuffs(focusTargetName)
-        else
-            -- Delete debuffs only
-            FSPELLCASTINGCOREClearBuffs(focusTargetName, true)
-        end
+        ClearBuffs(focusTargetName, data.unitIsEnemy)
     end
 
-    local function SyncBuff(unit, i, texture, stack, debuffType, isDebuff) --local
+    local function SyncBuff(unit, i, texture, stack, debuffType, isDebuff)
         scantip:ClearLines()
-        if debuff then
+        if isDebuff then
             scantip:SetUnitDebuff(unit, i)
         else
             scantip:SetUnitBuff(unit, i)
         end
 
         local name = scantipTextLeft1:GetText()
-        local magicType = scantipTextRight1:GetText()
+        local magicType = debuffType or scantipTextRight1:GetText()
         if not magicType or magicType == "" then
             magicType = "none"
         end
 
         if name then
-            FSPELLCASTINGCORENewBuff(focusTargetName, name, texture, isDebuff, magicType, stack)
-            CallHooks("UNIT_AURA")
+            NewBuff(focusTargetName, name, texture, isDebuff, magicType, stack)
         end
     end
 
@@ -97,22 +105,21 @@ do
                 if texture then SyncBuff(unit, i, texture) end
             end
         end
+
+        CallHooks("UNIT_AURA")
     end
 end
 
 local function SetFocusInfo(unit)
 	if Focus:UnitIsFocus(unit) then
-        SetFocusHealth(unit)
-        SetFocusAuras(unit)
-    
         data.playerCanAttack = UnitCanAttack("player", unit)
         data.raidIcon = GetRaidTargetIndex(unit)
         data.unit = unit
-        data.refreshed = GetTime()
 
         data.unitName = GetUnitName(unit)
-        data.unitIsEnemy = UnitIsEnemy(unit, "player") == 1 and true or false
-        data.unitIsPlayer = UnitIsPlayer(unit) == 1 and true or false
+        data.unitIsEnemy = UnitIsEnemy(unit, "player")
+        data.unitIsFriend = UnitIsFriend(unit, "player")
+        data.unitIsPlayer = UnitIsPlayer(unit)
         data.unitClassification = UnitClassification(unit)
         data.unitIsCivilian = UnitIsCivilian(unit)
         data.unitLevel = UnitLevel(unit)
@@ -122,8 +129,11 @@ local function SetFocusInfo(unit)
         data.unitIsTapped = UnitIsTapped(unit)
         data.unitIsTappedByPlayer = UnitIsTappedByPlayer(unit)
         data.unitReaction = UnitReaction(unit, "player")
-        data.unitIsPvPFreeForAll = UnitIsPVPFreeForAll(unit)
-        data.unitIsPvP = UnitIsPVP(unit)
+        data.unitIsPVPFreeForAll = UnitIsPVPFreeForAll(unit)
+        data.unitIsPVP = UnitIsPVP(unit)
+
+        SetFocusHealth(unit)
+        SetFocusAuras(unit)
 
         return true
 	end
@@ -133,7 +143,7 @@ end
 
 -- Nameplate scanning
 do
-    local WorldFrame = WorldFrame
+    local WorldFrame, ipairs = WorldFrame, ipairs
 
     local RaidIconCoordinate = {
         [0]		= { [0]	= 1,	[0.25]	= 5, },
@@ -153,6 +163,7 @@ do
 
     function NameplateScanner() -- local
         local frames = { WorldFrame:GetChildren() }
+        -- TODO nameplate cvar check?
 
         for _, plate in ipairs(frames) do
             if IsPlate(plate) and plate:IsVisible() then
@@ -164,11 +175,9 @@ do
                     if raidIcon and raidIcon:IsVisible() then
                         local ux, uy = raidIcon:GetTexCoord()
                         data.raidIcon = RaidIconCoordinate[ux][uy]
-                        CallHooks("RAID_TARGET_UPDATE")
                     end
 
                     data.health = health
-                    CallHooks("UNIT_HEALTH_OR_POWER")
                     return
                 end
             end
@@ -213,7 +222,7 @@ do
 		refresh = refresh - arg1
 		if refresh < 0 then
 			if focusTargetName then
-		
+
 				if focusTargetName ~= UnitName("target") and focusTargetName ~= UnitName("mouseover") then
 					if partyUnit and focusTargetName == UnitName(partyUnit) then
 						return SetFocusInfo(partyUnit)
@@ -221,6 +230,7 @@ do
 
 					NameplateScanner()
 					PartyScanner()
+                    data.unit = nil
 				else
                     if not SetFocusInfo("target") then
                         if not SetFocusInfo("mouseover") then
@@ -274,14 +284,11 @@ end
 -- If you need multiple arguments, use a table as arg
 function Focus:Trigger(func, arguments)
     if self:FocusExists(true) then
-        if type(func) == "function" then
+        --if type(func) == "function" then
             self:TargetFocus()
             func(type(arguments) == "table" and unpack(arguments) or arguments)
             self:TargetPrevious()
-            return
-        end
-
-        print("invalid arguments in TriggerOnFocus")
+        --end
     end
 end
 
@@ -292,7 +299,7 @@ end
 
 -- local min, max = Focus:GetPower()
 function Focus:GetPower()
-    return data.power or 0, data.powerMax or 100
+    return data.power or 0, data.maxPower or 100
 end
 
 -- Get statusbar color for power. I.e mana is blue.
@@ -332,7 +339,7 @@ function Focus:TargetFocus(name)
             TargetByName(_name, false)
 
             if UnitIsDead("target") == 1 then
-                TargetByName(_name, true)
+                TargetByName(name or focusTargetName, true)
             end
         else
             TargetByName(name or focusTargetName, true)
@@ -346,7 +353,6 @@ function Focus:TargetFocus(name)
     SetFocusInfo("target")
 end
 
--- Target previous target. (TargetFocus() needs to be ran first)
 function Focus:TargetPrevious()
     if self.oldTarget and self.needRetarget then
         TargetLastTarget()
@@ -372,7 +378,9 @@ function Focus:SetFocus(name)
     focusTargetName = name
     if focusTargetName then
         self:TargetFocus()
+        data.init = true
         CallHooks("FOCUS_SET", "target")
+        data.init = false
         self:TargetPrevious()
     else
         self:ClearFocus()
@@ -390,16 +398,6 @@ end
 -- Check if focus is dead.
 function Focus:IsDead()
     return data.health <= 0
-end
-
--- Check if focus is enemy.
-function Focus:IsEnemy()
-    return data.unitIsEnemy
-end
-
--- Check if focus is friendly.
-function Focus:IsFriendly()
-    return not data.unitIsEnemy
 end
 
 -- Get UnitReactionColor for focus.
@@ -432,20 +430,13 @@ end
 -- can be retrieved here
 -- If no key is specified, returns all the data.
 function Focus:GetData(key)
-    if key then
-        return data[key]
-    end
-
-    return data or {}
+    return key and data[key] or data or {}
 end
 
 -- Insert/replace any focus data
 function Focus:SetData(key, value)
     if key and value then
         data[key] = value
-        if strfind(strlower(key), "health") then
-            CallHooks("UNIT_HEALTH_OR_POWER")
-        end
     end
 end
 
@@ -488,14 +479,11 @@ do
         end
 
         if event == "UNIT_HEALTH" or event == "UNIT_MANA" or event == "UNIT_RAGE" or event == "UNIT_FOCUS" or event == "UNIT_ENERGY" then
-            Focus:UNIT_HEALTH_OR_POWER(event, arg1)
-            CallHooks("UNIT_HEALTH_OR_POWER", arg1)
-            return
+            return events:UNIT_HEALTH_OR_POWER(event, arg1)
         end
 
         if events[event] then
             events[event](Focus, event, arg1, arg2, arg3)
-            CallHooks(event, {arg1, arg2, arg3})
         end
     end)
 

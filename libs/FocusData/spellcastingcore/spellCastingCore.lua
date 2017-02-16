@@ -23,6 +23,8 @@ local SPELLINFO_CHANNELED_SPELLCASTS_TO_TRACK, SPELLINFO_INSTANT_SPELLCASTS_TO_T
 local SPELLINFO_CHANNELED_HEALS_SPELLCASTS_TO_TRACK, SPELLINFO_SPELLCASTS_TO_TRACK = SPELLINFO_CHANNELED_HEALS_SPELLCASTS_TO_TRACK, SPELLINFO_SPELLCASTS_TO_TRACK
 local SPELLINFO_TRADECASTS_TO_TRACK = SPELLINFO_TRADECASTS_TO_TRACK
 
+local Focus
+
 Cast.create = function(caster, spell, info, timeMod, time, inv)
 	local acnt = {}
 	setmetatable(acnt, spellCast)
@@ -306,6 +308,8 @@ local function newbuff(tar, b, s, castOn, texture, debuff, magictype, debuffStac
 
 		local n = buff.create(tar, b, s, FSPELLINFO_BUFFS_TO_TRACK[b], drf, time, texture, debuff, magictype, debuffStack)
 		tinsert(buffList, n)
+		Focus = Focus or getglobal("FocusData")
+		Focus:SetData("auras", true)
 	--end
 end
 
@@ -334,8 +338,9 @@ local function processQueuedBuff(tar, b)
 		if v.target == tar and v.buffName == b then
 			local n = buff.create(v.target, v.buffName, 1, v.buffData, 1, time, v.icon, v.btype, v.type, v.stacks)
 			tinsert(buffList, n)
-			
 			tremove(buffQueueList, k)
+			Focus = Focus or getglobal("FocusData")
+			Focus:SetData("auras", true)
 			return 
 		end
 	end
@@ -380,6 +385,9 @@ local forceHideTableItem = function(tab, caster, spell, debuffsOnly)
 
 		i = i + 1
 	end
+
+	Focus = Focus or getglobal("FocusData")
+	Focus:SetData("auras", true)
 end
 
 local CastCraftPerform = function()
@@ -751,7 +759,6 @@ local channelHeal = function()
 	return fhot or fphot or fshot
 end
 
-local Focus
 local playerDeath = function()
 	local pdie 		= 'You die.'					local fpdie		= strfind(arg1, pdie)
 	local dies		= '(.+) dies.'					local fdies		= strfind(arg1, dies)
@@ -838,6 +845,42 @@ end
 function FSPELLCASTINGCOREClearBuffs(caster, debuffsOnly)
 	forceHideTableItem(buffList, caster, nil, debuffsOnly)
 end
+
+local UnitIsFriend, UnitName, UnitBuff = UnitIsFriend, UnitName, UnitBuff
+
+--[[function FocusFrame_SyncBuffData(unit)
+	local target = UnitName(unit)
+	if target == CURR_FOCUS_TARGET then
+		local buffs = {}
+		local index = 1
+		for k, v in ipairs(buffList) do
+			if v.caster == target then
+				buffs[v.icon] = index
+			end
+			index = index + 1
+		end
+
+		if UnitIsFriend(unit, "player") == 1 then
+			for i = 1, 5 do
+				local buff = UnitBuff(unit, i) or ""
+
+				if not buffs[buff] then
+					tremove(buffList, buffs[buff])
+					--print("remove " .. buff)
+				end
+			end
+		end
+
+		for i = 1, 16 do
+			local buff = UnitDebuff(unit, i)
+			if not buff then break end
+
+			if not buffs[buff] then
+				tremove(buffList, buffs[buff])
+			end
+		end
+	end
+end]]
 
 FSPELLCASTINGCOREgetCast = function(caster)
 	if caster then

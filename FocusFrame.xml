@@ -2,14 +2,6 @@
 ..\FrameXML\UI.xsd">
 	<Script file="FocusFrame.lua"/>
 
-	<GameTooltip name="FocusScantip" frameStrata="TOOLTIP" hidden="true" inherits="GameTooltipTemplate">
-		<Scripts>
-			<OnLoad>
-				this:SetOwner(UIParent, "ANCHOR_NONE");
-			</OnLoad>
-		</Scripts>
-	</GameTooltip>
-
 	<!-- Modified version of TargetFrame.xml
 		https://github.com/tekkub/wow-ui-source/blob/1.12.1/FrameXML/TargetFrame.xml
 	-->
