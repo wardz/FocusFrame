@@ -42,11 +42,11 @@ do
             rawset(userdata, key, value)
 
             if events[key] then
-                --local last = userdata.eventsThrottle[event] or 0
+                --local last = userdata.eventsThrottle[key] or 0
                 --if (GetTime() - last) > 0.2 then
                     if not oldValue or oldValue ~= value then
                         CallHooks(events[key])
-                        --userdata.eventsThrottle[event] = GetTime()
+                        --userdata.eventsThrottle[key] = GetTime()
                     end
                 --end
             end
@@ -335,6 +335,7 @@ do
 
     -- Get table containing cast data for focus.
     -- Should be ran in an OnUpdate script.
+    -- @see Cast.create()
     -- @return {Object,Number|Nil}
     function Focus:GetCast()
         local cast = FSPELLCASTINGCOREgetCast(focusTargetName)
@@ -579,6 +580,10 @@ do
         end
     end
 
+    -- Post-hook a focus event.
+    -- @param {String} eventName
+    -- @param {Function} callback
+    -- @return {Number} event ID (when UnhookEvent is needed)
     function Focus:HookEvent(eventName, callback)
         if type(eventName) ~= "string" or type(callback) ~= "function" then
             return error('Usage: HookEvent("event", callbackFunc)')
@@ -587,16 +592,21 @@ do
         if not hookEvents[eventName] then
             hookEvents[eventName] = {}
         end
-        table.insert(hookEvents[eventName], callback)
+
+        local i = tgetn(hookEvents[eventName])
+        hookEvents[eventName][i+1] = callback
+        return i+1
     end
 
-    function Focus:UnhookEvent(eventName, callback)
-        if type(eventName) ~= "string" or type(callback) ~= "function" then
-            return error('Usage: UnhookEvent("event", callbackFunc)')
+    -- @param {String} eventName
+    -- @param {Number} eventID
+    function Focus:UnhookEvent(eventName, eventID)
+        if type(eventName) ~= "string" or type(eventID) ~= "number" then
+            return error('Usage: UnhookEvent("event", id)')
         end
 
-        if hookEvents[eventName] then
-            -- TODO
+        if hookEvents[eventName] and hookEvents[eventName][eventID] then
+            table.remove(hookEvents[eventName], eventID)
         end
     end
 
