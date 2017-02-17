@@ -19,10 +19,6 @@ local playerName = UnitName'player'
 local tinsert, tremove, strfind, gsub, ipairs, pairs, GetTime, GetNetStats, setmetatable, tgetn =
 	  table.insert, table.remove, string.find, string.gsub, ipairs, pairs, GetTime, GetNetStats, setmetatable, table.getn
 
-local SPELLINFO_CHANNELED_SPELLCASTS_TO_TRACK, SPELLINFO_INSTANT_SPELLCASTS_TO_TRACK = SPELLINFO_CHANNELED_SPELLCASTS_TO_TRACK, SPELLINFO_INSTANT_SPELLCASTS_TO_TRACK
-local SPELLINFO_CHANNELED_HEALS_SPELLCASTS_TO_TRACK, SPELLINFO_SPELLCASTS_TO_TRACK = SPELLINFO_CHANNELED_HEALS_SPELLCASTS_TO_TRACK, SPELLINFO_SPELLCASTS_TO_TRACK
-local SPELLINFO_TRADECASTS_TO_TRACK = SPELLINFO_TRADECASTS_TO_TRACK
-
 local Focus
 
 Cast.create = function(caster, spell, info, timeMod, time, inv)
@@ -67,7 +63,7 @@ InstaBuff.create = function(c, b, list, time)
 end
 
 buff.create = function(tar, t, s, buffType, factor, time, texture, debuff, magictype, debuffStack)
-	local acnt     = {}
+	local acnt = {}
 	buffType = buffType or {}
 	if magictype --[[and not buffType.type]] then
 		buffType.type = strlower(magictype)
@@ -308,8 +304,8 @@ local function newbuff(tar, b, s, castOn, texture, debuff, magictype, debuffStac
 
 		local n = buff.create(tar, b, s, FSPELLINFO_BUFFS_TO_TRACK[b], drf, time, texture, debuff, magictype, debuffStack)
 		tinsert(buffList, n)
-		Focus = Focus or getglobal("FocusData")
-		Focus:SetData("auras", true)
+
+		Focus:SetData("auraUpdate", true)
 	--end
 end
 
@@ -339,12 +335,12 @@ local function processQueuedBuff(tar, b)
 			local n = buff.create(v.target, v.buffName, 1, v.buffData, 1, time, v.icon, v.btype, v.type, v.stacks)
 			tinsert(buffList, n)
 			tremove(buffQueueList, k)
-			Focus = Focus or getglobal("FocusData")
-			Focus:SetData("auras", true)
+			Focus:SetData("auraUpdate", true)
 			return 
 		end
 	end
 end
+
 -----handleCast subfunctions-----------------------------------------------
 ---------------------------------------------------------------------------
 local forceHideTableItem = function(tab, caster, spell, debuffsOnly)
@@ -386,8 +382,7 @@ local forceHideTableItem = function(tab, caster, spell, debuffsOnly)
 		i = i + 1
 	end
 
-	Focus = Focus or getglobal("FocusData")
-	Focus:SetData("auras", true)
+	Focus:SetData("auraUpdate", true)
 end
 
 local CastCraftPerform = function()
@@ -776,11 +771,13 @@ local playerDeath = function()
 			forceHideTableItem(buffList, c, nil)
 		end
 
-		Focus = Focus or getglobal("FocusData")
-		Focus:SetData("health", 0)
-		Focus:SetData("maxHealth", 0)
-		Focus:SetData("power", 0)
-		Focus:SetData("maxPower", 0)
+		if Focus:UnitIsFocus(c, true) then
+			Focus:SetData("health", 0)
+			Focus:SetData("maxHealth", 0)
+			Focus:SetData("power", 0)
+			Focus:SetData("maxPower", 0)
+			Focus:SetData("auraUpdate", true)
+		end
 	end
 	
 	return fpdie or fdies or fslain or fpslain
@@ -843,10 +840,9 @@ function FSPELLCASTINGCORENewBuff(tar, b, texture, debuff, magictype, debuffStac
 end
 
 function FSPELLCASTINGCOREClearBuffs(caster, debuffsOnly)
+	-- TODO merge with _SyncBuffData
 	forceHideTableItem(buffList, caster, nil, debuffsOnly)
 end
-
-local UnitIsFriend, UnitName, UnitBuff = UnitIsFriend, UnitName, UnitBuff
 
 --[[function FocusFrame_SyncBuffData(unit)
 	local target = UnitName(unit)
@@ -912,7 +908,7 @@ end
 
 FSPELLCASTINGCOREgetBuffs = function(caster)
 	local list = {
-		debuffs = {}, -- keep debuffs here to avoid breaking any addons using old code
+		debuffs = {},
 		buffs = {}
 	}
 
@@ -935,26 +931,31 @@ end
 
 do
 	local refresh, interval = 0, 0.1
-	local events = CreateFrame("Frame")
-	events:RegisterEvent("PLAYER_ENTERING_WORLD")
-	events:RegisterEvent("PLAYER_ALIVE") -- Releases from death to a graveyard
-	events:SetScript("OnEvent", function()
-		tableMaintenance(true)
-	end)
 
-	events:SetScript("OnUpdate", function()
+	local function OnUpdate()
 		refresh = refresh - arg1
 		if refresh < 0 then
 			tableMaintenance(false)
 			refresh = interval
 		end
-	end)
+	end
 
-	-- Use seperate event frames so we can call combatlogParser() directly here for better performance
-	-- (avoids calling extra func)
+
+	local events = CreateFrame("Frame")
 	local f = CreateFrame("Frame")
-	f:SetScript("OnEvent", combatlogParser)
-	f:Hide()
+	events:RegisterEvent("VARIABLES_LOADED")
+	events:SetScript("OnEvent", function()
+		if event == "VARIABLES_LOADED" then
+			Focus = getglobal("FocusData")
+			events:UnregisterEvent("VARIABLES_LOADED")
+			events:RegisterEvent("PLAYER_ENTERING_WORLD")
+			events:RegisterEvent("PLAYER_ALIVE") -- Releases from death to a graveyard
+			events:SetScript("OnUpdate", OnUpdate)
+			f:SetScript("OnEvent", combatlogParser)
+		else
+			tableMaintenance(true)
+		end
+	end)
 
 	f:RegisterEvent'CHAT_MSG_MONSTER_EMOTE'--[[
 	f:RegisterEvent'CHAT_MSG_COMBAT_SELF_HITS'
@@ -998,4 +999,5 @@ do
 	f:RegisterEvent'CHAT_MSG_SPELL_DAMAGESHIELDS_ON_OTHERS'
 	f:RegisterEvent'CHAT_MSG_COMBAT_HOSTILE_DEATH'
 	f:RegisterEvent'CHAT_MSG_COMBAT_FRIENDLY_DEATH'
+	f:Hide()
 end

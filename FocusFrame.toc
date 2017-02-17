@@ -13,5 +13,4 @@ libs\FocusData\FocusData.xml
 libs\FocusData\FocusData.lua
 
 FocusFrame.xml
-FocusCastbar.lua
 FocusFrame.lua

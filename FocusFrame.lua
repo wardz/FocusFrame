@@ -14,6 +14,7 @@ function FocusFrame_Refresh(event, unit)
 	end
 
 	FocusFrame:SetScale(FocusFrameDB.scale)
+	FocusFrame:SetScript("OnUpdate", FocusFrame_CastingBarUpdate)
 	FocusFrame:Show()
 end
 
@@ -40,6 +41,7 @@ end
 
 do
 	local function PositionBuffs(numDebuffs, numBuffs)
+		local debuffWrap = 6
 		if Focus:GetData("unitIsFriend") == 1 then
 			FocusFrameBuff1:SetPoint("TOPLEFT", "FocusFrame", "BOTTOMLEFT", 5, 32)
 			FocusFrameDebuff1:SetPoint("TOPLEFT", "FocusFrameBuff1", "BOTTOMLEFT", 0, -2)
@@ -49,8 +51,6 @@ do
 		end
 
 		local debuffSize, debuffFrameSize
-		local debuffWrap = 6
-
 		if numDebuffs >= debuffWrap then
 			debuffSize = 17
 			debuffFrameSize = 19
@@ -176,6 +176,7 @@ function FocusFrame_UpdateRaidTargetIcon()
 end
 
 function FocusFrame_OnShow()
+	-- Ran on FOCUS_SET. "target" = focus here
 	if UnitIsEnemy("target", "player") then
 		PlaySound("igCreatureAggroSelect")
 	elseif UnitIsFriend("player", "target") then
@@ -186,6 +187,11 @@ function FocusFrame_OnShow()
 end
 
 function FocusFrame_OnHide()
+	if FocusFrame:IsVisible() then
+		FocusFrame:SetScript("OnUpdate", nil)
+		return FocusFrame:Hide()
+	end
+
 	PlaySound("INTERFACESOUND_LOSTTARGETUNIT")
 end
 
@@ -219,7 +225,6 @@ end
 function FocusFrame_CheckFaction()
 	if Focus:GetData("unitPlayerControlled") == 1 then
 		local r, g, b = Focus:GetReactionColors()
-
 		FocusFrameNameBackground:SetVertexColor(r, g, b)
 		FocusPortrait:SetVertexColor(1.0, 1.0, 1.0)
 	elseif Focus:GetData("unitIsTapped") == 1 and Focus:GetData("unitIsTappedByPlayer") ~= 1 then
@@ -256,11 +261,11 @@ function FocusFrame_CheckClassification()
 	local classification = Focus:GetData("unitClassification")
 
 	if classification == "worldboss" or classification == "rareelite" or classification == "elite" then
-		FocusFrameTexture:SetTexture("Interface\\TargetingFrame\\UI-TargetingFrame-Elite");
+		FocusFrameTexture:SetTexture("Interface\\TargetingFrame\\UI-TargetingFrame-Elite")
 	elseif classification == "rare" then
-		FocusFrameTexture:SetTexture("Interface\\TargetingFrame\\UI-TargetingFrame-Rare");
+		FocusFrameTexture:SetTexture("Interface\\TargetingFrame\\UI-TargetingFrame-Rare")
 	else
-		FocusFrameTexture:SetTexture("Interface\\TargetingFrame\\UI-TargetingFrame");
+		FocusFrameTexture:SetTexture("Interface\\TargetingFrame\\UI-TargetingFrame")
 	end
 end
 
@@ -280,10 +285,75 @@ function FocusFrame_OnClick(button)
 	end
 end
 
+function FocusFrame_CastingBarUpdate()
+	local cast, value, maxValue, sparkPosition, timer = Focus:GetCast()
+
+	if cast then
+		local castbar = FocusFrame.cast
+		castbar:SetMinMaxValues(0, maxValue)
+		castbar:SetValue(value)
+
+		castbar.spark:SetPoint("CENTER", castbar, "LEFT", sparkPosition * castbar:GetWidth(), 0)
+		castbar.text:SetText(cast.spell)
+		castbar.timer:SetText(timer .. "s")
+		castbar.icon:SetTexture(cast.icon)
+		castbar:SetAlpha(FocusFrameCastingBar:GetAlpha())
+		castbar:Show()
+	else
+		FocusFrame.cast:Hide()
+	end
+end
+
+-- Create castbar
+-- im too lazy to add this to xml..
+FocusFrame.cast = CreateFrame("StatusBar", "FocusFrame_Castbar", FocusFrame)
+FocusFrame.cast:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar")
+FocusFrame.cast:SetStatusBarColor(0.4, 1, 0)
+FocusFrame.cast:SetHeight(13)
+FocusFrame.cast:SetWidth(151)
+FocusFrame.cast:SetPoint("BOTTOMLEFT", FocusFrame, 15, -35)
+FocusFrame.cast:SetValue(0)
+FocusFrame.cast:Hide()
+
+FocusFrame.cast.spark = FocusFrame.cast:CreateTexture(nil, "OVERLAY")
+FocusFrame.cast.spark:SetTexture([[Interface\CastingBar\UI-CastingBar-Spark]])
+FocusFrame.cast.spark:SetHeight(26)	
+FocusFrame.cast.spark:SetWidth(26)
+FocusFrame.cast.spark:SetBlendMode("ADD")
+
+FocusFrame.cast.border = FocusFrame.cast:CreateTexture(nil, "OVERLAY")
+FocusFrame.cast.border:SetPoint("TOPLEFT", -23, 20)
+FocusFrame.cast.border:SetPoint("TOPRIGHT", 23, 20)
+--FocusFrame.cast.border:SetWidth(150)
+FocusFrame.cast.border:SetHeight(50)
+FocusFrame.cast.border:SetTexture("Interface\\AddOns\\FocusFrame\\libs\\FocusData\\UI-CastingBar-Border-Small.blp")
+
+FocusFrame.cast.text = FocusFrame.cast:CreateFontString(nil, "OVERLAY")
+FocusFrame.cast.text:SetTextColor(1, 1, 1)
+FocusFrame.cast.text:SetFont(STANDARD_TEXT_FONT, 10)
+FocusFrame.cast.text:SetShadowColor(0, 0, 0)
+FocusFrame.cast.text:SetPoint("CENTER", FocusFrame.cast, 0, 2)
+FocusFrame.cast.text:SetText("Drain Life")
+
+FocusFrame.cast.timer = FocusFrame.cast:CreateFontString(nil, "OVERLAY")
+FocusFrame.cast.timer:SetTextColor(1, 1, 1)
+FocusFrame.cast.timer:SetFont(STANDARD_TEXT_FONT, 9)
+FocusFrame.cast.timer:SetShadowColor(0, 0, 0)
+FocusFrame.cast.timer:SetPoint("RIGHT", FocusFrame.cast, 28, 2)
+FocusFrame.cast.timer:SetText("2.0s")
+
+FocusFrame.cast.icon = FocusFrame.cast:CreateTexture(nil, "OVERLAY", nil, 7)
+FocusFrame.cast.icon:SetWidth(20)
+FocusFrame.cast.icon:SetHeight(20)
+FocusFrame.cast.icon:SetPoint("LEFT", FocusFrame.cast, -25, 0)
+FocusFrame.cast.icon:SetTexture("Interface\\Icons\\Spell_shadow_lifedrain02")
+
+-- [[ Events ]]
+--Focus:HookEvent("FOCUS_CASTING", FocusFrame_CastingBar)
 Focus:HookEvent("FOCUS_SET", FocusFrame_Refresh)
-Focus:HookEvent("FOCUS_CLEAR", function() FocusFrame:Hide() end)
-Focus:HookEvent("UNIT_HEALTH_OR_POWER", FocusFrame_HealthUpdate)
+Focus:HookEvent("FOCUS_CLEAR", FocusFrame_OnHide)
 Focus:HookEvent("RAID_TARGET_UPDATE", FocusFrame_UpdateRaidTargetIcon)
+Focus:HookEvent("UNIT_HEALTH_OR_POWER", FocusFrame_HealthUpdate)
 Focus:HookEvent("UNIT_AURA", FocusDebuffButton_Update)
 Focus:HookEvent("UNIT_LEVEL", FocusFrame_CheckLevel)
 Focus:HookEvent("UNIT_FACTION", FocusFrame_CheckFaction)
@@ -344,9 +414,9 @@ do
 	end
 
 	SlashCmdList.FOCUSOPTIONS = function(msg)
-		local space = string.find(msg or "", " ")
-		local cmd = string.sub(msg, 1, space and (space - 1))
-		local value = tonumber(string.sub(msg, space or -1))
+		local space = strfind(msg or "", " ")
+		local cmd = strsub(msg, 1, space and (space-1))
+		local value = tonumber(strsub(msg, space or -1))
 		local print = function(x) DEFAULT_CHAT_FRAME:AddMessage(x) end
 		
 		if cmd == "scale" and value then

@@ -1,11 +1,10 @@
 <Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/
 ..\FrameXML\UI.xsd">
-	<Script file="FocusFrame.lua"/>
 
 	<!-- Modified version of TargetFrame.xml
 		https://github.com/tekkub/wow-ui-source/blob/1.12.1/FrameXML/TargetFrame.xml
 	-->
-	<Button name="FocusDebuffButtonTemplate" virtual="true">
+	<Button name="FocusDebuffButtonTemplate" virtual="true" hidden="true">
 		<Size>
 			<AbsDimension x="17" y="17"/>
 		</Size>
@@ -51,7 +50,7 @@
 		</Layers>
 	</Button>
 
-	<Button name="FocusFrame" frameStrata="LOW" enableMouse="true" toplevel="true" movable="true" parent="UIParent">
+	<Button name="FocusFrame" frameStrata="LOW" enableMouse="true" toplevel="true" movable="true" parent="UIParent" hidden="true">
 		<Size>
 			<AbsDimension x="232" y="100"/>
 		</Size>
@@ -232,6 +231,7 @@
 				</Anchors>
 
 				<BarTexture file="Interface\TargetingFrame\UI-StatusBar"/>
+				<BarColor r="0" g="1" b="00"/>
 			</StatusBar>
 
 			<StatusBar name="FocusFrameManaBar" inherits="TextStatusBar" frameLevel="1">
@@ -444,8 +444,6 @@
 		<Scripts>
 			<OnLoad>
 				FocusFrame:RegisterForDrag("LeftButton");
-				FocusFrameHealthBar:SetStatusBarColor(0, 1, 0, 1);
-				FocusFrame:Hide();
 			</OnLoad>
 			<OnShow>
 				FocusFrame_OnShow();
