@@ -73,7 +73,7 @@ buff.create = function(tar, t, s, buffType, factor, time, texture, debuff, magic
 	acnt.target    	= tar
 	acnt.caster    	= tar	-- facilitate entry removal
 	acnt.spell      = t
-	acnt.stacks		= debuffStack or s
+	acnt.stacks		= debuffStack or s or 0
 	acnt.icon      	= texture and texture or buffType['icon']
 	acnt.timeStart 	= time
 	--acnt.timeEnd   	= time + (buffType['duration'] or 0) * factor
@@ -305,7 +305,7 @@ local function newbuff(tar, b, s, castOn, texture, debuff, magictype, debuffStac
 		local n = buff.create(tar, b, s, FSPELLINFO_BUFFS_TO_TRACK[b], drf, time, texture, debuff, magictype, debuffStack)
 		tinsert(buffList, n)
 
-		Focus:SetData("auraUpdate", true)
+		Focus:SetData("auraUpdate", 1)
 	--end
 end
 
@@ -335,7 +335,7 @@ local function processQueuedBuff(tar, b)
 			local n = buff.create(v.target, v.buffName, 1, v.buffData, 1, time, v.icon, v.btype, v.type, v.stacks)
 			tinsert(buffList, n)
 			tremove(buffQueueList, k)
-			Focus:SetData("auraUpdate", true)
+			Focus:SetData("auraUpdate", 1)
 			return 
 		end
 	end
@@ -382,7 +382,7 @@ local forceHideTableItem = function(tab, caster, spell, debuffsOnly)
 		i = i + 1
 	end
 
-	Focus:SetData("auraUpdate", true)
+	Focus:SetData("auraUpdate", 1)
 end
 
 local CastCraftPerform = function()
@@ -776,7 +776,7 @@ local playerDeath = function()
 			Focus:SetData("maxHealth", 0)
 			Focus:SetData("power", 0)
 			Focus:SetData("maxPower", 0)
-			Focus:SetData("auraUpdate", true)
+			Focus:SetData("auraUpdate", 1)
 		end
 	end
 	

@@ -168,7 +168,7 @@ function FocusFrame_UpdateRaidTargetIcon()
 	local index = Focus:GetData("raidIcon")
 
 	if index then
-		--SetRaidTargetIconTexture(FocusRaidTargetIcon, index)
+		SetRaidTargetIconTexture(FocusRaidTargetIcon, index)
 		FocusRaidTargetIcon:Show()
 	else
 		FocusRaidTargetIcon:Hide()
@@ -383,7 +383,11 @@ do
 	end
 
 	SlashCmdList.FCAST = function(spell)
-		Focus:Trigger(CastSpellByName, spell)
+		if strlower(spell) == "petattack" then
+			Focus:Trigger(PetAttack)
+		else
+			Focus:Trigger(CastSpellByName, spell)
+		end
 	end
 
 	SlashCmdList.FITEM = function(msg)

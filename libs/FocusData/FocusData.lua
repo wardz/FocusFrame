@@ -15,7 +15,7 @@ local SetFocusAuras
 local CallHooks
 
 do
-    local userdata = {}
+    local userdata = { eventsThrottle = {} }
 
     local events = {
         -- Changing these values in data will trigger the listed event.
@@ -28,7 +28,8 @@ do
         unitIsPartyLeader = "PLAYER_FLAGS_CHANGED",
         raidIcon = "RAID_TARGET_UPDATE",
         auraUpdate = "UNIT_AURA",
-        --unit = "FOCUS_TARGETED",
+        --unit = "FOCUS_MATCH_UNIT",
+        --unitName = "FOCUS_CHANGED,
         --cast = "FOCUS_CASTING",
     }
 
@@ -42,18 +43,17 @@ do
             rawset(userdata, key, value)
 
             if events[key] then
-                --local last = userdata.eventsThrottle[key] or 0
-                --if (GetTime() - last) > 0.2 then
-                    if not oldValue or oldValue ~= value then
-                        CallHooks(events[key])
-                        --userdata.eventsThrottle[key] = GetTime()
-                    end
-                --end
+                if key ~= "auraUpdate" then
+                    if oldValue and oldValue == value then return end
+                    --local last = userdata.eventsThrottle[key] or 0
+                    --if (GetTime() - last) < 0.1 then return end
+                end
+
+                CallHooks(events[key])
+                --userdata.eventsThrottle[key] = GetTime()
             end
         end
     })
-
-    data.eventsThrottle = {}
 end
 
 -- Aura unit scanning
@@ -101,11 +101,11 @@ do
             if texture then
                 SyncBuff(unit, i, texture, stack, debuffType, true)
             end
+        end
 
-            if i <= 5 then
-                local texture = UnitBuff(unit, i)
-                if texture then SyncBuff(unit, i, texture) end
-            end
+        for i = 1, 5 do
+            local texture = UnitBuff(unit, i)
+            if texture then SyncBuff(unit, i, texture) end
         end
 
         CallHooks("UNIT_AURA")
@@ -186,6 +186,7 @@ local function SetFocusInfo(unit)
         data.unitReaction = UnitReaction(unit, "player")
         data.unitIsPVPFreeForAll = UnitIsPVPFreeForAll(unit)
         data.unitIsPVP = UnitIsPVP(unit)
+        data.unitIsConnected = UnitIsConnected(unit)
         -- More data can be sat using Focus:SetData() in FOCUS_SET event
 
         SetFocusHealth(unit)
@@ -283,6 +284,7 @@ function Focus:Trigger(func, arguments, err)
         end
     end
 end
+--/run getglobal("FocusData"):Trigger(function(a,b)print(a)print(b)end, {"test","1"})
 
 -- local min, max = Focus:GetHealth()
 -- @return {Number}
@@ -479,7 +481,11 @@ end
 -- @param {String} [key]
 -- @return {*}
 function Focus:GetData(key)
-    return key and data[key] or data or {}
+    if key then
+        return data[key] or nil
+    else
+        return data or {}
+    end
 end
 
 -- Insert/replace any focus data
