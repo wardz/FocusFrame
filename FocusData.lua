@@ -10,6 +10,7 @@ local UnitName, UnitExists, UnitIsFriend, UnitIsPlayer, UnitIsConnected =
 local UnitHealth, UnitHealthMax, UnitMana, UnitManaMax, UnitPowerType =
 	  UnitHealth, UnitHealthMax, UnitMana, UnitManaMax, UnitPowerType
 
+-- Currently rewriting this whole thing into an API. Expect a lot of changes soon.
 function FocusFrame_SetFocusInfo(unit)
 	if CURR_FOCUS_TARGET and UnitExists(unit) then
 		local name = UnitName(unit)

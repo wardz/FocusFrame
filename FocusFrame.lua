@@ -333,7 +333,7 @@ do
 	end
 
 	local function PositionBuffs(unit, enemy, numDebuffs, numBuffs)
-		local debuffFrame, debuffWrap, debuffSize, debuffFrameSize;
+		local debuffFrame, debuffWrap, debuffSize, debuffFrameSize, button;
 		local targetofTarget = false --FocusTargetofTargetFrame:IsShown();
 
 		if enemy == "1" or unit and UnitIsFriend("player", unit) then
