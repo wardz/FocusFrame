@@ -5,7 +5,7 @@ Provides [focus targeting](http://wowwiki.wikia.com/wiki/Focus_target) & frame s
 
 The focus frame works for both friendly and enemy players.
 
-![alt](http://i.imgur.com/Qziq2wX.jpg)
+![alt](http://i.imgur.com/OEcWwgU.jpg)
 
 ## Chat commands
 

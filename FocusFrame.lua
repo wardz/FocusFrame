@@ -414,12 +414,12 @@ do
 		else
 			if enemy == "2" or unit and UnitIsFriend("player", unit) ~= 1 then
 				if numBuffs >= 1 then
-					FocusFrame.cast:SetPoint("BOTTOMLEFT", FocusFrame, 15, -100)
+					FocusFrame.cast:SetPoint("BOTTOMLEFT", FocusFrame, 15, -70)
 					return
 				end
 			end
 			
-			local y = amount < 7 and -35 or amount < 13 and -70 or amount < 19 and -100
+			local y = amount > 7 and -70 or -35
 			FocusFrame.cast:SetPoint("BOTTOMLEFT", FocusFrame, 15, y)
 		end
 	end
