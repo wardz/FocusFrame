@@ -1,9 +1,7 @@
 <Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/
 ..\FrameXML\UI.xsd">
 
-	<!-- Modified version of TargetFrame.xml
-		https://github.com/tekkub/wow-ui-source/blob/1.12.1/FrameXML/TargetFrame.xml
-	-->
+	<!-- https://github.com/tekkub/wow-ui-source/blob/1.12.1/FrameXML/TargetFrame.xml -->
 	<Button name="FocusDebuffButtonTemplate" virtual="true" hidden="true">
 		<Size>
 			<AbsDimension x="17" y="17"/>

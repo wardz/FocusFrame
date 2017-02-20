@@ -28,7 +28,7 @@ do
         unitIsPartyLeader = "PLAYER_FLAGS_CHANGED",
         raidIcon = "RAID_TARGET_UPDATE",
         auraUpdate = "UNIT_AURA",
-        --unit = "FOCUS_MATCH_UNIT",
+        unit = "FOCUS_UNITID_EXISTS",
         --unitName = "FOCUS_CHANGED,
         --cast = "FOCUS_CASTING",
     }
@@ -47,6 +47,7 @@ do
                     if oldValue and oldValue == value then return end
                     --local last = userdata.eventsThrottle[key] or 0
                     --if (GetTime() - last) < 0.1 then return end
+                    if key == "unit" and not value then return end
                 end
 
                 CallHooks(events[key])
@@ -271,13 +272,13 @@ end
 -- Focus:Trigger(CastSpellByName, "Fireball")
 -- Focus:Trigger(DropItemOnUnit) -- defaults to "target" when no second arg.
 -- @param {Function} func
--- @param {Object|*} [arguments] - Use table here if u need more than 1 arg.
-function Focus:Trigger(func, arguments, err)
+-- @param {*} [arg1], [arg2], [arg3], [arg4]
+function Focus:Trigger(func, arg1, arg2, arg3, arg4) -- no vararg in this lua version so this'll have to do for now
     if self:FocusExists(true) then
-        if not err and type(func) == "function" then
+        if type(func) == "function" then
             arguments = arguments or "target"
             self:TargetFocus()
-            func(type(arguments) == "table" and unpack(arguments) or arguments)
+            func(arg1, arg2, arg3, arg4)
             self:TargetPrevious()
         else
             error("Usage: Trigger(function, {arg1,arg2,..}")
@@ -523,13 +524,13 @@ do
     local events = CreateFrame("frame")
     local refresh = 0
 
-    function CallHooks(event, arguments, recursive) --local
+    function CallHooks(event, arg1, arg2, arg3, arg4, recursive) --local
         data.init = event == "FOCUS_SET"
         --if not data.init then
             local hooks = hookEvents[event]
             if hooks then
                 for i = 1, tgetn(hooks) do
-                    hooks[i](event, type(arguments) == "table" and unpack(arguments) or arguments)
+                    hooks[i](event, arg1, arg2, arg3, arg4)
                 end
             end
         --end
@@ -538,7 +539,7 @@ do
             -- Trigger all events for easy GUI updating
             for k, v in next, hookEvents do
                 if k ~= "FOCUS_CLEAR" then
-                    CallHooks(k, arguments, true)
+                    CallHooks(k, arg1, arg2, arg3, arg4, true)
                 end
             end
             data.init = false
@@ -557,7 +558,7 @@ do
         end
 
         if events[event] then
-            events[event](Focus, event, arg1, arg2, arg3)
+            events[event](Focus, event, arg1, arg2, arg3, arg4)
         end
     end
 
@@ -638,11 +639,20 @@ do
         data.unitIsPartyLeader = UnitIsPartyLeader(unit)
     end
 
+    function events:PARTY_LEADER_CHANGED(event, unit)
+        data.unitIsPartyLeader = UnitIsPartyLeader(unit)
+    end
+
+    function events:UNIT_PORTRAIT_UPDATE(event, unit)
+        -- TODO
+    end
+
     events:SetScript("OnEvent", EventHandler)
     events:SetScript("OnUpdate", OnUpdateHandler)
     events:RegisterEvent("PLAYER_FLAGS_CHANGED")
-    --events:RegisterEvent("PARTY_LEADER_CHANGED")
+    events:RegisterEvent("PARTY_LEADER_CHANGED")
     events:RegisterEvent("RAID_TARGET_UPDATE")
+    events:RegisterEvent("UNIT_PORTRAIT_UPDATE")
     events:RegisterEvent("UNIT_CLASSIFICATION_CHANGED")
     events:RegisterEvent("UNIT_HEALTH")
     events:RegisterEvent("UNIT_LEVEL")

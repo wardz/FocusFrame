@@ -6,12 +6,7 @@ function FocusFrame_Refresh(event, unit)
 	FocusName:SetText(UnitName(unit))
 	SetPortraitTexture(FocusPortrait, unit)
 	FocusPortrait:SetAlpha(1)
-
-	if UnitIsPartyLeader(unit) then
-		FocusLeaderIcon:Show()
-	else
-		FocusLeaderIcon:Hide()
-	end
+	FocusFrame_CheckLeader()
 
 	FocusFrame:SetScale(FocusFrameDB.scale)
 	FocusFrame:SetScript("OnUpdate", FocusFrame_CastingBarUpdate)
@@ -187,7 +182,7 @@ function FocusFrame_OnShow()
 end
 
 function FocusFrame_OnHide()
-	if FocusFrame:IsVisible() then
+	if FocusFrame:IsVisible() then -- called by FOCUS_CLEAR instead of OnHide
 		FocusFrame:SetScript("OnUpdate", nil)
 		return FocusFrame:Hide()
 	end
@@ -245,6 +240,7 @@ function FocusFrame_CheckFaction()
 		FocusPortrait:SetVertexColor(1.0, 1.0, 1.0)
 	end
 
+	-- PvP Icon
 	local factionGroup = Focus:GetData("unitFactionGroup")
 	if Focus:GetData("unitIsPVPFreeForAll") == 1 then
 		FocusPVPIcon:SetTexture("Interface\\TargetingFrame\\UI-PVP-FFA")
@@ -304,8 +300,16 @@ function FocusFrame_CastingBarUpdate()
 	end
 end
 
+function FocusFrame_CheckLeader()
+	if Focus:GetData("unitIsPartyLeader") == 1 then
+		FocusLeaderIcon:Show()
+	else
+		FocusLeaderIcon:Hide()
+	end
+end
+
 -- Create castbar
--- im too lazy to add this to xml..
+-- im too lazy to convert this to xml..
 FocusFrame.cast = CreateFrame("StatusBar", "FocusFrame_Castbar", FocusFrame)
 FocusFrame.cast:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar")
 FocusFrame.cast:SetStatusBarColor(0.4, 1, 0)
@@ -349,15 +353,17 @@ FocusFrame.cast.icon:SetPoint("LEFT", FocusFrame.cast, -25, 0)
 FocusFrame.cast.icon:SetTexture("Interface\\Icons\\Spell_shadow_lifedrain02")
 
 -- [[ Events ]]
---Focus:HookEvent("FOCUS_CASTING", FocusFrame_CastingBar)
 Focus:HookEvent("FOCUS_SET", FocusFrame_Refresh)
 Focus:HookEvent("FOCUS_CLEAR", FocusFrame_OnHide)
 Focus:HookEvent("RAID_TARGET_UPDATE", FocusFrame_UpdateRaidTargetIcon)
 Focus:HookEvent("UNIT_HEALTH_OR_POWER", FocusFrame_HealthUpdate)
+Focus:HookEvent("PLAYER_FLAGS_CHANGED", FocusFrame_CheckLeader)
 Focus:HookEvent("UNIT_AURA", FocusDebuffButton_Update)
 Focus:HookEvent("UNIT_LEVEL", FocusFrame_CheckLevel)
 Focus:HookEvent("UNIT_FACTION", FocusFrame_CheckFaction)
 Focus:HookEvent("UNIT_CLASSIFICATION_CHANGED", FocusFrame_CheckClassification)
+--Focus:HookEvent("UNIT_PORTRAIT_UPDATE, )
+--Focus:HookEvent("FOCUS_CASTING", FocusFrame_CastingBar)
 
 --[[ Chat commands ]]
 do
@@ -368,6 +374,7 @@ do
 	SLASH_MFOCUS1 = "/mfocus"
 	SLASH_FCAST1 = "/fcast"
 	SLASH_FITEM1 = "/fitem"
+	SLASH_FSWAP = "/fswap"
 	SLASH_TARFOCUS1 = "/tarfocus"
 	SLASH_CLEARFOCUS1 = "/clearfocus"
 	SLASH_FOCUSOPTIONS1 = "/foption"
@@ -383,7 +390,7 @@ do
 	end
 
 	SlashCmdList.FCAST = function(spell)
-		if strlower(spell) == "petattack" then
+		if spell and strlower(spell) == "petattack" then
 			Focus:Trigger(PetAttack)
 		else
 			Focus:Trigger(CastSpellByName, spell)
@@ -410,10 +417,18 @@ do
 
 					local text = scantipTextLeft1:GetText()
 					if text and strlower(text) == msg then
-						return Focus:Trigger(UseContainerItem, {i, j})
+						return Focus:Trigger(UseContainerItem, i, j)
 					end
 				end
 			end
+		end
+	end
+
+	SlashCmdList.FSWAP = function()
+		if Focus:FocusExists(true) and UnitExists("target") then
+			local target = UnitName("target")
+			Focus:TargetFocus()
+			Focus:SetFocus(target)
 		end
 	end
 
@@ -439,7 +454,8 @@ do
 			FocusFrame:StopMovingOrSizing() -- trigger db save
 			print("Frame has been reset.")
 		else
-			print("Valid commands are:\n/foption scale 1 - Change frame size (0.2 - 2)\n/foption lock - Toggle dragging of frame\n/foption reset - Reset to default settings.")
+			print("Valid commands are:\n/foption scale 1 - Change frame size (0.2 - 2)\n/foption lock - Toggle dragging of frame")
+			print("\n/foption reset - Reset to default settings.")
 		end
 	end
 end
