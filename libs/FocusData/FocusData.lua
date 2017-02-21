@@ -1,11 +1,14 @@
+------------
+-- @module FocusData
 local _G = getfenv(0)
-local tgetn = table.getn
 print = print or function(msg) DEFAULT_CHAT_FRAME:AddMessage(msg or "nil") end
 if _G.FocusData then return end
 
+-- Vars
 local Focus = {}
 local focusTargetName
 local partyUnit
+local rawData
 local data
 
 -- Functions
@@ -14,8 +17,16 @@ local PartyScanner
 local SetFocusAuras
 local CallHooks
 
+-- Upvalues
+local next, strfind, UnitName, TargetLastTarget, TargetByName, strlower, type, tgetn =
+      next, strfind, UnitName, TargetLastTarget, TargetByName, strlower, type, table.getn
+
+local FSPELLCASTINGCOREgetDebuffs, FSPELLCASTINGCOREgetBuffs, FRGB_BORDER_DEBUFFS_COLOR =
+      FSPELLCASTINGCOREgetDebuffs, FSPELLCASTINGCOREgetBuffs, FRGB_BORDER_DEBUFFS_COLOR
+
+-- Data event handling
 do
-    local userdata = { eventsThrottle = {} }
+    local rawset = rawset
 
     local events = {
         -- Changing these values in data will trigger the listed event.
@@ -33,25 +44,28 @@ do
         --cast = "FOCUS_CASTING",
     }
 
+    rawData = { eventsThrottle = {} }
+    -- data.x will trigger events.
+    -- rawData.x will not and has less overhead.
     data = setmetatable({}, {
         __index = function(self, key)
-            return userdata[key]
+            return rawData[key]
         end,
 
         __newindex = function(self, key, value)
-            local oldValue = userdata[key]
-            rawset(userdata, key, value)
+            local oldValue = rawData[key]
+            rawset(rawData, key, value)
 
             if events[key] then
                 if key ~= "auraUpdate" then
                     if oldValue and oldValue == value then return end
-                    --local last = userdata.eventsThrottle[key] or 0
+                    --local last = rawData.eventsThrottle[key] or 0
                     --if (GetTime() - last) < 0.1 then return end
                     if key == "unit" and not value then return end
                 end
 
                 CallHooks(events[key])
-                --userdata.eventsThrottle[key] = GetTime()
+                --rawData.eventsThrottle[key] = GetTime()
             end
         end
     })
@@ -61,17 +75,18 @@ end
 do
     local ClearBuffs = FSPELLCASTINGCOREClearBuffs
     local NewBuff = FSPELLCASTINGCORENewBuff
+    local UnitBuff, UnitDebuff = UnitBuff, UnitDebuff
 
     local scantip = _G["FocusDataScantip"]
     local scantipTextLeft1 = _G["FocusDataScantipTextLeft1"]
     local scantipTextRight1 = _G["FocusDataScantipTextRight1"]
 
     local function DeleteExistingAuras()
-        if data.health <= 0 then
+        if rawData.health <= 0 then
             return ClearBuffs(focusTargetName)
         end
 
-        ClearBuffs(focusTargetName, data.unitIsEnemy)
+        ClearBuffs(focusTargetName, rawData.unitIsEnemy)
     end
 
     local function SyncBuff(unit, i, texture, stack, debuffType, isDebuff)
@@ -140,17 +155,17 @@ do
 
         for _, plate in ipairs(frames) do
             if IsPlate(plate) and plate:IsVisible() then
-                local _, _, nameFrame, _, _, raidIcon = plate:GetRegions() -- TODO add lvl frame
+                local _, _, name, level, _, raidIcon = plate:GetRegions()
                 local health = plate:GetChildren():GetValue()
-                local name = nameFrame:GetText()
 
-                if name == focusTargetName then
+                if name:GetText() == focusTargetName then
                     if raidIcon and raidIcon:IsVisible() then
                         local ux, uy = raidIcon:GetTexCoord()
                         data.raidIcon = RaidIconCoordinate[ux][uy]
                     end
 
                     data.health = health
+                    data.unitLevel = tonumber(level:GetText())
                     return
                 end
             end
@@ -201,6 +216,9 @@ end
 
 -- Raid/party unit scanning
 do
+    local UnitInRaid, GetNumRaidMembers, GetNumPartyMembers =
+          UnitInRaid, GetNumRaidMembers, GetNumPartyMembers
+
     local raidMemberIndex = 1
 
 	function PartyScanner() --local
@@ -229,18 +247,20 @@ end
 
 --------------------------------------
 -- Public API
+-- Most of these can only be used after certain events,
+-- or OnUpdate script with focus exist check. See wiki for more info.
 --------------------------------------
 
--- Display user error
--- @param {String} [msg]
+--- Display user error
+-- @tparam[opt] string msg
 function Focus:ShowError(msg)
     UIErrorsFrame:AddMessage("|cffFF003F " .. (msg or "You have no focus.") .. "|r")
 end
 
--- Check if unitID or name matches focus target.
--- @param {String} unit
--- @param {Boolean} [checkName]
--- @return {Boolean}
+--- Check if unitID or unit name matches focus target.
+-- @tparam string unit
+-- @tparam[opt] bool checkName
+-- @treturn bool
 function Focus:UnitIsFocus(unit, checkName)
     if not checkName then
         return focusTargetName and UnitName(unit) == focusTargetName
@@ -249,17 +269,25 @@ function Focus:UnitIsFocus(unit, checkName)
     end
 end
 
--- Get unitID for focus *if available*
--- @return {String|Nil}
+--- Get unitID for focus *if available*
+-- @treturn[1] string unitID
+-- @treturn[2] nil
 function Focus:GetFocusUnit()
-    if data.unit and UnitExists(data.unit) and self:UnitIsFocus(data.unit) then
-        return data.unit
+    if rawData.unit and UnitExists(rawData.unit) and self:UnitIsFocus(rawData.unit) then
+        return rawData.unit
     end
 end
 
--- Check if focus is sat. (Not same as UnitExists!)
--- @param {Boolean} [showError]
--- @return {Boolean}
+--- Get focus unit name.
+-- @treturn[1] string unit name
+-- @treturn[2] nil
+function Focus:GetName()
+    return focusTargetName
+end
+
+--- Check if focus is sat. (Not same as UnitExists!)
+-- @tparam[opt] bool showError display UI error msg
+-- @treturn bool true if exists
 function Focus:FocusExists(showError)
     if showError and not focusTargetName then
         self:ShowError()
@@ -268,11 +296,14 @@ function Focus:FocusExists(showError)
     return focusTargetName ~= nil
 end
 
--- Use any unit function on focus target, i.e CastSpellByName
+--- Use any unit function on focus target, i.e CastSpellByName
 -- Focus:Trigger(CastSpellByName, "Fireball")
--- Focus:Trigger(DropItemOnUnit) -- defaults to "target" when no second arg.
--- @param {Function} func
--- @param {*} [arg1], [arg2], [arg3], [arg4]
+-- Focus:Trigger(DropItemOnUnit); defaults to "target" when no second arg.
+-- @tparam func func function
+-- @param arg1
+-- @param arg2
+-- @param arg3
+-- @param arg4
 function Focus:Trigger(func, arg1, arg2, arg3, arg4) -- no vararg in this lua version so this'll have to do for now
     if self:FocusExists(true) then
         if type(func) == "function" then
@@ -281,73 +312,80 @@ function Focus:Trigger(func, arg1, arg2, arg3, arg4) -- no vararg in this lua ve
             func(arg1, arg2, arg3, arg4)
             self:TargetPrevious()
         else
-            error("Usage: Trigger(function, {arg1,arg2,..}")
+            error("Usage: Trigger(function, arg1,arg2,arg3,arg4)")
         end
     end
 end
---/run getglobal("FocusData"):Trigger(function(a,b)print(a)print(b)end, {"test","1"})
 
--- local min, max = Focus:GetHealth()
--- @return {Number}
+--- Get focus health.
+-- @return first min
+-- @return second max
 function Focus:GetHealth()
-    return data.health or 0, data.maxHealth or 100
+    return rawData.health or 0, rawData.maxHealth or 100
 end
 
--- local min, max = Focus:GetPower()
--- @return {Number}
+--- Get focus power.
+-- @return first min
+-- @return second max
 function Focus:GetPower()
-    return data.power or 0, data.maxPower or 100
+    return rawData.power or 0, rawData.maxPower or 100
 end
 
--- Get statusbar color for power.
--- @return {Object}
+--- Get statusbar color for power.
+-- @treturn table {R=number,G=number,B=number}
 function Focus:GetPowerColor()
-    return ManaBarColor[data.powerType] or { r = 0, g = 0, b = 0 }
+    return ManaBarColor[rawData.powerType] or { r = 0, g = 0, b = 0 }
 end
 
--- Get border color for debuffs.
+--- Get border color for debuffs.
 -- Note: uses numeric indexes.
--- @param {String} debuffType - E.g "magic" or "phyisical"
--- @return {Object}
+-- @tparam string debuffType e.g "magic" or "physical"
+-- @return table
 function Focus:GetDebuffColor(debuffType)
     return debuffType and FRGB_BORDER_DEBUFFS_COLOR[strlower(debuffType)] or {0, 0, 0, 0}
 end
 
--- Get table containing all buff data for focus.
+--- Get table containing all buff data for focus.
 -- Should be ran in an OnUpdate script or HookEvent("UNIT_AURA")
--- @return {Object}
+-- @treturn table
 function Focus:GetBuffs()
     local list = FSPELLCASTINGCOREgetBuffs(focusTargetName)
     return list and list.buffs or {}
 end
 
--- Get table containing all debuff data for focus.
+--- Get table containing all debuff data for focus.
 -- Should be ran in an OnUpdate script or HookEvent("UNIT_AURA")
--- @return {Object}
+-- @treturn table
 function Focus:GetDebuffs()
     return FSPELLCASTINGCOREgetDebuffs(focusTargetName) or {}
 end
 
-
 do
+    local mod, floor, GetTime = mod, floor, GetTime
+    local GetCast = FSPELLCASTINGCOREgetCast
+
     local function Round(num, idp)
         local mult = 10^(idp or 0)
 
         return floor(num * mult + 0.5) / mult
     end
 
-    -- Get table containing cast data for focus.
+    --- Get table containing cast data for focus.
     -- Should be ran in an OnUpdate script.
     -- @see Cast.create()
-    -- @return {Object,Number|Nil}
+    -- @return first cast
+    -- @return second value
+    -- @return third maxValue
+    -- @return fourth sparkPosition
+    -- @return fifth timer
     function Focus:GetCast()
-        local cast = FSPELLCASTINGCOREgetCast(focusTargetName)
+        local cast = GetCast(focusTargetName)
         if cast then
             local timeEnd, timeStart = cast.timeEnd, cast.timeStart
             local gTime = GetTime()
 
             if gTime < timeEnd then
-                local t = timeEnd - gTime()
+                local t = timeEnd - gTime
                 local timer = Round(t, t > 3 and 0 or 1)
                 local maxValue = timeEnd - timeStart
                 local value, sparkPosition
@@ -372,12 +410,16 @@ do
     end
 end
 
--- Target the focus.
--- @param {String} [name] - opt
+--- Target the focus.
+-- @tparam[opt] string name
 function Focus:TargetFocus(name)
+    if not self:FocusExists() then
+        return self:ShowError()
+    end
+
     self.oldTarget = UnitName("target")
     if not self.oldTarget or self.oldTarget ~= focusTargetName then
-        if not data.unitIsPlayer then
+        if not rawData.unitIsPlayer then
             local _name = strsub(name or focusTargetName, 1, -2)
             TargetByName(_name, false)
             -- Case insensitive name will make the game target nearest enemy
@@ -413,9 +455,9 @@ function Focus:TargetPrevious()
     end
 end
 
--- Set current target as focus, or name if given.
+--- Set current target as focus, or name if given.
 -- Note that name is case sensitive.
--- @param {String} [name]
+-- @tparam[opt] string name
 function Focus:SetFocus(name)
     if not name or name == "" then
         name = UnitName("target")
@@ -424,17 +466,22 @@ function Focus:SetFocus(name)
         name = gsub(name, "^%l", strupper)
     end
 
+    local focusChanged = Focus:FocusExists()
+
     focusTargetName = name
     if focusTargetName then
         self:TargetFocus()
         CallHooks("FOCUS_SET", "target")
+        if focusChanged then
+            CallHooks("FOCUS_CHANGED", "target")
+        end
         self:TargetPrevious()
     else
         self:ClearFocus()
     end
 end
 
--- Remove focus & its data.
+--- Remove focus & its data.
 function Focus:ClearFocus()
     focusTargetName = nil
     partyUnit = nil
@@ -443,31 +490,31 @@ function Focus:ClearFocus()
     CallHooks("FOCUS_CLEAR")
 end
 
--- Check if focus is dead.
--- @return {Boolean}
+--- Check if focus is dead.
+-- @treturn bool true if dead
 function Focus:IsDead()
-    return data.health <= 0 --and data.unitIsConnected
+    return rawData.health and rawData.health <= 0 --and data.unitIsConnected
 end
 
--- Get UnitReactionColor for focus.
--- local r, g, b = Focus:GetReactionColors()
--- @return {Number}
+--- Get UnitReactionColor for focus.
+-- @return {R=number,G=number,B=number}
 function Focus:GetReactionColors()
+    if not self:FocusExists() then return end
     local r, g, b = 0, 0, 1
 
-    if data.unitCanAttack then
+    if rawData.unitCanAttack then
         -- Hostile players are red
-        if data.playerCanAttack then
+        if rawData.playerCanAttack then
             r = UnitReactionColor[2].r
             g = UnitReactionColor[2].g
             b = UnitReactionColor[2].b
         end
-    elseif data.playerCanAttack then
+    elseif rawData.playerCanAttack then
         -- Players we can attack but which are not hostile are yellow
         r = UnitReactionColor[4].r
         g = UnitReactionColor[4].g
         b = UnitReactionColor[4].b
-    elseif data.unitIsPVP then
+    elseif rawData.unitIsPVP then
         -- Players we can assist but are PvP flagged are green
         r = UnitReactionColor[6].r
         g = UnitReactionColor[6].g
@@ -477,21 +524,21 @@ function Focus:GetReactionColors()
     return r, g, b
 end
 
--- Get specific focus data.
+--- Get specific focus data.
 -- If no key is specified, returns all the data.
--- @param {String} [key]
--- @return {*}
+-- @tparam[opt] string key
+-- @return data or nil
 function Focus:GetData(key)
     if key then
-        return data[key] or nil
+        return rawData[key] or nil
     else
-        return data or {}
+        return rawData or {}
     end
 end
 
--- Insert/replace any focus data
--- @param {String} key
--- @param {*} value
+--- Insert/replace any focus data
+-- @tparam string key
+-- @param value
 function Focus:SetData(key, value)
     if key and type(key) == "string" and value then
         data[key] = value
@@ -500,8 +547,8 @@ function Focus:SetData(key, value)
     end
 end
 
--- Delete (specific) focus data
--- @param {String} [key]
+--- Delete (specific) focus data
+-- @tparam[opt] string key
 function Focus:ClearData(key)
     if key then
         data[key] = nil
@@ -525,7 +572,8 @@ do
     local refresh = 0
 
     function CallHooks(event, arg1, arg2, arg3, arg4, recursive) --local
-        data.init = event == "FOCUS_SET"
+        print(event)
+        rawData.init = event == "FOCUS_SET"
         --if not data.init then
             local hooks = hookEvents[event]
             if hooks then
@@ -542,7 +590,7 @@ do
                     CallHooks(k, arg1, arg2, arg3, arg4, true)
                 end
             end
-            data.init = false
+            rawData.init = false
         end
     end
 
@@ -566,19 +614,15 @@ do
         refresh = refresh - arg1
         if refresh < 0 then
             if focusTargetName then
-                if focusTargetName ~= UnitName("target") and focusTargetName ~= UnitName("mouseover") then
-                    if partyUnit and focusTargetName == UnitName(partyUnit) then
-                        return SetFocusInfo(partyUnit)
-                    end
-
-                    NameplateScanner()
-                    PartyScanner()
-                    data.unit = nil
-                else
-                    if not SetFocusInfo("target") then
-                        if not SetFocusInfo("mouseover") then
-                            data.unit = nil
+                if not SetFocusInfo("target") then
+                    if not SetFocusInfo("mouseover") then
+                        if partyUnit and focusTargetName == UnitName(partyUnit) then
+                            return SetFocusInfo(partyUnit)
                         end
+
+                        rawData.unit = nil
+                        NameplateScanner()
+                        PartyScanner()
                     end
                 end
             end
@@ -587,10 +631,10 @@ do
         end
     end
 
-    -- Post-hook a focus event.
-    -- @param {String} eventName
-    -- @param {Function} callback
-    -- @return {Number} event ID (when UnhookEvent is needed)
+    --- Post-hook a focus event.
+    -- @tparam string eventName
+    -- @tparam func callback
+    -- @treturn number event ID (when UnhookEvent is needed)
     function Focus:HookEvent(eventName, callback)
         if type(eventName) ~= "string" or type(callback) ~= "function" then
             return error('Usage: HookEvent("event", callbackFunc)')
@@ -605,8 +649,9 @@ do
         return i+1
     end
 
-    -- @param {String} eventName
-    -- @param {Number} eventID
+    --- Remove focus event.
+    -- @tparam string eventName
+    -- @tparam number eventID
     function Focus:UnhookEvent(eventName, eventID)
         if type(eventName) ~= "string" or type(eventID) ~= "number" then
             return error('Usage: UnhookEvent("event", id)')

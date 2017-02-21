@@ -4,13 +4,17 @@ FocusFrameDB = FocusFrameDB or { unlock = true, scale = 1 }
 
 function FocusFrame_Refresh(event, unit)
 	FocusName:SetText(UnitName(unit))
-	SetPortraitTexture(FocusPortrait, unit)
-	FocusPortrait:SetAlpha(1)
 	FocusFrame_CheckLeader()
+	FocusFrame_CheckPortrait(event, unit) -- needed here?
 
 	FocusFrame:SetScale(FocusFrameDB.scale)
 	FocusFrame:SetScript("OnUpdate", FocusFrame_CastingBarUpdate)
 	FocusFrame:Show()
+end
+
+function FocusFrame_CheckPortrait(event, unit)
+	SetPortraitTexture(FocusPortrait, unit)
+	FocusPortrait:SetAlpha(1)
 end
 
 function FocusFrame_HealthUpdate()
@@ -293,7 +297,7 @@ function FocusFrame_CastingBarUpdate()
 		castbar.text:SetText(cast.spell)
 		castbar.timer:SetText(timer .. "s")
 		castbar.icon:SetTexture(cast.icon)
-		castbar:SetAlpha(FocusFrameCastingBar:GetAlpha())
+		castbar:SetAlpha(castbar:GetAlpha())
 		castbar:Show()
 	else
 		FocusFrame.cast:Hide()
@@ -356,14 +360,17 @@ FocusFrame.cast.icon:SetTexture("Interface\\Icons\\Spell_shadow_lifedrain02")
 Focus:HookEvent("FOCUS_SET", FocusFrame_Refresh)
 Focus:HookEvent("FOCUS_CLEAR", FocusFrame_OnHide)
 Focus:HookEvent("RAID_TARGET_UPDATE", FocusFrame_UpdateRaidTargetIcon)
-Focus:HookEvent("UNIT_HEALTH_OR_POWER", FocusFrame_HealthUpdate)
+Focus:HookEvent("UNIT_HEALTH_OR_POWER", FocusFrame_HealthUpdate) -- *
 Focus:HookEvent("PLAYER_FLAGS_CHANGED", FocusFrame_CheckLeader)
-Focus:HookEvent("UNIT_AURA", FocusDebuffButton_Update)
-Focus:HookEvent("UNIT_LEVEL", FocusFrame_CheckLevel)
+Focus:HookEvent("UNIT_AURA", FocusDebuffButton_Update) -- *
+Focus:HookEvent("UNIT_LEVEL", FocusFrame_CheckLevel) -- *
 Focus:HookEvent("UNIT_FACTION", FocusFrame_CheckFaction)
 Focus:HookEvent("UNIT_CLASSIFICATION_CHANGED", FocusFrame_CheckClassification)
---Focus:HookEvent("UNIT_PORTRAIT_UPDATE, )
+Focus:HookEvent("UNIT_PORTRAIT_UPDATE", FocusFrame_CheckPortrait)
 --Focus:HookEvent("FOCUS_CASTING", FocusFrame_CastingBar)
+
+-- Warning: events marked with * have event + unitID as args, but they may also be triggered
+-- without any arguments supplied at all.
 
 --[[ Chat commands ]]
 do
@@ -374,12 +381,12 @@ do
 	SLASH_MFOCUS1 = "/mfocus"
 	SLASH_FCAST1 = "/fcast"
 	SLASH_FITEM1 = "/fitem"
-	SLASH_FSWAP = "/fswap"
+	SLASH_FSWAP1 = "/fswap"
 	SLASH_TARFOCUS1 = "/tarfocus"
 	SLASH_CLEARFOCUS1 = "/clearfocus"
 	SLASH_FOCUSOPTIONS1 = "/foption"
 
-	SlashCmdList.FOCUS = function() Focus:SetFocus() end
+	SlashCmdList.FOCUS = function(msg) Focus:SetFocus(msg) end
 	SlashCmdList.TARFOCUS = function() Focus:TargetFocus() end
 	SlashCmdList.CLEARFOCUS = function() Focus:ClearFocus() end
 

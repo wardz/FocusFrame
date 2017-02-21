@@ -14,12 +14,21 @@ buff.__index 		= buff
 buffQueue.__index	= buffQueue
 dreturns.__index	= dreturns
 
+local Focus
+
 local playerName = UnitName'player'
+
+-- Upvalues
+local SPELLINFO_CHANNELED_SPELLCASTS_TO_TRACK, SPELLINFO_INSTANT_SPELLCASTS_TO_TRACK =
+	  SPELLINFO_CHANNELED_SPELLCASTS_TO_TRACK, SPELLINFO_INSTANT_SPELLCASTS_TO_TRACK
+
+local SPELLINFO_CHANNELED_HEALS_SPELLCASTS_TO_TRACK, SPELLINFO_SPELLCASTS_TO_TRACK =
+	  SPELLINFO_CHANNELED_HEALS_SPELLCASTS_TO_TRACK, SPELLINFO_SPELLCASTS_TO_TRACK
+
+local SPELLINFO_TRADECASTS_TO_TRACK = SPELLINFO_TRADECASTS_TO_TRACK
 
 local tinsert, tremove, strfind, gsub, ipairs, pairs, GetTime, GetNetStats, setmetatable, tgetn =
 	  table.insert, table.remove, string.find, string.gsub, ipairs, pairs, GetTime, GetNetStats, setmetatable, table.getn
-
-local Focus
 
 Cast.create = function(caster, spell, info, timeMod, time, inv)
 	local acnt = {}
