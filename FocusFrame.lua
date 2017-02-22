@@ -283,9 +283,13 @@ do
 		FocusFrameManaBar:SetMinMaxValues(0, data.maxMana or 100)
 		FocusFrameManaBar:SetValue(data.mana or 0)
 
-		local info = ManaBarColor[data.power]
-		if info then
-			FocusFrameManaBar:SetStatusBarColor(info.r, info.g, info.b)
+		if FocusFrameManaBar:IsShown() then
+			local info = ManaBarColor[data.power]
+			if info then
+				FocusFrameManaBar:SetStatusBarColor(info.r, info.g, info.b)
+			end
+		else
+			FocusFrameManaBarText:SetText(nil)
 		end
 	end
 end
