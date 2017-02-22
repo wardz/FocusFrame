@@ -30,15 +30,16 @@ do
 
     --- Hookable events. Ran only if unit = focus.
     -- @table Events
+    -- @usage Focus:HookEvent("EVENT_NAME", callbackFunc)
     -- @field UNIT_HEALTH_OR_POWER
     -- @field UNIT_LEVEL
     -- @field UNIT_AURA
     -- @field UNIT_CLASSIFICATION_CHANGED
     -- @field PLAYER_FLAGS_CHANGED
     -- @field RAID_TARGET_UPDATE
-    -- @field FOCUS_UNITID_EXISTS
-    -- @field FOCUS_SET
-    -- @field FOCUS_CHANGED
+    -- @field FOCUS_UNITID_EXISTS arg1=event, arg2=unit
+    -- @field FOCUS_SET arg1=event, arg2=unit
+    -- @field FOCUS_CHANGED arg1=event, arg2=unit
     -- @field FOCUS_CLEAR
     local events = {
         health              = "UNIT_HEALTH_OR_POWER",
@@ -74,7 +75,7 @@ do
                 local last = rawData.eventsThrottle[key] or 0
                 if (GetTime() - last) > 0.1 then
                     rawData.eventsThrottle[key] = GetTime()
-                    CallHooks(events[key])
+                    CallHooks(events[key], key == "unit" and rawData.unit)
                 end
             end
         end
