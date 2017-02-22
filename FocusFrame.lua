@@ -181,8 +181,10 @@ SlashCmdList["FOCUSOPTIONS"] = function(msg)
 	elseif cmd == "lock" then
 		FocusFrameDB.unlock = not FocusFrameDB.unlock
 		print("Frame is now " .. (FocusFrameDB.unlock and "un" or "") .. "locked.")
-	elseif cmd == "reset" then
-		
+	elseif cmd == "statustext" then
+		FocusFrameDB.statusTextAlways = not FocusFrameDB.statusTextAlways
+
+		print("Always show text sat to: " .. (FocusFrameDB.statusTextAlways and "true" or "false"))	
 	else
 		print("Valid commands are:\n/foption scale 1 - Change frame size (0.2 - 2)\n/foption lock - Toggle dragging of frame")
 	end
@@ -205,7 +207,7 @@ function FocusFrame_OnLoad()
 	this:RegisterEvent("UNIT_FOCUS")
 	this:RegisterEvent("UNIT_ENERGY")
 
-	FocusFrameDB = FocusFrameDB or { unlock = true }
+	FocusFrameDB = FocusFrameDB or { unlock = true, statusTextAlways = false }
 end
 
 function FocusFrame_Refresh(unitID)
@@ -271,8 +273,15 @@ do
 		--if GetCVar("statusBarText") == "1" then
 			--local healthText = MobHealth_PPP and MobHealth_PPP(CURR_FOCUS_TARGET) or (health .. " / " .. maxHealth)
 
-			SetTextStatusBarText(FocusFrameHealthBar, FocusFrameHealthBarText);
-			SetTextStatusBarText(FocusFrameManaBar, FocusFrameManaBarText);
+			SetTextStatusBarText(FocusFrameHealthBar, FocusFrameHealthBarText)
+			SetTextStatusBarText(FocusFrameManaBar, FocusFrameManaBarText)
+			if FocusFrameDB.statusTextAlways then
+				ShowTextStatusBarText(FocusFrameHealthBar)
+				ShowTextStatusBarText(FocusFrameManaBar)
+			else
+				HideTextStatusBarText(FocusFrameHealthBar)
+				HideTextStatusBarText(FocusFrameManaBar)
+			end
 		--end
 	end
 
