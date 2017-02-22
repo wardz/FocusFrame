@@ -207,6 +207,9 @@ function FocusFrame_OnLoad()
 	this:RegisterEvent("UNIT_FOCUS")
 	this:RegisterEvent("UNIT_ENERGY")
 
+	SetTextStatusBarText(FocusFrameHealthBar, FocusFrameHealthBarText)
+	SetTextStatusBarText(FocusFrameManaBar, FocusFrameManaBarText)
+
 	FocusFrameDB = FocusFrameDB or { unlock = true, statusTextAlways = false }
 end
 
@@ -273,14 +276,12 @@ do
 		--if GetCVar("statusBarText") == "1" then
 			--local healthText = MobHealth_PPP and MobHealth_PPP(CURR_FOCUS_TARGET) or (health .. " / " .. maxHealth)
 
-			SetTextStatusBarText(FocusFrameHealthBar, FocusFrameHealthBarText)
-			SetTextStatusBarText(FocusFrameManaBar, FocusFrameManaBarText)
 			if FocusFrameDB.statusTextAlways then
-				ShowTextStatusBarText(FocusFrameHealthBar)
-				ShowTextStatusBarText(FocusFrameManaBar)
+				FocusFrameHealthBar.TextString:Show()
+				FocusFrameManaBar.TextString:Show()
 			else
-				HideTextStatusBarText(FocusFrameHealthBar)
-				HideTextStatusBarText(FocusFrameManaBar)
+				--FocusFrameHealthBar.TextString:Hide()
+				--FocusFrameManaBar.TextString:Hide()
 			end
 		--end
 	end
