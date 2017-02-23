@@ -34,6 +34,7 @@ function FocusFrame_HealthUpdate()
 
 	if Focus:IsDead() then
 		FocusDeadText:Show()
+		FocusFrameHealthBarText:SetText(nil)
 	else
 		FocusDeadText:Hide()
 	end
@@ -396,6 +397,6 @@ SlashCmdList.FOCUSOPTIONS = function(msg)
 		print("Frame has been reset.")
 	else
 		print("Valid commands are:\n/foption scale 1 - Change frame size (0.2 - 2)\n/foption lock - Toggle dragging of frame")
-		print("\n/foption reset - Reset to default settings.")
+		print("/foption reset - Reset to default settings.")
 	end
 end
