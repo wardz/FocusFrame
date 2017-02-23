@@ -181,10 +181,6 @@ SlashCmdList["FOCUSOPTIONS"] = function(msg)
 	elseif cmd == "lock" then
 		FocusFrameDB.unlock = not FocusFrameDB.unlock
 		print("Frame is now " .. (FocusFrameDB.unlock and "un" or "") .. "locked.")
-	elseif cmd == "statustext" then
-		FocusFrameDB.statusTextAlways = not FocusFrameDB.statusTextAlways
-
-		print("Always show text sat to: " .. (FocusFrameDB.statusTextAlways and "true" or "false"))	
 	else
 		print("Valid commands are:\n/foption scale 1 - Change frame size (0.2 - 2)\n/foption lock - Toggle dragging of frame")
 	end
@@ -208,9 +204,12 @@ function FocusFrame_OnLoad()
 	this:RegisterEvent("UNIT_ENERGY")
 
 	SetTextStatusBarText(FocusFrameHealthBar, FocusFrameHealthBarText)
-	SetTextStatusBarText(FocusFrameManaBar, FocusFrameManaBarText)
+	FocusFrameHealthBar.textLockable = 1
 
-	FocusFrameDB = FocusFrameDB or { unlock = true, statusTextAlways = false }
+	SetTextStatusBarText(FocusFrameManaBar, FocusFrameManaBarText)
+	FocusFrameManaBar.textLockable = 1
+
+	FocusFrameDB = FocusFrameDB or { unlock = true }
 end
 
 function FocusFrame_Refresh(unitID)
@@ -272,20 +271,6 @@ end
 do
 	local ManaBarColor = ManaBarColor
 
-	local function SetStatusText(health, maxHealth, mana, maxMana)
-		--if GetCVar("statusBarText") == "1" then
-			--local healthText = MobHealth_PPP and MobHealth_PPP(CURR_FOCUS_TARGET) or (health .. " / " .. maxHealth)
-
-			if FocusFrameDB.statusTextAlways then
-				FocusFrameHealthBar.TextString:Show()
-				FocusFrameManaBar.TextString:Show()
-			else
-				--FocusFrameHealthBar.TextString:Hide()
-				--FocusFrameManaBar.TextString:Hide()
-			end
-		--end
-	end
-
 	function FocusFrame_HealthUpdate(unit)
 		if unit then
 			-- sync values first to avoid calling UnitHealth() stuff below
@@ -298,12 +283,14 @@ do
 		FocusFrameManaBar:SetMinMaxValues(0, data.maxMana or 100)
 		FocusFrameManaBar:SetValue(data.mana or 0)
 
-		local info = ManaBarColor[data.power]
-		if info then
-			FocusFrameManaBar:SetStatusBarColor(info.r, info.g, info.b)
+		if FocusFrameManaBar:IsShown() then
+			local info = ManaBarColor[data.power]
+			if info then
+				FocusFrameManaBar:SetStatusBarColor(info.r, info.g, info.b)
+			end
+		else
+			FocusFrameManaBarText:SetText(nil)
 		end
-
-		SetStatusText(data.health or 0, data.maxHealth or 100, data.mana or 0, data.maxMana or 100)
 	end
 end
 
