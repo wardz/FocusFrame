@@ -195,38 +195,38 @@ local function SetFocusHealth(unit)
 end
 
 local function SetFocusInfo(unit)
-	if Focus:UnitIsFocus(unit) then
-        data.playerCanAttack = UnitCanAttack("player", unit)
-        data.raidIcon = GetRaidTargetIndex(unit)
-        data.unit = unit
+	if not Focus:UnitIsFocus(unit) then
+        return false
+    end
 
-        data.unitName = GetUnitName(unit)
-        data.unitIsEnemy = UnitIsEnemy(unit, "player")
-        data.unitIsFriend = UnitIsFriend(unit, "player")
-        data.unitIsPlayer = UnitIsPlayer(unit)
-        data.unitClassification = UnitClassification(unit)
-        data.unitIsCivilian = UnitIsCivilian(unit)
-        data.unitLevel = UnitLevel(unit)
-        data.unitCanAttack = UnitCanAttack(unit, "player")
-        data.unitIsCorpse = UnitIsCorpse(unit)
-        data.unitIsPartyLeader = UnitIsPartyLeader(unit)
-        data.unitIsTapped = UnitIsTapped(unit)
-        data.unitIsTappedByPlayer = UnitIsTappedByPlayer(unit)
-        data.unitReaction = UnitReaction(unit, "player")
-        data.unitIsPVPFreeForAll = UnitIsPVPFreeForAll(unit)
-        data.unitIsPVP = UnitIsPVP(unit)
-        data.unitIsConnected = UnitIsConnected(unit)
-        data.unitFactionGroup = UnitFactionGroup(unit)
-        data.unitPlayerControlled = UnitPlayerControlled(unit)
-        -- More data can be sat using Focus:SetData() in FOCUS_SET event
+    data.playerCanAttack = UnitCanAttack("player", unit)
+    data.raidIcon = GetRaidTargetIndex(unit)
+    data.unit = unit
 
-        SetFocusHealth(unit)
-        SetFocusAuras(unit)
+    data.unitName = GetUnitName(unit)
+    data.unitIsEnemy = UnitIsEnemy(unit, "player")
+    data.unitIsFriend = UnitIsFriend(unit, "player")
+    data.unitIsPlayer = UnitIsPlayer(unit)
+    data.unitClassification = UnitClassification(unit)
+    data.unitIsCivilian = UnitIsCivilian(unit)
+    data.unitLevel = UnitLevel(unit)
+    data.unitCanAttack = UnitCanAttack(unit, "player")
+    data.unitIsCorpse = UnitIsCorpse(unit)
+    data.unitIsPartyLeader = UnitIsPartyLeader(unit)
+    data.unitIsTapped = UnitIsTapped(unit)
+    data.unitIsTappedByPlayer = UnitIsTappedByPlayer(unit)
+    data.unitReaction = UnitReaction(unit, "player")
+    data.unitIsPVPFreeForAll = UnitIsPVPFreeForAll(unit)
+    data.unitIsPVP = UnitIsPVP(unit)
+    data.unitIsConnected = UnitIsConnected(unit)
+    data.unitFactionGroup = UnitFactionGroup(unit)
+    data.unitPlayerControlled = UnitPlayerControlled(unit)
+    -- More data can be sat using Focus:SetData() in FOCUS_SET event
 
-        return true
-	end
+    SetFocusHealth(unit)
+    SetFocusAuras(unit)
 
-	return false
+	return true
 end
 
 -- Raid/party unit scanning
