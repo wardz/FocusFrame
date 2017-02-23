@@ -5,7 +5,7 @@ FocusFrameDB = FocusFrameDB or { unlock = true, scale = 1 }
 function FocusFrame_Refresh(event, unit)
 	FocusName:SetText(UnitName(unit))
 	FocusFrame_CheckLeader()
-	FocusFrame_CheckPortrait(event, unit) -- needed here?
+	FocusFrame_CheckPortrait() -- not needed here, but fixes a flickering issue on first portrait sat
 
 	FocusFrame:SetScale(FocusFrameDB.scale)
 	FocusFrame:SetScript("OnUpdate", FocusFrame_CastingBarUpdate)
@@ -64,11 +64,11 @@ end
 
 function FocusFrame_OnHide()
 	if FocusFrame:IsVisible() then -- called by FOCUS_CLEAR instead of OnHide
-		FocusFrame:SetScript("OnUpdate", nil)
-		return FocusFrame:Hide()
+		FocusFrame:SetScript("OnUpdate", nil) -- not rly needed but w/e
+		FocusFrame:Hide()
+	else
+		PlaySound("INTERFACESOUND_LOSTTARGETUNIT")
 	end
-
-	PlaySound("INTERFACESOUND_LOSTTARGETUNIT")
 end
 
 function FocusFrame_CheckLevel()

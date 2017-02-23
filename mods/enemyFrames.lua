@@ -1,4 +1,5 @@
 if not IsAddOnLoaded("enemyFrames") then return end
+local Focus = getglobal("FocusData")
 
 local portraitDebuff = CreateFrame('Frame', 'FocusPortraitDebuff', TargetFrame)
 portraitDebuff:SetFrameLevel(0)
@@ -90,14 +91,14 @@ dummyFrame:SetScript('OnUpdate', function()
     if nextRefresh < 0 then
 
         if ENEMYFRAMESPLAYERDATA['targetPortraitDebuff'] then
-            showPortraitDebuff()				
+            showPortraitDebuff()
         else
             portraitDebuff.cd:Hide()				
             portraitDebuff.debuffText:SetTexture()
             portraitDebuff.duration:SetText('')
             portraitDebuff.bgText:Hide()
         end
-    
+
         nextRefresh = refreshInterval			
     end
 end)

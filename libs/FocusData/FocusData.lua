@@ -1,5 +1,6 @@
 ------------
 -- @module FocusData
+-- Documentation: https://wardz.github.io/FocusFrame/
 local _G = getfenv(0)
 print = print or function(msg) DEFAULT_CHAT_FRAME:AddMessage(msg or "nil") end
 if _G.FocusData then return end
@@ -215,6 +216,8 @@ local function SetFocusInfo(unit)
         data.unitIsPVPFreeForAll = UnitIsPVPFreeForAll(unit)
         data.unitIsPVP = UnitIsPVP(unit)
         data.unitIsConnected = UnitIsConnected(unit)
+        data.unitFactionGroup = UnitFactionGroup(unit)
+        data.unitPlayerControlled = UnitPlayerControlled(unit)
         -- More data can be sat using Focus:SetData() in FOCUS_SET event
 
         SetFocusHealth(unit)
@@ -480,8 +483,9 @@ function Focus:SetFocus(name)
     end
 
     local focusChanged = Focus:FocusExists()
-
     focusTargetName = name
+    CURR_FOCUS_TARGET = name -- keeping this global var for addons relying on old code
+
     if focusTargetName then
         self:TargetFocus()
         CallHooks("FOCUS_SET", "target")
@@ -497,6 +501,7 @@ end
 --- Remove focus & its data.
 function Focus:ClearFocus()
     focusTargetName = nil
+    CURR_FOCUS_TARGET = nil
     partyUnit = nil
     self:ClearData()
 
