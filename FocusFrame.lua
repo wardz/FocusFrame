@@ -25,141 +25,18 @@ function FocusFrame_HealthUpdate()
 	FocusFrameHealthBar:SetValue(health)
 	FocusFrameManaBar:SetMinMaxValues(0, maxMana)
 	FocusFrameManaBar:SetValue(mana)
-	local color = Focus:GetPowerColor()
-	FocusFrameManaBar:SetStatusBarColor(color.r, color.g, color.b)
+
+	if FocusFrameManaBar:IsShown() then
+		local color = Focus:GetPowerColor()
+		FocusFrameManaBar:SetStatusBarColor(color.r, color.g, color.b)
+	else
+		FocusFrameManaBarText:SetText(nil)
+	end
 
 	if Focus:IsDead() then
 		FocusDeadText:Show()
 	else
 		FocusDeadText:Hide()
-	end
-
-	SetTextStatusBarText(FocusFrameHealthBar, FocusFrameHealthBarText)
-	SetTextStatusBarText(FocusFrameManaBar, FocusFrameManaBarText)
-end
-
-do
-	local function PositionBuffs(numDebuffs, numBuffs)
-		local debuffWrap = 6
-		if Focus:GetData("unitIsFriend") == 1 then
-			FocusFrameBuff1:SetPoint("TOPLEFT", "FocusFrame", "BOTTOMLEFT", 5, 32)
-			FocusFrameDebuff1:SetPoint("TOPLEFT", "FocusFrameBuff1", "BOTTOMLEFT", 0, -2)
-		else
-			FocusFrameDebuff1:SetPoint("TOPLEFT", "FocusFrame", "BOTTOMLEFT", 5, 32)
-			FocusFrameBuff1:SetPoint("TOPLEFT", "FocusFrameDebuff7", "BOTTOMLEFT", 0, -2)
-		end
-
-		local debuffSize, debuffFrameSize
-		if numDebuffs >= debuffWrap then
-			debuffSize = 17
-			debuffFrameSize = 19
-		else
-			debuffSize = 21
-			debuffFrameSize = 23
-		end
-
-		-- resize Buffs
-		for i = 1, 5 do
-			local button = _G["FocusFrameBuff" .. i]
-			if button then
-				button:SetWidth(debuffSize)
-				button:SetHeight(debuffSize)
-			end
-		end
-
-		-- resize Debuffs
-		for i = 1, 6 do
-			local button = _G["FocusFrameDebuff" .. i]
-			local debuffFrame = _G["FocusFrameDebuff" .. i .. "Border"]
-
-			if debuffFrame then
-				debuffFrame:SetWidth(debuffFrameSize)
-				debuffFrame:SetHeight(debuffFrameSize)
-			end
-
-			button:SetWidth(debuffSize)
-			button:SetHeight(debuffSize)
-		end
-
-		-- Reset anchors for debuff wrapping
-		_G["FocusFrameDebuff"..debuffWrap]:ClearAllPoints()
-		_G["FocusFrameDebuff"..debuffWrap]:SetPoint("LEFT", _G["FocusFrameDebuff"..(debuffWrap - 1)], "RIGHT", 3, 0)
-		_G["FocusFrameDebuff"..(debuffWrap + 1)]:ClearAllPoints()
-		_G["FocusFrameDebuff"..(debuffWrap + 1)]:SetPoint("TOPLEFT", "FocusFrameDebuff1", "BOTTOMLEFT", 0, -2)
-		_G["FocusFrameDebuff"..(debuffWrap + 2)]:ClearAllPoints()
-		_G["FocusFrameDebuff"..(debuffWrap + 2)]:SetPoint("LEFT", _G["FocusFrameDebuff"..(debuffWrap + 1)], "RIGHT", 3, 0)
-
-		-- Set anchor for the last row if debuffWrap is 5
-		if debuffWrap == 5 then
-			FocusFrameDebuff11:ClearAllPoints()
-			FocusFrameDebuff11:SetPoint("TOPLEFT", "FocusFrameDebuff6", "BOTTOMLEFT", 0, -2)
-		else
-			FocusFrameDebuff11:ClearAllPoints()
-			FocusFrameDebuff11:SetPoint("LEFT", "FocusFrameDebuff10", "RIGHT", 3, 0)
-		end
-
-		-- Move castbar
-		local amount = numBuffs + numDebuffs
-		if Focus:GetData("unitIsEnemy") == 1 then
-			if numBuffs >= 1 then
-				FocusFrame.cast:SetPoint("BOTTOMLEFT", FocusFrame, 15, -100)
-			end
-		else
-			local y = amount < 7 and -35 or amount < 13 and -70 or amount < 19 and -100
-			FocusFrame.cast:SetPoint("BOTTOMLEFT", FocusFrame, 15, y)
-		end
-	end
-
-	function FocusDebuffButton_Update()
-		local buffs = Focus:GetBuffs()
-		local debuffs = Focus:GetDebuffs()
-		local numBuffs = 0
-		local numDebuffs = 0
-
-		for i = 1, 5 do
-			local buff = buffs[i]
-			local button = _G["FocusFrameBuff" .. i]
-
-			if buff then
-				_G["FocusFrameBuff" .. i .. "Icon"]:SetTexture(buff.icon)
-				button:Show()
-				button.id = i
-				numBuffs = numBuffs + 1
-			else
-				button:Hide()
-			end
-		end
-
-		for i = 1, 16 do
-			local debuffBorder = _G["FocusFrameDebuff" .. i .. "Border"]
-			local button = _G["FocusFrameDebuff" .. i]
-			local debuff = debuffs[i]
-
-			if debuff then
-				local debuffStack = debuff.stacks
-				local debuffType = debuff.debuffType
-				local debuffCount = _G["FocusFrameDebuff" .. i .. "Count"]
-				local color = Focus:GetDebuffColor(debuffType)
-				_G["FocusFrameDebuff" .. i .. "Icon"]:SetTexture(debuff.icon)
-
-				if debuffStack and debuffStack > 1 then
-					debuffCount:SetText(debuffStack)
-					debuffCount:Show()
-				else
-					debuffCount:Hide()
-				end
-
-				debuffBorder:SetVertexColor(color[1], color[2], color[3], color[4])
-				button:Show()
-				numDebuffs = numDebuffs + 1
-			else
-				button:Hide()
-			end
-
-			button.id = i
-		end
-
-		PositionBuffs(numDebuffs, numBuffs)
 	end
 end
 
@@ -312,8 +189,132 @@ function FocusFrame_CheckLeader()
 	end
 end
 
+do
+	local function PositionBuffs(numDebuffs, numBuffs)
+		local debuffWrap = 6
+		if Focus:GetData("unitIsFriend") == 1 then
+			FocusFrameBuff1:SetPoint("TOPLEFT", "FocusFrame", "BOTTOMLEFT", 5, 32)
+			FocusFrameDebuff1:SetPoint("TOPLEFT", "FocusFrameBuff1", "BOTTOMLEFT", 0, -2)
+		else
+			FocusFrameDebuff1:SetPoint("TOPLEFT", "FocusFrame", "BOTTOMLEFT", 5, 32)
+			FocusFrameBuff1:SetPoint("TOPLEFT", "FocusFrameDebuff7", "BOTTOMLEFT", 0, -2)
+		end
+
+		local debuffSize, debuffFrameSize
+		if numDebuffs >= debuffWrap then
+			debuffSize = 17
+			debuffFrameSize = 19
+		else
+			debuffSize = 21
+			debuffFrameSize = 23
+		end
+
+		-- resize Buffs
+		for i = 1, 5 do
+			local button = _G["FocusFrameBuff" .. i]
+			if button then
+				button:SetWidth(debuffSize)
+				button:SetHeight(debuffSize)
+			end
+		end
+
+		-- resize Debuffs
+		for i = 1, 6 do
+			local button = _G["FocusFrameDebuff" .. i]
+			local debuffFrame = _G["FocusFrameDebuff" .. i .. "Border"]
+
+			if debuffFrame then
+				debuffFrame:SetWidth(debuffFrameSize)
+				debuffFrame:SetHeight(debuffFrameSize)
+			end
+
+			button:SetWidth(debuffSize)
+			button:SetHeight(debuffSize)
+		end
+
+		-- Reset anchors for debuff wrapping
+		_G["FocusFrameDebuff"..debuffWrap]:ClearAllPoints()
+		_G["FocusFrameDebuff"..debuffWrap]:SetPoint("LEFT", _G["FocusFrameDebuff"..(debuffWrap - 1)], "RIGHT", 3, 0)
+		_G["FocusFrameDebuff"..(debuffWrap + 1)]:ClearAllPoints()
+		_G["FocusFrameDebuff"..(debuffWrap + 1)]:SetPoint("TOPLEFT", "FocusFrameDebuff1", "BOTTOMLEFT", 0, -2)
+		_G["FocusFrameDebuff"..(debuffWrap + 2)]:ClearAllPoints()
+		_G["FocusFrameDebuff"..(debuffWrap + 2)]:SetPoint("LEFT", _G["FocusFrameDebuff"..(debuffWrap + 1)], "RIGHT", 3, 0)
+
+		-- Set anchor for the last row if debuffWrap is 5
+		if debuffWrap == 5 then
+			FocusFrameDebuff11:ClearAllPoints()
+			FocusFrameDebuff11:SetPoint("TOPLEFT", "FocusFrameDebuff6", "BOTTOMLEFT", 0, -2)
+		else
+			FocusFrameDebuff11:ClearAllPoints()
+			FocusFrameDebuff11:SetPoint("LEFT", "FocusFrameDebuff10", "RIGHT", 3, 0)
+		end
+
+		-- Move castbar
+		local amount = numBuffs + numDebuffs
+		if Focus:GetData("unitIsEnemy") == 1 then
+			if numBuffs >= 1 then
+				FocusFrame.cast:SetPoint("BOTTOMLEFT", FocusFrame, 15, -70)
+			end
+		else
+			local y = amount > 7 and -70 or -35
+			FocusFrame.cast:SetPoint("BOTTOMLEFT", FocusFrame, 15, y)
+		end
+	end
+
+	function FocusDebuffButton_Update()
+		local buffs = Focus:GetBuffs()
+		local debuffs = Focus:GetDebuffs()
+		local numBuffs = 0
+		local numDebuffs = 0
+
+		for i = 1, MAX_TARGET_BUFFS do
+			local buff = buffs[i]
+			local button = _G["FocusFrameBuff" .. i]
+
+			if buff then
+				_G["FocusFrameBuff" .. i .. "Icon"]:SetTexture(buff.icon)
+				button:Show()
+				button.id = i
+				numBuffs = numBuffs + 1
+			else
+				button:Hide()
+			end
+		end
+
+		for i = 1, MAX_TARGET_DEBUFFS do
+			local debuffBorder = _G["FocusFrameDebuff" .. i .. "Border"]
+			local button = _G["FocusFrameDebuff" .. i]
+			local debuff = debuffs[i]
+
+			if debuff then
+				local debuffCount = _G["FocusFrameDebuff" .. i .. "Count"]
+				local color = Focus:GetDebuffColor(debuff.debuffType)
+				local debuffStack = debuff.stacks
+				_G["FocusFrameDebuff" .. i .. "Icon"]:SetTexture(debuff.icon)
+
+				if debuffStack and debuffStack > 1 then
+					debuffCount:SetText(debuffStack)
+					debuffCount:Show()
+				else
+					debuffCount:Hide()
+				end
+
+				debuffBorder:SetVertexColor(color[1], color[2], color[3], color[4])
+				button:Show()
+				numDebuffs = numDebuffs + 1
+			else
+				button:Hide()
+			end
+
+			button.id = i
+		end
+
+		PositionBuffs(numDebuffs, numBuffs)
+	end
+end
+
 -- Create castbar
--- im too lazy to convert this to xml..
+-- TODO add to xml
 FocusFrame.cast = CreateFrame("StatusBar", "FocusFrame_Castbar", FocusFrame)
 FocusFrame.cast:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar")
 FocusFrame.cast:SetStatusBarColor(0.4, 1, 0)
@@ -360,109 +361,42 @@ FocusFrame.cast.icon:SetTexture("Interface\\Icons\\Spell_shadow_lifedrain02")
 Focus:HookEvent("FOCUS_SET", FocusFrame_Refresh)
 Focus:HookEvent("FOCUS_CLEAR", FocusFrame_OnHide)
 Focus:HookEvent("RAID_TARGET_UPDATE", FocusFrame_UpdateRaidTargetIcon)
-Focus:HookEvent("UNIT_HEALTH_OR_POWER", FocusFrame_HealthUpdate) -- *
 Focus:HookEvent("PLAYER_FLAGS_CHANGED", FocusFrame_CheckLeader)
-Focus:HookEvent("UNIT_AURA", FocusDebuffButton_Update) -- *
-Focus:HookEvent("UNIT_LEVEL", FocusFrame_CheckLevel) -- *
+Focus:HookEvent("UNIT_HEALTH_OR_POWER", FocusFrame_HealthUpdate)
+Focus:HookEvent("UNIT_AURA", FocusDebuffButton_Update)
+Focus:HookEvent("UNIT_LEVEL", FocusFrame_CheckLevel)
 Focus:HookEvent("UNIT_FACTION", FocusFrame_CheckFaction)
 Focus:HookEvent("UNIT_CLASSIFICATION_CHANGED", FocusFrame_CheckClassification)
 Focus:HookEvent("UNIT_PORTRAIT_UPDATE", FocusFrame_CheckPortrait)
---Focus:HookEvent("FOCUS_CASTING", FocusFrame_CastingBar)
-
--- Warning: events marked with * have event + unitID as args, but they may also be triggered
--- without any arguments supplied at all.
+--Focus:HookEvent("FOCUS_CASTING", FocusFrame_CastingBarUpdate)
 
 --[[ Chat commands ]]
-do
-	local scantip = _G["FocusDataScantip"]
-	local scantipTextLeft1 = _G["FocusDataScantipTextLeft1"]
 
-	SLASH_FOCUS1 = "/focus"
-	SLASH_MFOCUS1 = "/mfocus"
-	SLASH_FCAST1 = "/fcast"
-	SLASH_FITEM1 = "/fitem"
-	SLASH_FSWAP1 = "/fswap"
-	SLASH_TARFOCUS1 = "/tarfocus"
-	SLASH_CLEARFOCUS1 = "/clearfocus"
-	SLASH_FOCUSOPTIONS1 = "/foption"
-
-	SlashCmdList.FOCUS = function(msg) Focus:SetFocus(msg) end
-	SlashCmdList.TARFOCUS = function() Focus:TargetFocus() end
-	SlashCmdList.CLEARFOCUS = function() Focus:ClearFocus() end
-
-	SlashCmdList.MFOCUS = function()
-		if UnitExists("mouseover") then
-			Focus:SetFocus(UnitName("mouseover"))
-		end
-	end
-
-	SlashCmdList.FCAST = function(spell)
-		if spell and strlower(spell) == "petattack" then
-			Focus:Trigger(PetAttack)
-		else
-			Focus:Trigger(CastSpellByName, spell)
-		end
-	end
-
-	SlashCmdList.FITEM = function(msg)
-		if Focus:FocusExists(true) then
-			msg = strlower(msg)
-		
-			for i = 0, 19 do
-				scantip:ClearLines()
-				scantip:SetInventoryItem("player", i)
-				local text = scantipTextLeft1:GetText()
-				if text and strlower(text) == msg then
-					return Focus:Trigger(UseInventoryItem, i)
-				end
-			end
-
-			for i = 0, 4 do
-				for j = 1, GetContainerNumSlots(i) do
-					scantip:ClearLines()
-					scantip:SetBagItem(i, j)
-
-					local text = scantipTextLeft1:GetText()
-					if text and strlower(text) == msg then
-						return Focus:Trigger(UseContainerItem, i, j)
-					end
-				end
-			end
-		end
-	end
-
-	SlashCmdList.FSWAP = function()
-		if Focus:FocusExists(true) and UnitExists("target") then
-			local target = UnitName("target")
-			Focus:TargetFocus()
-			Focus:SetFocus(target)
-		end
-	end
-
-	SlashCmdList.FOCUSOPTIONS = function(msg)
-		local space = strfind(msg or "", " ")
-		local cmd = strsub(msg, 1, space and (space-1))
-		local value = tonumber(strsub(msg, space or -1))
-		local print = function(x) DEFAULT_CHAT_FRAME:AddMessage(x) end
-		
-		if cmd == "scale" and value then
-			local x = value > 0.1 and value <= 2 and value or 1
-			FocusFrame:SetScale(x)
-			FocusFrameDB.scale = x
-			print("Scale set to " .. x)
-		elseif cmd == "lock" then
-			FocusFrameDB.unlock = not FocusFrameDB.unlock
-			print("Frame is now " .. (FocusFrameDB.unlock and "un" or "") .. "locked.")
-		elseif cmd == "reset" then
-			FocusFrameDB.scale = 1
-			FocusFrameDB.unlock = true
-			FocusFrame:SetScale(1)
-			FocusFrame:SetPoint("TOPLEFT", 250, -300)
-			FocusFrame:StopMovingOrSizing() -- trigger db save
-			print("Frame has been reset.")
-		else
-			print("Valid commands are:\n/foption scale 1 - Change frame size (0.2 - 2)\n/foption lock - Toggle dragging of frame")
-			print("\n/foption reset - Reset to default settings.")
-		end
+SLASH_FOCUSOPTIONS1 = "/foption"
+SlashCmdList.FOCUSOPTIONS = function(msg)
+	-- strsplit doesn't exist in lua 5.0 :/
+	local space = strfind(msg or "", " ")
+	local cmd = strsub(msg, 1, space and (space-1))
+	local value = tonumber(strsub(msg, space or -1))
+	local print = function(x) DEFAULT_CHAT_FRAME:AddMessage(x) end
+	
+	if cmd == "scale" and value then
+		local x = value > 0.1 and value <= 2 and value or 1
+		FocusFrame:SetScale(x)
+		FocusFrameDB.scale = x
+		print("Scale set to " .. x)
+	elseif cmd == "lock" then
+		FocusFrameDB.unlock = not FocusFrameDB.unlock
+		print("Frame is now " .. (FocusFrameDB.unlock and "un" or "") .. "locked.")
+	elseif cmd == "reset" then
+		FocusFrameDB.scale = 1
+		FocusFrameDB.unlock = true
+		FocusFrame:SetScale(1)
+		FocusFrame:SetPoint("TOPLEFT", 250, -300)
+		FocusFrame:StopMovingOrSizing() -- trigger db save
+		print("Frame has been reset.")
+	else
+		print("Valid commands are:\n/foption scale 1 - Change frame size (0.2 - 2)\n/foption lock - Toggle dragging of frame")
+		print("\n/foption reset - Reset to default settings.")
 	end
 end

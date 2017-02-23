@@ -353,16 +353,6 @@ end
 -----handleCast subfunctions-----------------------------------------------
 ---------------------------------------------------------------------------
 local forceHideTableItem = function(tab, caster, spell, debuffsOnly)
-	--local time = GetTime()
-	--[[for k, v in pairs(tab) do
-		if (time < v.timeEnd) and (v.caster == caster) then
-			if (spell ~= nil) then if v.spell == spell then	v.timeEnd = time end-- 10000 end 
-			else
-				v.timeEnd = time -- 10000 -- force hide
-			end
-		end
-	end]]
-
 	local i = 1
 
 	for k, v in pairs(tab) do

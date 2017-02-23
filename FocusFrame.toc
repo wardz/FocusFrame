@@ -11,6 +11,7 @@ libs\FocusData\spellcastingcore\spells.lua
 libs\FocusData\spellcastingcore\spellCastingCore.lua
 libs\FocusData\FocusData.xml
 libs\FocusData\FocusData.lua
+libs\FocusData\FocusCmds.lua
 
 FocusFrame.xml
 FocusFrame.lua

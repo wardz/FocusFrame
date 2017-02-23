@@ -442,6 +442,11 @@
 		<Scripts>
 			<OnLoad>
 				FocusFrame:RegisterForDrag("LeftButton");
+
+				SetTextStatusBarText(FocusFrameHealthBar, FocusFrameHealthBarText);
+				SetTextStatusBarText(FocusFrameManaBar, FocusFrameManaBarText);
+				FocusFrameHealthBar.textLockable = 1;
+				FocusFrameManaBar.textLockable = 1;
 			</OnLoad>
 			<OnShow>
 				FocusFrame_OnShow();

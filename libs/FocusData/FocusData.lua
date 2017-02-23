@@ -31,9 +31,9 @@ do
     --- Hookable events. Ran only if unit = focus.
     -- @table Events
     -- @usage Focus:HookEvent("EVENT_NAME", callbackFunc)
-    -- @field UNIT_HEALTH_OR_POWER
-    -- @field UNIT_LEVEL
-    -- @field UNIT_AURA
+    -- @field UNIT_HEALTH_OR_POWER arg1=event or nil, arg2=unit or nil
+    -- @field UNIT_LEVEL arg1=event or nil, arg2=unit or nil
+    -- @field UNIT_AURA arg1=event or nil, arg2=unit or nil
     -- @field UNIT_CLASSIFICATION_CHANGED
     -- @field PLAYER_FLAGS_CHANGED
     -- @field RAID_TARGET_UPDATE
@@ -57,6 +57,7 @@ do
     rawData = { eventsThrottle = {} }
     -- data.x will trigger events.
     -- rawData.x will not and has less overhead.
+
     data = setmetatable({}, {
         __index = function(self, key)
             return rawData[key]
@@ -75,7 +76,7 @@ do
                 local last = rawData.eventsThrottle[key] or 0
                 if (GetTime() - last) > 0.1 then
                     rawData.eventsThrottle[key] = GetTime()
-                    CallHooks(events[key], key == "unit" and rawData.unit)
+                    CallHooks(events[key], rawData.unit)
                 end
             end
         end
@@ -431,7 +432,7 @@ function Focus:TargetFocus(name)
 
     self.oldTarget = UnitName("target")
     if not self.oldTarget or self.oldTarget ~= focusTargetName then
-        if not rawData.unitIsPlayer then
+        if rawData.unitIsPlayer ~= 1 then
             local _name = strsub(name or focusTargetName, 1, -2)
             TargetByName(_name, false)
             -- Case insensitive name will make the game target nearest enemy
@@ -513,7 +514,7 @@ end
 -- @treturn number g
 -- @treturn number b
 function Focus:GetReactionColors()
-    if not self:FocusExists() then return end
+    if not self:FocusExists() then return error("no focus sat.") end
     local r, g, b = 0, 0, 1
 
     if rawData.unitCanAttack == 1then
@@ -586,8 +587,9 @@ do
     local events = CreateFrame("frame")
     local refresh = 0
 
+    -- Call all eventlisteners for given event.
     function CallHooks(event, arg1, arg2, arg3, arg4, recursive) --local
-        print(event)
+        --print(event)
         rawData.init = event == "FOCUS_SET"
         --if not data.init then
             local hooks = hookEvents[event]
@@ -662,12 +664,12 @@ do
             hookEvents[eventName] = {}
         end
 
-        local i = tgetn(hookEvents[eventName])
-        hookEvents[eventName][i+1] = callback
-        return i+1
+        local i = tgetn(hookEvents[eventName]) + 1
+        hookEvents[eventName][i] = callback
+        return i
     end
 
-    --- Remove event.
+    --- Remove existing event.
     -- @tparam string eventName
     -- @tparam number eventID
     function Focus:UnhookEvent(eventName, eventID)
@@ -677,6 +679,8 @@ do
 
         if hookEvents[eventName] and hookEvents[eventName][eventID] then
             table.remove(hookEvents[eventName], eventID)
+        else
+            error("Invalid event name or id.")
         end
     end
 
