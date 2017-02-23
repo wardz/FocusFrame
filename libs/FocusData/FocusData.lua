@@ -203,6 +203,7 @@ local function SetFocusInfo(unit)
     data.raidIcon = GetRaidTargetIndex(unit)
     data.unit = unit
 
+    data.unitClass = UnitClass(unit)
     data.unitName = GetUnitName(unit)
     data.unitIsEnemy = UnitIsEnemy(unit, "player")
     data.unitIsFriend = UnitIsFriend(unit, "player")
@@ -263,7 +264,8 @@ end
 --------------------------------------
 -- Public API
 -- Most of these can only be used after certain events,
--- or OnUpdate script with focus exist check. See wiki for more info.
+-- or OnUpdate script with focus exist check.
+-- Documentation: https://wardz.github.io/FocusFrame/
 --------------------------------------
 
 --- Display focus UI error
@@ -484,7 +486,6 @@ function Focus:SetFocus(name)
 
     local focusChanged = Focus:FocusExists()
     focusTargetName = name
-    CURR_FOCUS_TARGET = name -- keeping this global var for addons relying on old code
 
     if focusTargetName then
         self:TargetFocus()
@@ -501,7 +502,6 @@ end
 --- Remove focus & its data.
 function Focus:ClearFocus()
     focusTargetName = nil
-    CURR_FOCUS_TARGET = nil
     partyUnit = nil
     self:ClearData()
 

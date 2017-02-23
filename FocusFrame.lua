@@ -4,8 +4,7 @@ FocusFrameDB = FocusFrameDB or { unlock = true, scale = 1 }
 
 function FocusFrame_Refresh(event, unit)
 	FocusName:SetText(UnitName(unit))
-	FocusFrame_CheckLeader()
-	FocusFrame_CheckPortrait() -- not needed here, but fixes a flickering issue on first portrait sat
+	FocusFrame_CheckPortrait(event, unit) -- required here for classportraits support
 
 	FocusFrame:SetScale(FocusFrameDB.scale)
 	FocusFrame:SetScript("OnUpdate", FocusFrame_CastingBarUpdate)

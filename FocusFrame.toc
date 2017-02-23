@@ -17,3 +17,4 @@ FocusFrame.xml
 FocusFrame.lua
 
 mods\enemyFrames.lua
+mods\classPortraits.lua

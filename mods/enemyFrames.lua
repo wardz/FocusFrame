@@ -5,6 +5,7 @@ local portraitDebuff = CreateFrame('Frame', 'FocusPortraitDebuff', TargetFrame)
 portraitDebuff:SetFrameLevel(0)
 portraitDebuff:SetPoint('TOPLEFT', FocusPortrait, 'TOPLEFT', 7, -2)
 portraitDebuff:SetPoint('BOTTOMRIGHT', FocusPortrait, 'BOTTOMRIGHT', -5.5, 4)
+portraitDebuff:Hide()
 
 -- circle texture
 portraitDebuff.bgText = FocusFrame:CreateTexture(nil, 'OVERLAY')
@@ -63,6 +64,7 @@ local showPortraitDebuff = function()
             portraitDebuff.bgText:Show()
             portraitDebuff.cd:SetTimers(prioBuff.timeStart, prioBuff.timeEnd)
             portraitDebuff.cd:Show()
+            portraitDebuff:Show()
             
             local br, bg, bb = prioBuff.border[1], prioBuff.border[2], prioBuff.border[3]
             portraitDebuff.bgText:SetVertexColor(br, bg, bb)
@@ -75,10 +77,11 @@ local showPortraitDebuff = function()
             portraitDebuff.bgText:SetVertexColor(.1, .1, .1)]]
             
         else
-            portraitDebuff.cd:Hide()				
+            portraitDebuff.cd:Hide()		
             portraitDebuff.debuffText:SetTexture()
             portraitDebuff.duration:SetText('')
             portraitDebuff.bgText:Hide()
+            portraitDebuff:Hide()
         end			
     end
 end
