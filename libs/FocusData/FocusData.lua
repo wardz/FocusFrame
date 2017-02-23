@@ -68,7 +68,7 @@ do
             local oldValue = rawData[key]
             rawset(rawData, key, value)
 
-            if events[key] then
+            if not rawData.init and events[key] then
                 if key ~= "auraUpdate" then
                     if oldValue and oldValue == value then return end
                     if key == "unit" and not value then return end
@@ -493,8 +493,10 @@ function Focus:SetFocus(name)
     focusTargetName = name
 
     if focusTargetName then
+        rawData.init = true
         self:TargetFocus()
         CallHooks("FOCUS_SET", "target")
+        rawData.init = false
         if focusChanged then
             CallHooks("FOCUS_CHANGED", "target")
         end
@@ -600,15 +602,12 @@ do
     -- Call all eventlisteners for given event.
     function CallHooks(event, arg1, arg2, arg3, arg4, recursive) --local
         --print(event)
-        rawData.init = event == "FOCUS_SET"
-        --if not data.init then
-            local hooks = hookEvents[event]
-            if hooks then
-                for i = 1, tgetn(hooks) do
-                    hooks[i](event, arg1, arg2, arg3, arg4)
-                end
+        local hooks = hookEvents[event]
+        if hooks then
+            for i = 1, tgetn(hooks) do
+                hooks[i](event, arg1, arg2, arg3, arg4)
             end
-        --end
+        end
 
         if not recursive and event == "FOCUS_SET" then
             -- Trigger all events for easy GUI updating
@@ -617,7 +616,6 @@ do
                     CallHooks(k, arg1, arg2, arg3, arg4, true)
                 end
             end
-            rawData.init = false
         end
     end
 
