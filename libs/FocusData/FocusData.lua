@@ -325,7 +325,7 @@ end
 function Focus:Trigger(func, arg1, arg2, arg3, arg4) -- no vararg in this lua version so this'll have to do for now
     if self:FocusExists(true) then
         if type(func) == "function" then
-            arguments = arguments or "target"
+            arg1 = arg1 or "target"
             self:TargetFocus()
             func(arg1, arg2, arg3, arg4)
             self:TargetPrevious()
