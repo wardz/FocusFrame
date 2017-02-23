@@ -205,13 +205,13 @@ local function SetFocusInfo(unit)
 
     data.unitClass = UnitClass(unit)
     data.unitName = GetUnitName(unit)
-    data.unitIsEnemy = UnitIsEnemy(unit, "player")
     data.unitIsFriend = UnitIsFriend(unit, "player")
     data.unitIsPlayer = UnitIsPlayer(unit)
     data.unitClassification = UnitClassification(unit)
     data.unitIsCivilian = UnitIsCivilian(unit)
     data.unitLevel = UnitLevel(unit)
     data.unitCanAttack = UnitCanAttack(unit, "player")
+    data.unitIsEnemy = rawData.playerCanAttack == 1 and rawData.unitCanAttack == 1 and 1 -- UnitIsEnemy() does not count neutral targets
     data.unitIsCorpse = UnitIsCorpse(unit)
     data.unitIsPartyLeader = UnitIsPartyLeader(unit)
     data.unitIsTapped = UnitIsTapped(unit)
@@ -242,8 +242,8 @@ do
         local members = groupType == "raid" and GetNumRaidMembers() or GetNumPartyMembers()
 
         if members > 0 then
-            local unit = groupType .. raidMemberIndex .. (data.unitIsEnemy and "target" or "")
-            local unitPet = groupType .. "pet" .. raidMemberIndex .. (data.unitIsEnemy and "target" or "")
+            local unit = groupType .. raidMemberIndex .. (rawData.unitIsEnemy == 1 and "target" or "")
+            local unitPet = groupType .. "pet" .. raidMemberIndex .. (rawData.unitIsEnemy == 1 and "target" or "")
             -- party1, party1target if focus is enemy
 
             if SetFocusInfo(unit) then
