@@ -19,8 +19,8 @@ local SetFocusAuras
 local CallHooks
 
 -- Upvalues
-local next, strfind, UnitName, TargetLastTarget, TargetByName, strlower, type, tgetn =
-      next, strfind, UnitName, TargetLastTarget, TargetByName, strlower, type, table.getn
+local GetTime, next, strfind, UnitName, TargetLastTarget, TargetByName, strlower, type, tgetn =
+      GetTime, next, strfind, UnitName, TargetLastTarget, TargetByName, strlower, type, table.getn
 
 local FSPELLCASTINGCOREgetDebuffs, FSPELLCASTINGCOREgetBuffs, FRGB_BORDER_DEBUFFS_COLOR =
       FSPELLCASTINGCOREgetDebuffs, FSPELLCASTINGCOREgetBuffs, FRGB_BORDER_DEBUFFS_COLOR
@@ -199,30 +199,35 @@ local function SetFocusInfo(unit)
         return false
     end
 
-    data.playerCanAttack = UnitCanAttack("player", unit)
-    data.raidIcon = GetRaidTargetIndex(unit)
     data.unit = unit
 
-    data.unitClass = UnitClass(unit)
-    data.unitName = GetUnitName(unit)
-    data.unitIsFriend = UnitIsFriend(unit, "player")
-    data.unitIsPlayer = UnitIsPlayer(unit)
-    data.unitClassification = UnitClassification(unit)
-    data.unitIsCivilian = UnitIsCivilian(unit)
-    data.unitLevel = UnitLevel(unit)
-    data.unitCanAttack = UnitCanAttack(unit, "player")
-    data.unitIsEnemy = rawData.playerCanAttack == 1 and rawData.unitCanAttack == 1 and 1 -- UnitIsEnemy() does not count neutral targets
-    data.unitIsCorpse = UnitIsCorpse(unit)
-    data.unitIsPartyLeader = UnitIsPartyLeader(unit)
-    data.unitIsTapped = UnitIsTapped(unit)
-    data.unitIsTappedByPlayer = UnitIsTappedByPlayer(unit)
-    data.unitReaction = UnitReaction(unit, "player")
-    data.unitIsPVPFreeForAll = UnitIsPVPFreeForAll(unit)
-    data.unitIsPVP = UnitIsPVP(unit)
-    data.unitIsConnected = UnitIsConnected(unit)
-    data.unitFactionGroup = UnitFactionGroup(unit)
-    data.unitPlayerControlled = UnitPlayerControlled(unit)
-    -- More data can be sat using Focus:SetData() in FOCUS_SET event
+    if (GetTime() - (rawData.refreshed or 0)) > 1 then
+        data.raidIcon = GetRaidTargetIndex(unit)
+        data.playerCanAttack = UnitCanAttack("player", unit)
+        data.unitCanAttack = UnitCanAttack(unit, "player")
+        data.unitIsEnemy = rawData.playerCanAttack == 1 and rawData.unitCanAttack == 1 and 1 -- UnitIsEnemy() does not count neutral targets
+        data.unitIsTapped = UnitIsTapped(unit)
+        data.unitIsTappedByPlayer = UnitIsTappedByPlayer(unit)
+        data.unitIsFriend = UnitIsFriend(unit, "player")
+        data.unitReaction = UnitReaction(unit, "player")
+        data.unitIsPVP = UnitIsPVP(unit)
+        data.unitIsConnected = UnitIsConnected(unit)
+        data.unitFactionGroup = UnitFactionGroup(unit)
+
+        data.unitClass = UnitClass(unit)
+        data.unitName = GetUnitName(unit)
+        data.unitIsPlayer = UnitIsPlayer(unit)
+        data.unitClassification = UnitClassification(unit)
+        data.unitIsCivilian = UnitIsCivilian(unit)
+        data.unitLevel = UnitLevel(unit)
+        data.unitIsCorpse = UnitIsCorpse(unit)
+        data.unitIsPartyLeader = UnitIsPartyLeader(unit)
+        data.unitIsPVPFreeForAll = UnitIsPVPFreeForAll(unit)
+        data.unitPlayerControlled = UnitPlayerControlled(unit)
+        -- More data can be sat using Focus:SetData() in FOCUS_SET event
+
+        rawData.refreshed = GetTime()
+    end
 
     SetFocusHealth(unit)
     SetFocusAuras(unit)
@@ -264,7 +269,7 @@ end
 --------------------------------------
 -- Public API
 -- Most of these can only be used after certain events,
--- or OnUpdate script with focus exist check.
+-- or in an OnUpdate script with focus exist check.
 -- Documentation: https://wardz.github.io/FocusFrame/
 --------------------------------------
 
