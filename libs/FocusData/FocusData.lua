@@ -117,12 +117,12 @@ do
         end
 
         local name = scantipTextLeft1:GetText()
-        local magicType = debuffType or scantipTextRight1:GetText()
-        if not magicType or magicType == "" then
-            magicType = "none"
-        end
-
         if name then
+            local magicType = debuffType or scantipTextRight1:GetText()
+            if not magicType or magicType == "" then
+                magicType = "none"
+            end
+
             NewBuff(focusTargetName, name, texture, isDebuff, magicType, stack)
         end
     end
@@ -133,17 +133,17 @@ do
 
         for i = 1, 16 do
             local texture, stack, debuffType = UnitDebuff(unit, i)
-            if texture then
-                SyncBuff(unit, i, texture, stack, debuffType, true)
-            end
+            if not texture then break end
+            SyncBuff(unit, i, texture, stack, debuffType, true)
         end
 
         for i = 1, 5 do
             local texture = UnitBuff(unit, i)
-            if texture then SyncBuff(unit, i, texture) end
+            if not texture then break end
+            SyncBuff(unit, i, texture)
         end
 
-        CallHooks("UNIT_AURA")
+        --CallHooks("UNIT_AURA")
     end
 end
 
@@ -391,14 +391,16 @@ function Focus:TargetPrevious()
     end
 end
 
+local function ToUpper(a, b) return strupper(a) .. b end
+
 --- Set current target as focus, or name if given.
--- @tparam[opt=nil] string name Case sensitive!
+-- @tparam[opt=nil] string name
 function Focus:SetFocus(name)
     if not name or name == "" then
         name = UnitName("target")
     else
         name = strlower(name)
-        name = gsub(name, "^%l", strupper)
+        name = gsub(name, "(%l)(%w+)", ToUpper)
     end
 
     local focusChanged = Focus:FocusExists()
@@ -407,10 +409,10 @@ function Focus:SetFocus(name)
     if focusTargetName then
         rawData.init = true -- prevent calling events, FOCUS_SET will handle that here
         self:TargetFocus()
+        rawData.init = nil
         CallHooks("FOCUS_SET", "target")
-        rawData.init = false
         if focusChanged then
-            CallHooks("FOCUS_CHANGED", "target")
+            --CallHooks("FOCUS_CHANGED", "target")
         end
         self:TargetPrevious()
     else
@@ -620,6 +622,8 @@ do
     -- Call all eventlisteners for given event.
     function CallHooks(event, arg1, arg2, arg3, arg4, recursive) --local
         --print(event)
+        if rawData.init then return end
+
         local hooks = hookEvents[event]
         if hooks then
             for i = 1, tgetn(hooks) do

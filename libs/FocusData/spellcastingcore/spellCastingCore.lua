@@ -129,7 +129,7 @@ local getAvgLatency = function()	--/script down, up, lagHome, lagWorld = GetNetS
 end
 
 local getTimeMinusPing = function()
-	return GetTime() -- getAvgLatency() --- standby for now
+	return GetTime() - 0.1 -- getAvgLatency() --- standby for now
 end
 
 local removeExpiredTableEntries = function(time, tab)
@@ -295,7 +295,7 @@ local function checkQueueBuff(tar, b)
 	return false
 end
 
-local function newbuff(tar, b, s, castOn, texture, debuff, magictype, debuffStack)
+local function newbuff(tar, b, s, castOn, texture, debuff, magictype, debuffStack, noEvent)
 	local time = getTimeMinusPing()--GetTime()
 
 	-- check buff queue
@@ -316,7 +316,9 @@ local function newbuff(tar, b, s, castOn, texture, debuff, magictype, debuffStac
 		local n = buff.create(tar, b, s, FSPELLINFO_BUFFS_TO_TRACK[b], drf, time, texture, debuff, magictype, debuffStack)
 		tinsert(buffList, n)
 
-		Focus:SetData("auraUpdate", 1)
+		if not noEvent then -- only trigger event when called outside FocusData
+			Focus:SetData("auraUpdate", 1)
+		end
 	--end
 end
 
@@ -837,7 +839,7 @@ end
 -- GLOBAL ACCESS FUNCTIONS
 
 function FSPELLCASTINGCORENewBuff(tar, b, texture, debuff, magictype, debuffStack)
-	newbuff(tar, b, 1, false, texture, debuff, magictype, debuffStack)
+	newbuff(tar, b, 1, false, texture, debuff, magictype, debuffStack, true)
 end
 
 function FSPELLCASTINGCOREClearBuffs(caster, debuffsOnly)
@@ -892,14 +894,13 @@ FSPELLCASTINGCOREgetCast = function(caster)
 end
 
 FSPELLCASTINGCOREgetDebuffs = function(caster)
-	local list = {}
+	if not caster then return end
 
-	if caster then
-		for k, v in ipairs(buffList) do
-			if v.target == caster then
-				if v.btype then
-					tinsert(list, v)
-				end
+	local list = {}
+	for k, v in pairs(buffList) do
+		if v.target == caster then
+			if v.btype then
+				tinsert(list, v)
 			end
 		end
 	end
@@ -908,14 +909,13 @@ FSPELLCASTINGCOREgetDebuffs = function(caster)
 end
 
 FSPELLCASTINGCOREgetBuffs = function(caster)
-	local list = {}
+	if not caster then return end
 
-	if caster then
-		for k, v in ipairs(buffList) do
-			if v.target == caster then
-				if not v.btype then
-					tinsert(list, v)
-				end
+	local list = {}
+	for k, v in pairs(buffList) do
+		if v.target == caster then
+			if not v.btype then
+				tinsert(list, v)
 			end
 		end
 	end
