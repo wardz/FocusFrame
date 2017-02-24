@@ -153,9 +153,9 @@ function FocusFrame_OnClick(button)
 
 	if button == "LeftButton" then
 		if SpellIsTargeting() then
-			Focus:Trigger(SpellTargetUnit)
+			Focus:Call(SpellTargetUnit)
 		elseif CursorHasItem() then
-			Focus:Trigger(DropItemOnUnit)
+			Focus:Call(DropItemOnUnit)
 		else
 			Focus:TargetFocus()
 		end

@@ -1,6 +1,8 @@
 -- Modified version of spellCastingCore by kuuurtz
 -- https://github.com/zetone/enemyFrames
 
+if FSPELLCASTINGCOREgetDebuffs then return end
+
 local Cast 			= {} 		local casts 		= {}
 local Heal 			= {} 		local heals			= {}
 local InstaBuff 	= {} 		local iBuffs 		= {}
@@ -906,18 +908,13 @@ FSPELLCASTINGCOREgetDebuffs = function(caster)
 end
 
 FSPELLCASTINGCOREgetBuffs = function(caster)
-	local list = {
-		debuffs = {},
-		buffs = {}
-	}
+	local list = {}
 
 	if caster then
 		for k, v in ipairs(buffList) do
 			if v.target == caster then
-				if v.btype then
-					tinsert(list.debuffs, v)
-				else
-					tinsert(list.buffs, v)
+				if not v.btype then
+					tinsert(list, v)
 				end
 			end
 		end

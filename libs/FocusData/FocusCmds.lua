@@ -1,3 +1,5 @@
+if SlashCmdList.MFOCUS then return end
+
 local _G = getfenv(0)
 local Focus = _G["FocusData"]
 
@@ -24,9 +26,9 @@ end
 
 SlashCmdList.FCAST = function(spell)
     if spell and strlower(spell) == "petattack" then
-        Focus:Trigger(PetAttack)
+        Focus:Call(PetAttack)
     else
-        Focus:Trigger(CastSpellByName, spell)
+        Focus:Call(CastSpellByName, spell)
     end
 end
 
@@ -39,7 +41,7 @@ SlashCmdList.FITEM = function(msg)
             scantip:SetInventoryItem("player", i)
             local text = scantipTextLeft1:GetText()
             if text and strlower(text) == msg then
-                return Focus:Trigger(UseInventoryItem, i)
+                return Focus:Call(UseInventoryItem, i)
             end
         end
 
@@ -50,7 +52,7 @@ SlashCmdList.FITEM = function(msg)
 
                 local text = scantipTextLeft1:GetText()
                 if text and strlower(text) == msg then
-                    return Focus:Trigger(UseContainerItem, i, j)
+                    return Focus:Call(UseContainerItem, i, j)
                 end
             end
         end
