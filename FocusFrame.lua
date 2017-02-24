@@ -35,6 +35,7 @@ function FocusFrame_HealthUpdate()
 	if Focus:IsDead() then
 		FocusDeadText:Show()
 		FocusFrameHealthBarText:SetText(nil)
+		FocusFrameManaBarText:SetText(nil)
 	else
 		FocusDeadText:Hide()
 	end
@@ -267,7 +268,7 @@ do
 		local numBuffs = 0
 		local numDebuffs = 0
 
-		for i = 1, MAX_TARGET_BUFFS do
+		for i = 1, 5 do
 			local buff = buffs[i]
 			local button = _G["FocusFrameBuff" .. i]
 
@@ -281,7 +282,7 @@ do
 			end
 		end
 
-		for i = 1, MAX_TARGET_DEBUFFS do
+		for i = 1, 16 do
 			local debuffBorder = _G["FocusFrameDebuff" .. i .. "Border"]
 			local button = _G["FocusFrameDebuff" .. i]
 			local debuff = debuffs[i]

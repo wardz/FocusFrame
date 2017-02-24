@@ -229,7 +229,7 @@
 				</Anchors>
 
 				<BarTexture file="Interface\TargetingFrame\UI-StatusBar"/>
-				<BarColor r="0" g="1" b="00"/>
+				<BarColor r="0" g="1" b="0"/>
 			</StatusBar>
 
 			<StatusBar name="FocusFrameManaBar" inherits="TextStatusBar" frameLevel="1">

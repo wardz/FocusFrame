@@ -176,8 +176,8 @@ local tableMaintenance = function(reset)
 		-- BUFFQUEUE
 		removeExpiredTableEntries(time, buffQueueList)
 		-- DRS
-		updateDRtimers(time, dreturnsList, buffList)
-		removeExpiredTableEntries(time, dreturnsList)
+		--updateDRtimers(time, dreturnsList, buffList)
+		--removeExpiredTableEntries(time, dreturnsList)
 	end
 end
 
@@ -926,7 +926,7 @@ end
 ------------------------------------
 
 do
-	local refresh, interval = 0, 0.1
+	local refresh, interval = 0, 0.5
 
 	local function OnUpdate()
 		refresh = refresh - arg1
@@ -935,7 +935,6 @@ do
 			refresh = interval
 		end
 	end
-
 
 	local events = CreateFrame("Frame")
 	local f = CreateFrame("Frame")
