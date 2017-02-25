@@ -86,9 +86,9 @@ do
 
                     local last = rawData.eventsThrottle[key] or 0
                     if (getTime - last) < 0.1 then return end
+                    rawData.eventsThrottle[key] = getTime
                 end
 
-                rawData.eventsThrottle[key] = getTime
                 CallHooks(events[key], rawData.unit)
             end
         end
@@ -141,14 +141,12 @@ do
         for i = 1, 5 do
             local texture = UnitBuff(unit, i)
             if not texture then break end
-            print(texture)
             SyncBuff(unit, i, texture)
         end
 
         for i = 1, 16 do
             local texture, stack, debuffType = UnitDebuff(unit, i)
             if not texture then break end
-            print(texture)
             SyncBuff(unit, i, texture, stack, debuffType, true)
         end
 
@@ -220,7 +218,7 @@ local function SetFocusInfo(unit, resetRefresh)
         rawData.refresh = 0
     end
 
-    if (getTime - (rawData.refreshed or 0)) > 1 then
+    --if (getTime - (rawData.refreshed or 0)) > 1 then
         -- Changing these will trigger event
         SetFocusAuras(unit)
         data.raidIcon = GetRaidTargetIndex(unit)
@@ -249,7 +247,7 @@ local function SetFocusInfo(unit, resetRefresh)
         rawData.unitPlayerControlled = UnitPlayerControlled(unit)
         rawData.refreshed = getTime
         -- More data can be sat using Focus:SetData() in FOCUS_SET event
-    end
+    --end
 
 	return true
 end
