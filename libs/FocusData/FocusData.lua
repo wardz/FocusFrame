@@ -66,7 +66,9 @@ do
 
     data = setmetatable({}, {
         __index = function(self, key)
-            return rawData[key]
+            local value = rawData[key]
+            if not value then error("invalid key: " .. key) end
+            return value
         end,
 
         -- This function will be called everytime a property in data has been changed
@@ -132,21 +134,25 @@ do
 
     -- Scans unit for buffs and adds them to FSPELLCASTINGCORE
     function SetFocusAuras(unit) --local
+        -- Delete all buffs stored in DB, then readd them later if found on target
+        -- This is needed when buffs are not removed in the combat log. (i.e unit out of range)
         DeleteExistingAuras()
-
-        for i = 1, 16 do
-            local texture, stack, debuffType = UnitDebuff(unit, i)
-            if not texture then break end
-            SyncBuff(unit, i, texture, stack, debuffType, true)
-        end
 
         for i = 1, 5 do
             local texture = UnitBuff(unit, i)
             if not texture then break end
+            print(texture)
             SyncBuff(unit, i, texture)
         end
 
-        --CallHooks("UNIT_AURA")
+        for i = 1, 16 do
+            local texture, stack, debuffType = UnitDebuff(unit, i)
+            if not texture then break end
+            print(texture)
+            SyncBuff(unit, i, texture, stack, debuffType, true)
+        end
+
+        CallHooks("UNIT_AURA")
     end
 end
 
@@ -203,12 +209,16 @@ local function SetFocusHealth(unit)
     data.powerType = UnitPowerType(unit)
 end
 
-local function SetFocusInfo(unit)
+local function SetFocusInfo(unit, resetRefresh)
 	if not Focus:UnitIsFocus(unit) then return false end
 
     local getTime = GetTime()
     data.unit = unit
     SetFocusHealth(unit)
+
+    if resetRefresh then
+        rawData.refresh = 0
+    end
 
     if (getTime - (rawData.refreshed or 0)) > 1 then
         -- Changing these will trigger event
@@ -219,28 +229,26 @@ local function SetFocusInfo(unit)
         data.unitIsPartyLeader = UnitIsPartyLeader(unit)
 
         -- Data without event triggers
-        if (getTime - (rawData.refreshed or 0)) > 5 then
-            rawData.playerCanAttack = UnitCanAttack("player", unit)
-            rawData.unitCanAttack = UnitCanAttack(unit, "player")
-            rawData.unitIsEnemy = rawData.playerCanAttack == 1 and rawData.unitCanAttack == 1 and 1 -- UnitIsEnemy() does not count neutral targets
-            rawData.unitIsTapped = UnitIsTapped(unit)
-            rawData.unitIsTappedByPlayer = UnitIsTappedByPlayer(unit)
-            rawData.unitIsFriend = UnitIsFriend(unit, "player")
-            rawData.unitReaction = UnitReaction(unit, "player")
-            rawData.unitIsPVP = UnitIsPVP(unit)
-            rawData.unitIsConnected = UnitIsConnected(unit)
-            rawData.unitFactionGroup = UnitFactionGroup(unit)
-            rawData.unitClass = UnitClass(unit)
-            rawData.unitName = GetUnitName(unit)
-            rawData.unitIsPlayer = UnitIsPlayer(unit)
-            rawData.unitIsCivilian = UnitIsCivilian(unit)
-            rawData.unitIsCorpse = UnitIsCorpse(unit)
-            rawData.unitIsPVPFreeForAll = UnitIsPVPFreeForAll(unit)
-            rawData.unitPlayerControlled = UnitPlayerControlled(unit)
-            -- More data can be sat using Focus:SetData() in FOCUS_SET event
-        end
-
+        -- TODO throttle these even more
+        rawData.playerCanAttack = UnitCanAttack("player", unit)
+        rawData.unitCanAttack = UnitCanAttack(unit, "player")
+        rawData.unitIsEnemy = rawData.playerCanAttack == 1 and rawData.unitCanAttack == 1 and 1 -- UnitIsEnemy() does not count neutral targets
+        rawData.unitIsTapped = UnitIsTapped(unit)
+        rawData.unitIsTappedByPlayer = UnitIsTappedByPlayer(unit)
+        rawData.unitIsFriend = UnitIsFriend(unit, "player")
+        rawData.unitReaction = UnitReaction(unit, "player")
+        rawData.unitIsPVP = UnitIsPVP(unit)
+        rawData.unitIsConnected = UnitIsConnected(unit)
+        rawData.unitFactionGroup = UnitFactionGroup(unit)
+        rawData.unitClass = UnitClass(unit)
+        rawData.unitName = GetUnitName(unit)
+        rawData.unitIsPlayer = UnitIsPlayer(unit)
+        rawData.unitIsCivilian = UnitIsCivilian(unit)
+        rawData.unitIsCorpse = UnitIsCorpse(unit)
+        rawData.unitIsPVPFreeForAll = UnitIsPVPFreeForAll(unit)
+        rawData.unitPlayerControlled = UnitPlayerControlled(unit)
         rawData.refreshed = getTime
+        -- More data can be sat using Focus:SetData() in FOCUS_SET event
     end
 
 	return true
@@ -262,10 +270,10 @@ do
             local unitPet = groupType .. "pet" .. raidMemberIndex .. (rawData.unitIsEnemy == 1 and "target" or "")
             -- party1, party1target if focus is enemy
 
-            if SetFocusInfo(unit) then
+            if SetFocusInfo(unit, true) then
                 raidMemberIndex = 1
                 partyUnit = unit
-            elseif SetFocusInfo(unitPet) then
+            elseif SetFocusInfo(unitPet, true) then
                 raidMemberIndex = 1
                 partyUnit = unitPet
             else
@@ -339,12 +347,12 @@ end
 function Focus:Call(func, arg1, arg2, arg3, arg4) -- no vararg in this lua version so this'll have to do for now
     if self:FocusExists(true) then
         if type(func) == "function" then
-            arg1 = arg1 or "target"
+            arg1 = arg1 or "target" --focus
             self:TargetFocus()
             func(arg1, arg2, arg3, arg4)
             self:TargetPrevious()
         else
-            error("Usage: Call(function, arg1,arg2,arg3,arg4)")
+            error("Usage: Focus:Call(function, arg1,arg2,arg3,arg4)")
         end
     end
 end
@@ -387,14 +395,14 @@ function Focus:TargetPrevious()
         if UnitName("target") ~= self.oldTarget then
             -- TargetLastTarget seems to bug out randomly,
             -- so use this as fallback
-            self:TargetFocus(name)
+            self:TargetFocus()
         end
     elseif not self.oldTarget then
         ClearTarget()
     end
 end
 
-local function ToUpper(a, b) return strupper(a) .. b end
+local ToUpper = function(a, b) return strupper(a) .. b end
 
 --- Set current target as focus, or name if given.
 -- @tparam[opt=nil] string name
@@ -480,14 +488,14 @@ end
 -- Should be ran in an OnUpdate script or HookEvent("UNIT_AURA")
 -- @treturn table data or empty table
 function Focus:GetBuffs()
-    return FSPELLCASTINGCOREgetBuffs(focusTargetName)
+    return FSPELLCASTINGCOREgetBuffs(focusTargetName) or {}
 end
 
 --- Get table containing all debuff data for focus.
 -- Should be ran in an OnUpdate script or HookEvent("UNIT_AURA")
 -- @treturn table data or empty table
 function Focus:GetDebuffs()
-    return FSPELLCASTINGCOREgetDebuffs(focusTargetName)
+    return FSPELLCASTINGCOREgetDebuffs(focusTargetName) or {}
 end
 
 do
@@ -548,9 +556,9 @@ function Focus:GetReactionColors()
     if not self:FocusExists() then return error("no focus sat.") end
     local r, g, b = 0, 0, 1
 
-    if rawData.unitCanAttack == 1then
+    if rawData.unitCanAttack == 1 then
         -- Hostile players are red
-        if rawData.playerCanAttack == 1then
+        if rawData.playerCanAttack == 1 then
             r = UnitReactionColor[2].r
             g = UnitReactionColor[2].g
             b = UnitReactionColor[2].b
@@ -591,7 +599,7 @@ end
 -- @tparam string key
 -- @param value
 function Focus:SetData(key, value)
-    if key and type(key) == "string" and value then
+    if key and value then
         data[key] = value
     else
         error('Usage: SetData("key", value)')
@@ -606,9 +614,9 @@ function Focus:ClearData(key)
     else
         for k, v in next, data do
             if k == "eventsThrottle" then
-                data[k] = {}
+                rawData[k] = {}
             else
-                data[k] = nil
+                rawData[k] = nil
             end
         end
     end
@@ -624,27 +632,26 @@ do
 
     -- Call all eventlisteners for given event.
     function CallHooks(event, arg1, arg2, arg3, arg4, recursive) --local
-        --print(event)
-        if rawData.init then return end
+        --if rawData.init then return end
 
-        local hooks = hookEvents[event]
-        if hooks then
-            for i = 1, tgetn(hooks) do
-                hooks[i](event, arg1, arg2, arg3, arg4)
+        local callbacks = hookEvents[event]
+        if callbacks then
+            for i = 1, tgetn(callbacks) do
+                callbacks[i](event, arg1, arg2, arg3, arg4)
             end
         end
 
         if not recursive and event == "FOCUS_SET" then
             -- Trigger all events for easy GUI updating
-            for k, v in next, hookEvents do
-                if k ~= "FOCUS_CLEAR" then
-                    CallHooks(k, arg1, arg2, arg3, arg4, true)
+            for evnt, _ in next, hookEvents do
+                if evnt ~= "FOCUS_CLEAR" then
+                    CallHooks(evnt, arg1, arg2, arg3, arg4, true)
                 end
             end
         end
     end
 
-    local function EventHandler()
+    local EventHandler = function()
         if strfind(event, "UNIT_") or strfind(event, "PLAYER_") then
             -- Run only events for focus
             if not Focus:UnitIsFocus(arg1) then return end
@@ -654,7 +661,7 @@ do
         or event == "UNIT_RAGE" or event == "UNIT_FOCUS" or event == "UNIT_ENERGY" then
             -- Combine into 1 single event
             --return events:UNIT_HEALTH_OR_POWER(event, arg1)
-            SetFocusHealth(arg1)
+            return SetFocusHealth(arg1)
         end
 
         if events[event] then
@@ -662,11 +669,12 @@ do
         end
     end
 
-    local function OnUpdateHandler()
+    local OnUpdateHandler = function()
         refresh = refresh - arg1
         if refresh < 0 then
             if focusTargetName then
                 if partyUnit and focusTargetName == UnitName(partyUnit) then
+                    -- partyX or partyXtarget = focus
                     return SetFocusInfo(partyUnit)
                 end
 
@@ -723,10 +731,6 @@ do
 
     --------------------------------------------------------
 
-    function events:UNIT_HEALTH_OR_POWER(event, unit)
-        SetFocusHealth(unit)
-    end
-
     function events:UNIT_AURA(event, unit)
         SetFocusAuras(unit)
     end
@@ -747,12 +751,13 @@ do
         data.unitIsPartyLeader = UnitIsPartyLeader(unit)
     end
 
-    function events:UNIT_PORTRAIT_UPDATE(event, unit)
-        -- TODO
+    function events:PLAYER_TARGET_CHANGED(event, unit)
+        --if Focus:UnitIsFocus("target") then rawData.refreshed = 0 end
     end
 
     events:SetScript("OnEvent", EventHandler)
     events:SetScript("OnUpdate", OnUpdateHandler)
+    --events:RegisterEvent("PLAYER_TARGET_CHANGED")
     events:RegisterEvent("PLAYER_FLAGS_CHANGED")
     events:RegisterEvent("PARTY_LEADER_CHANGED")
     events:RegisterEvent("RAID_TARGET_UPDATE")

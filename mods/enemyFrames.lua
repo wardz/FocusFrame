@@ -1,4 +1,5 @@
 if not IsAddOnLoaded("enemyFrames") then return end
+
 local Focus = getglobal("FocusData")
 
 local portraitDebuff = CreateFrame('Frame', 'FocusPortraitDebuff', TargetFrame)
@@ -33,10 +34,12 @@ portraitDebuff.duration:SetPoint('CENTER', FocusPortrait, 'CENTER', 0, -7)
 portraitDebuff.cd = CreateCooldown(portraitDebuff, 1.054, true)
 portraitDebuff.cd:SetAlpha(1)
 
+local SPELLCASTINGCOREgetPrioBuff, floor, GetTime = SPELLCASTINGCOREgetPrioBuff, floor, GetTime
+
 -------------------------------------------------------------------------------
 local function round(num, idp)
     local mult = 10^(idp or 0)
-    return math.floor(num * mult + 0.5) / mult
+    return floor(num * mult + 0.5) / mult
 end
 local getTimerLeft = function(tEnd, l)
     local t = tEnd - GetTime()
@@ -69,7 +72,7 @@ local showPortraitDebuff = function()
             local br, bg, bb = prioBuff.border[1], prioBuff.border[2], prioBuff.border[3]
             portraitDebuff.bgText:SetVertexColor(br, bg, bb)
             
-        --[[elseif UnitName'target' == flagCarriers[xtFaction] then
+        --[[elseif Focus:GetName() == flagCarriers[xtFaction] then
             portraitDebuff.debuffText:SetTexture(SPELLINFO_WSG_FLAGS[xtFaction]['icon'])
             portraitDebuff.bgText:Show()
             portraitDebuff.duration:SetText('')
@@ -86,6 +89,7 @@ local showPortraitDebuff = function()
     end
 end
 
+local ENEMYFRAMESPLAYERDATA = ENEMYFRAMESPLAYERDATA
 local nextRefresh, refreshInterval = 0, 0.1
 local dummyFrame = CreateFrame'Frame'
 
@@ -93,7 +97,7 @@ dummyFrame:SetScript('OnUpdate', function()
     nextRefresh = nextRefresh - arg1
     if nextRefresh < 0 then
 
-        if ENEMYFRAMESPLAYERDATA['targetPortraitDebuff'] then
+        if ENEMYFRAMESPLAYERDATA.targetPortraitDebuff then
             showPortraitDebuff()
         else
             portraitDebuff.cd:Hide()				

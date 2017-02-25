@@ -16,9 +16,13 @@ function FocusFrame_CheckPortrait(event, unit)
 	FocusPortrait:SetAlpha(1)
 end
 
+-- Upvalues
+local GetHealth, GetPower = Focus.GetHealth, Focus.GetPower
+local GetPowerColor = Focus.GetPowerColor
+
 function FocusFrame_HealthUpdate()
-	local health, maxHealth = Focus:GetHealth()
-	local mana, maxMana = Focus:GetPower()
+	local health, maxHealth = GetHealth()
+	local mana, maxMana = GetPower()
 
 	FocusFrameHealthBar:SetMinMaxValues(0, maxHealth)
 	FocusFrameHealthBar:SetValue(health)
@@ -26,7 +30,7 @@ function FocusFrame_HealthUpdate()
 	FocusFrameManaBar:SetValue(mana)
 
 	if FocusFrameManaBar:IsShown() then
-		local color = Focus:GetPowerColor()
+		local color = GetPowerColor()
 		FocusFrameManaBar:SetStatusBarColor(color.r, color.g, color.b)
 	else
 		FocusFrameManaBarText:SetText(nil)
@@ -163,8 +167,9 @@ function FocusFrame_OnClick(button)
 	end
 end
 
+local GetCast = Focus.GetCast
 function FocusFrame_CastingBarUpdate()
-	local cast, value, maxValue, sparkPosition, timer = Focus:GetCast()
+	local cast, value, maxValue, sparkPosition, timer = GetCast()
 
 	if cast then
 		local castbar = FocusFrame.cast
@@ -191,6 +196,9 @@ function FocusFrame_CheckLeader()
 end
 
 do
+	local GetBuffs, GetDebuffs = Focus.GetBuffs, Focus.GetDebuffs
+	local GetDebuffColor = Focus.GetDebuffColor
+
 	local function PositionBuffs(numDebuffs, numBuffs)
 		local debuffWrap = 6
 		if Focus:GetData("unitIsFriend") == 1 then
@@ -263,8 +271,8 @@ do
 	end
 
 	function FocusDebuffButton_Update()
-		local buffs = Focus:GetBuffs()
-		local debuffs = Focus:GetDebuffs()
+		local buffs = GetBuffs()
+		local debuffs = GetDebuffs()
 		local numBuffs = 0
 		local numDebuffs = 0
 
@@ -289,7 +297,7 @@ do
 
 			if debuff then
 				local debuffCount = _G["FocusFrameDebuff" .. i .. "Count"]
-				local color = Focus:GetDebuffColor(debuff.debuffType)
+				local color = GetDebuffColor(debuff.debuffType)
 				local debuffStack = debuff.stacks
 				_G["FocusFrameDebuff" .. i .. "Icon"]:SetTexture(debuff.icon)
 
@@ -336,7 +344,7 @@ FocusFrame.cast.border:SetPoint("TOPLEFT", -23, 20)
 FocusFrame.cast.border:SetPoint("TOPRIGHT", 23, 20)
 --FocusFrame.cast.border:SetWidth(150)
 FocusFrame.cast.border:SetHeight(50)
-FocusFrame.cast.border:SetTexture("Interface\\AddOns\\FocusFrame\\libs\\FocusData\\UI-CastingBar-Border-Small.blp")
+FocusFrame.cast.border:SetTexture("Interface\\AddOns\\FocusFrame\\mods\\UI-CastingBar-Border-Small.blp")
 
 FocusFrame.cast.text = FocusFrame.cast:CreateFontString(nil, "OVERLAY")
 FocusFrame.cast.text:SetTextColor(1, 1, 1)

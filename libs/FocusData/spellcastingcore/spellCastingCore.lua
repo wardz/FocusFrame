@@ -29,12 +29,15 @@ local SPELLINFO_CHANNELED_HEALS_SPELLCASTS_TO_TRACK, SPELLINFO_SPELLCASTS_TO_TRA
 
 local SPELLINFO_TRADECASTS_TO_TRACK = SPELLINFO_TRADECASTS_TO_TRACK
 
+local FSPELLINFO_BUFFS_TO_TRACK, FRGB_BORDER_DEBUFFS_COLOR, FRGB_SPELL_SCHOOL_COLORS =
+		FSPELLINFO_BUFFS_TO_TRACK, FRGB_BORDER_DEBUFFS_COLOR, FRGB_SPELL_SCHOOL_COLORS
+
 local tinsert, tremove, strfind, gsub, ipairs, pairs, GetTime, GetNetStats, setmetatable, tgetn =
 	  table.insert, table.remove, string.find, string.gsub, ipairs, pairs, GetTime, GetNetStats, setmetatable, table.getn
 
 Cast.create = function(caster, spell, info, timeMod, time, inv)
 	local acnt = {}
-	setmetatable(acnt, spellCast)
+	setmetatable(acnt, Cast)
 	acnt.caster     = caster
 	acnt.spell      = spell
 	acnt.icon       = info['icon']
@@ -313,7 +316,7 @@ local function newbuff(tar, b, s, castOn, texture, debuff, magictype, debuffStac
 			i = i + 1
 		end
 
-		local n = buff.create(tar, b, s, FSPELLINFO_BUFFS_TO_TRACK[b], drf, time, texture, debuff, magictype, debuffStack)
+		local n = buff.create(tar, b, s, FSPELLINFO_BUFFS_TO_TRACK[b], 1, time, texture, debuff, magictype, debuffStack)
 		tinsert(buffList, n)
 
 		if not noEvent then -- only trigger event when called outside FocusData
@@ -435,7 +438,7 @@ local CastCraftPerform = function()
 		end]]--
 	end
 	
-	return fcast or fbcast or fpcast or fcraftor or fperform or fbperform or fpcastFin or fcastFin or fperformOn
+	return fcast or fbcast or fpcast or fperform or fbperform or fpcastFin or fcastFin or fperformOn
 end
 
 local handleHeal = function()
