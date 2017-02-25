@@ -5,8 +5,8 @@
 -- @author Wardz
 -- @license MIT
 local _G = getfenv(0)
-print = print or function(msg) DEFAULT_CHAT_FRAME:AddMessage(msg or "nil") end
 if _G.FocusData then return end
+print = print or function(msg) DEFAULT_CHAT_FRAME:AddMessage(msg or "nil") end
 
 -- Vars
 local Focus = {}
@@ -27,6 +27,10 @@ local PartyScanner
 local SetFocusAuras
 local CallHooks
 
+FocusDataScantip = CreateFrame("GameTooltip", "FocusDataScantip", nil, "GameTooltipTemplate")
+FocusDataScantip:SetOwner(UIParent, "ANCHOR_NONE")
+FocusDataScantip:SetFrameStrata("TOOLTIP")
+
 -- Data event handling
 do
     local rawset = rawset
@@ -35,7 +39,7 @@ do
     -- If you want to modify the built in focus frame,
     -- hook/replace the functions inside FocusFrame.lua instead.
     -- @table Events
-    -- @usage Focus:HookEvent("EVENT_NAME", callbackFunc)
+    -- @usage Focus:OnEvent("EVENT_NAME", callbackFunc)
     -- @field UNIT_HEALTH_OR_POWER arg1=event or nil, arg2=unit or nil
     -- @field UNIT_LEVEL arg1=event or nil, arg2=unit or nil
     -- @field UNIT_AURA arg1=event or nil, arg2=unit or nil
@@ -67,7 +71,7 @@ do
     data = setmetatable({}, {
         __index = function(self, key)
             local value = rawData[key]
-            if not value then error("invalid key: " .. key) end
+            if value == nil then error("invalid key: " .. key) end
             return value
         end,
 
@@ -483,14 +487,14 @@ function Focus:GetDebuffColor(debuffType)
 end
 
 --- Get table containing all buff data for focus.
--- Should be ran in an OnUpdate script or HookEvent("UNIT_AURA")
+-- Should be ran in an OnUpdate script or OnEvent("UNIT_AURA")
 -- @treturn table data or empty table
 function Focus:GetBuffs()
     return FSPELLCASTINGCOREgetBuffs(focusTargetName) or {}
 end
 
 --- Get table containing all debuff data for focus.
--- Should be ran in an OnUpdate script or HookEvent("UNIT_AURA")
+-- Should be ran in an OnUpdate script or OnEvent("UNIT_AURA")
 -- @treturn table data or empty table
 function Focus:GetDebuffs()
     return FSPELLCASTINGCOREgetDebuffs(focusTargetName) or {}
@@ -594,6 +598,7 @@ function Focus:GetData(key)
 end
 
 --- Insert/replace any focus data
+-- @see SetFocusInfo
 -- @tparam string key
 -- @param value
 function Focus:SetData(key, value)
@@ -698,7 +703,7 @@ do
     -- @tparam string eventName
     -- @tparam func callback
     -- @treturn number event ID
-    function Focus:HookEvent(eventName, callback)
+    function Focus:OnEvent(eventName, callback)
         if type(eventName) ~= "string" or type(callback) ~= "function" then
             return error('Usage: HookEvent("event", callbackFunc)')
         end
@@ -715,7 +720,7 @@ do
     --- Remove existing event.
     -- @tparam string eventName
     -- @tparam number eventID
-    function Focus:UnhookEvent(eventName, eventID)
+    function Focus:RemoveEvent(eventName, eventID)
         if type(eventName) ~= "string" or type(eventID) ~= "number" then
             return error('Usage: UnhookEvent("event", id)')
         end

@@ -68,7 +68,7 @@
 		['Mind Quickening']				= {['mod'] = 0.66, 	['list'] = {'Fireball', 'Frostbolt', 'Pyroblast', 'Scorch', 'Polymorph', 'Polymorph: Pig', 'Polymorph: Turtle'}},		
 	}
 	
-	FSPELLINFO_BUFFS_TO_TRACK = {
+	FSPELLINFO_BUFFS_TO_TRACK = FSPELLINFO_BUFFS_TO_TRACK or {
 	
 		-- MISC & MOBS
 		['First Aid']				= {['icon'] = [[Interface\Icons\Spell_holy_heal]],					['duration'] = 8,	['display'] = true,},

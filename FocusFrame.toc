@@ -9,7 +9,6 @@ libs\FocusData\spellcastingcore\globals.lua
 libs\FocusData\spellcastingcore\buffs.lua
 libs\FocusData\spellcastingcore\spells.lua
 libs\FocusData\spellcastingcore\spellCastingCore.lua
-libs\FocusData\FocusData.xml
 libs\FocusData\FocusData.lua
 libs\FocusData\FocusCmds.lua
 
