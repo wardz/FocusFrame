@@ -29,8 +29,12 @@
 
 <h2>Contents</h2>
 <ul>
-<li><a href="#Functions">Functions</a></li>
 <li><a href="#Tables">Tables</a></li>
+<li><a href="#Misc">Misc </a></li>
+<li><a href="#Unit">Unit </a></li>
+<li><a href="#Getters">Getters </a></li>
+<li><a href="#Data">Data </a></li>
+<li><a href="#Events">Events </a></li>
 </ul>
 
 
@@ -44,18 +48,35 @@
 <div id="content">
 
 <h1>Module <code>FocusData</code></h1>
-<p></p>
-<p></p>
+<p>Documentation: https://wardz.github.io/FocusFrame/.</p>
+<p>
+ Feel free to use or fork this module.
+ See FocusFrame.lua for examples.</p>
+    <h3>Info:</h3>
+    <ul>
+        <li><strong>License</strong>: MIT</li>
+        <li><strong>Author</strong>: Wardz</li>
+    </ul>
 
 
-<h2><a href="#Functions">Functions</a></h2>
+<h2><a href="#Tables">Tables</a></h2>
 <table class="function_list">
 	<tr>
-	<td class="name" nowrap><a href="#Focus:ShowError">Focus:ShowError ([msg])</a></td>
+	<td class="name" nowrap><a href="#Events">Events</a></td>
+	<td class="summary">FocusData events.</td>
+	</tr>
+</table>
+<h2><a href="#Misc">Misc </a></h2>
+<table class="function_list">
+	<tr>
+	<td class="name" nowrap><a href="#Focus:ShowError">Focus:ShowError ([msg=nil])</a></td>
 	<td class="summary">Display focus UI error</td>
 	</tr>
+</table>
+<h2><a href="#Unit">Unit </a></h2>
+<table class="function_list">
 	<tr>
-	<td class="name" nowrap><a href="#Focus:UnitIsFocus">Focus:UnitIsFocus (unit[, checkName])</a></td>
+	<td class="name" nowrap><a href="#Focus:UnitIsFocus">Focus:UnitIsFocus (unit[, checkName=false])</a></td>
 	<td class="summary">Check if unit ID or unit name matches focus target.</td>
 	</tr>
 	<tr>
@@ -63,16 +84,35 @@
 	<td class="summary">Get unit ID for focus if available</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#Focus:GetName">Focus:GetName ()</a></td>
-	<td class="summary">Get focus unit name.</td>
-	</tr>
-	<tr>
-	<td class="name" nowrap><a href="#Focus:FocusExists">Focus:FocusExists ([showError])</a></td>
+	<td class="name" nowrap><a href="#Focus:FocusExists">Focus:FocusExists ([showError=false])</a></td>
 	<td class="summary">Check if focus is sat.</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#Focus:Trigger">Focus:Trigger (func, arg1, arg2, arg3, arg4)</a></td>
-	<td class="summary">Use any unit function on focus target, i.e CastSpellByName</td>
+	<td class="name" nowrap><a href="#Focus:Call">Focus:Call (func, arg1, arg2, arg3, arg4)</a></td>
+	<td class="summary">Use any unit function on focus target, i.e CastSpellByName.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#Focus:TargetFocus">Focus:TargetFocus ([name=nil])</a></td>
+	<td class="summary">Target the focus.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#Focus:SetFocus">Focus:SetFocus ([name=nil])</a></td>
+	<td class="summary">Set current target as focus, or name if given.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#Focus:IsDead">Focus:IsDead ()</a></td>
+	<td class="summary">Check if focus is dead.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#Focus:ClearFocus">Focus:ClearFocus ()</a></td>
+	<td class="summary">Remove focus & all data.</td>
+	</tr>
+</table>
+<h2><a href="#Getters">Getters </a></h2>
+<table class="function_list">
+	<tr>
+	<td class="name" nowrap><a href="#Focus:GetName">Focus:GetName ()</a></td>
+	<td class="summary">Get focus unit name.</td>
 	</tr>
 	<tr>
 	<td class="name" nowrap><a href="#Focus:GetHealth">Focus:GetHealth ()</a></td>
@@ -103,27 +143,14 @@
 	<td class="summary">Get cast data for focus.</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#Focus:TargetFocus">Focus:TargetFocus ([name])</a></td>
-	<td class="summary">Target the focus.</td>
-	</tr>
-	<tr>
-	<td class="name" nowrap><a href="#Focus:SetFocus">Focus:SetFocus ([name])</a></td>
-	<td class="summary">Set current target as focus, or name if given.</td>
-	</tr>
-	<tr>
-	<td class="name" nowrap><a href="#Focus:ClearFocus">Focus:ClearFocus ()</a></td>
-	<td class="summary">Remove focus & its data.</td>
-	</tr>
-	<tr>
-	<td class="name" nowrap><a href="#Focus:IsDead">Focus:IsDead ()</a></td>
-	<td class="summary">Check if focus is dead.</td>
-	</tr>
-	<tr>
 	<td class="name" nowrap><a href="#Focus:GetReactionColors">Focus:GetReactionColors ()</a></td>
 	<td class="summary">Get UnitReactionColor for focus.</td>
 	</tr>
+</table>
+<h2><a href="#Data">Data </a></h2>
+<table class="function_list">
 	<tr>
-	<td class="name" nowrap><a href="#Focus:GetData">Focus:GetData ([key])</a></td>
+	<td class="name" nowrap><a href="#Focus:GetData">Focus:GetData ([key=nil])</a></td>
 	<td class="summary">Get specific focus data.</td>
 	</tr>
 	<tr>
@@ -131,23 +158,19 @@
 	<td class="summary">Insert/replace any focus data</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#Focus:ClearData">Focus:ClearData ([key])</a></td>
+	<td class="name" nowrap><a href="#Focus:ClearData">Focus:ClearData ([key=nil])</a></td>
 	<td class="summary">Delete specific or all focus data</td>
 	</tr>
-	<tr>
-	<td class="name" nowrap><a href="#Focus:HookEvent">Focus:HookEvent (eventName, callback)</a></td>
-	<td class="summary">Post-hook a focus event.</td>
-	</tr>
-	<tr>
-	<td class="name" nowrap><a href="#Focus:UnhookEvent">Focus:UnhookEvent (eventName, eventID)</a></td>
-	<td class="summary">Remove existing event.</td>
-	</tr>
 </table>
-<h2><a href="#Tables">Tables</a></h2>
+<h2><a href="#Events">Events </a></h2>
 <table class="function_list">
 	<tr>
-	<td class="name" nowrap><a href="#Events">Events</a></td>
-	<td class="summary">Hookable events.</td>
+	<td class="name" nowrap><a href="#Focus:OnEvent">Focus:OnEvent (eventName, callback)</a></td>
+	<td class="summary">Register event listener for a focus event.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#Focus:RemoveEvent">Focus:RemoveEvent (eventName, eventID)</a></td>
+	<td class="summary">Remove existing event listener.</td>
 	</tr>
 </table>
 
@@ -155,12 +178,70 @@
 <br/>
 
 
-    <h2 class="section-header "><a name="Functions"></a>Functions</h2>
+    <h2 class="section-header "><a name="Tables"></a>Tables</h2>
+
+    <dl class="function">
+    <dt>
+    <a name = "Events"></a>
+    <strong>Events</strong>
+    </dt>
+    <dd>
+    FocusData events.
+ List of events that you can register for.
+ (If you want to modify the built in focus frame,
+ hook the functions inside FocusFrame.lua instead.)
+
+
+    <h3>Fields:</h3>
+    <ul>
+        <li><span class="parameter">UNIT_HEALTH_OR_POWER</span>
+         arg1=event or nil, arg2=unit or nil
+        </li>
+        <li><span class="parameter">UNIT_LEVEL</span>
+         arg1=event or nil, arg2=unit or nil
+        </li>
+        <li><span class="parameter">UNIT_AURA</span>
+         arg1=event or nil, arg2=unit or nil
+        </li>
+        <li><span class="parameter">UNIT_CLASSIFICATION_CHANGED</span>
+
+        </li>
+        <li><span class="parameter">PLAYER_FLAGS_CHANGED</span>
+
+        </li>
+        <li><span class="parameter">RAID_TARGET_UPDATE</span>
+
+        </li>
+        <li><span class="parameter">FOCUS_UNITID_EXISTS</span>
+         arg1=event, arg2=unit
+        </li>
+        <li><span class="parameter">FOCUS_SET</span>
+         arg1=event, arg2=unit
+        </li>
+        <li><span class="parameter">FOCUS_CHANGED</span>
+         arg1=event, arg2=unit
+        </li>
+        <li><span class="parameter">FOCUS_CLEAR</span>
+
+        </li>
+    </ul>
+
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example">Focus:OnEvent(<span class="string">"EVENT_NAME"</span>, callbackFunc)</pre>
+    </ul>
+
+</dd>
+</dl>
+    <h2 class="section-header "><a name="Misc"></a>Misc </h2>
 
     <dl class="function">
     <dt>
     <a name = "Focus:ShowError"></a>
-    <strong>Focus:ShowError ([msg])</strong>
+    <strong>Focus:ShowError ([msg=nil])</strong>
     </dt>
     <dd>
     Display focus UI error
@@ -171,7 +252,7 @@
         <li><span class="parameter">msg</span>
             <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
 
-         (<em>optional</em>)
+         (<em>default</em> nil)
         </li>
     </ul>
 
@@ -180,9 +261,13 @@
 
 
 </dd>
+</dl>
+    <h2 class="section-header "><a name="Unit"></a>Unit </h2>
+
+    <dl class="function">
     <dt>
     <a name = "Focus:UnitIsFocus"></a>
-    <strong>Focus:UnitIsFocus (unit[, checkName])</strong>
+    <strong>Focus:UnitIsFocus (unit[, checkName=false])</strong>
     </dt>
     <dd>
     Check if unit ID or unit name matches focus target.
@@ -197,7 +282,7 @@
         <li><span class="parameter">checkName</span>
             <span class="types"><span class="type">bool</span></span>
 
-         (<em>optional</em>)
+         (<em>default</em> false)
         </li>
     </ul>
 
@@ -239,37 +324,11 @@
 
 </dd>
     <dt>
-    <a name = "Focus:GetName"></a>
-    <strong>Focus:GetName ()</strong>
-    </dt>
-    <dd>
-    Get focus unit name.
-
-
-
-    <h3>Returns:</h3>
-    <ol>
-
-           <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
-        unit name
-    </ol>
-     <h3>Or</h3>
-    <ol>
-
-           <span class="types"><span class="type">nil</span></span>
-
-    </ol>
-
-
-
-
-</dd>
-    <dt>
     <a name = "Focus:FocusExists"></a>
-    <strong>Focus:FocusExists ([showError])</strong>
+    <strong>Focus:FocusExists ([showError=false])</strong>
     </dt>
     <dd>
-    Check if focus is sat.
+    Check if focus is sat.  (Not same as UnitExists!)
 
 
     <h3>Parameters:</h3>
@@ -277,7 +336,7 @@
         <li><span class="parameter">showError</span>
             <span class="types"><span class="type">bool</span></span>
          display UI error msg
-         (<em>optional</em>)
+         (<em>default</em> false)
         </li>
     </ul>
 
@@ -293,18 +352,18 @@
 
 </dd>
     <dt>
-    <a name = "Focus:Trigger"></a>
-    <strong>Focus:Trigger (func, arg1, arg2, arg3, arg4)</strong>
+    <a name = "Focus:Call"></a>
+    <strong>Focus:Call (func, arg1, arg2, arg3, arg4)</strong>
     </dt>
     <dd>
-    Use any unit function on focus target, i.e CastSpellByName
+    Use any unit function on focus target, i.e CastSpellByName.
 
 
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">func</span>
             <span class="types"><span class="type">func</span></span>
-         function
+         function reference
         </li>
         <li><span class="parameter">arg1</span>
 
@@ -325,9 +384,118 @@
 
     <h3>Usage:</h3>
     <ul>
-        <li><pre class="example">Focus:Trigger(CastSpellByName, <span class="string">"Fireball"</span>)</pre></li>
-        <li><pre class="example">Focus:Trigger(DropItemOnUnit); <span class="comment">-- unit defaults to focus when no second arg.</span></pre></li>
+        <li><pre class="example">Focus:Call(CastSpellByName, <span class="string">"Fireball"</span>) <span class="comment">-- Casts Fireball on focus target</span></pre></li>
+        <li><pre class="example">Focus:Call(DropItemOnUnit); <span class="comment">-- defaults to focus unit if no second arg given</span></pre></li>
     </ul>
+
+</dd>
+    <dt>
+    <a name = "Focus:TargetFocus"></a>
+    <strong>Focus:TargetFocus ([name=nil])</strong>
+    </dt>
+    <dd>
+    Target the focus.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">name</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+
+         (<em>default</em> nil)
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "Focus:SetFocus"></a>
+    <strong>Focus:SetFocus ([name=nil])</strong>
+    </dt>
+    <dd>
+    Set current target as focus, or name if given.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">name</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+
+         (<em>default</em> nil)
+        </li>
+    </ul>
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "Focus:IsDead"></a>
+    <strong>Focus:IsDead ()</strong>
+    </dt>
+    <dd>
+    Check if focus is dead.
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">bool</span></span>
+        true if dead
+    </ol>
+
+
+
+
+</dd>
+    <dt>
+    <a name = "Focus:ClearFocus"></a>
+    <strong>Focus:ClearFocus ()</strong>
+    </dt>
+    <dd>
+    Remove focus & all data.
+
+
+
+
+
+
+
+</dd>
+</dl>
+    <h2 class="section-header "><a name="Getters"></a>Getters </h2>
+
+    <dl class="function">
+    <dt>
+    <a name = "Focus:GetName"></a>
+    <strong>Focus:GetName ()</strong>
+    </dt>
+    <dd>
+    Get focus unit name.
+ Global var CURR_FOCUS_TARGET may also be used.
+
+
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+        unit name
+    </ol>
+     <h3>Or</h3>
+    <ol>
+
+           <span class="types"><span class="type">nil</span></span>
+
+    </ol>
+
+
+
 
 </dd>
     <dt>
@@ -402,6 +570,7 @@
     </dt>
     <dd>
     Get border color for debuffs.
+ Uses numeric indexes.
 
 
     <h3>Parameters:</h3>
@@ -428,7 +597,7 @@
     </dt>
     <dd>
     Get table containing all buff data for focus.
- Should be ran in an OnUpdate script or HookEvent("UNIT_AURA")
+ Should be ran in an OnUpdate script or OnEvent("UNIT_AURA")
 
 
 
@@ -449,7 +618,7 @@
     </dt>
     <dd>
     Get table containing all debuff data for focus.
- Should be ran in an OnUpdate script or HookEvent("UNIT_AURA")
+ Should be ran in an OnUpdate script or OnEvent("UNIT_AURA")
 
 
 
@@ -504,84 +673,6 @@
 
 </dd>
     <dt>
-    <a name = "Focus:TargetFocus"></a>
-    <strong>Focus:TargetFocus ([name])</strong>
-    </dt>
-    <dd>
-    Target the focus.
-
-
-    <h3>Parameters:</h3>
-    <ul>
-        <li><span class="parameter">name</span>
-            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
-
-         (<em>optional</em>)
-        </li>
-    </ul>
-
-
-
-
-
-</dd>
-    <dt>
-    <a name = "Focus:SetFocus"></a>
-    <strong>Focus:SetFocus ([name])</strong>
-    </dt>
-    <dd>
-    Set current target as focus, or name if given.
-
-
-    <h3>Parameters:</h3>
-    <ul>
-        <li><span class="parameter">name</span>
-            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
-
-         (<em>optional</em>)
-        </li>
-    </ul>
-
-
-
-
-
-</dd>
-    <dt>
-    <a name = "Focus:ClearFocus"></a>
-    <strong>Focus:ClearFocus ()</strong>
-    </dt>
-    <dd>
-    Remove focus & its data.
-
-
-
-
-
-
-
-</dd>
-    <dt>
-    <a name = "Focus:IsDead"></a>
-    <strong>Focus:IsDead ()</strong>
-    </dt>
-    <dd>
-    Check if focus is dead.
-
-
-
-    <h3>Returns:</h3>
-    <ol>
-
-           <span class="types"><span class="type">bool</span></span>
-        true if dead
-    </ol>
-
-
-
-
-</dd>
-    <dt>
     <a name = "Focus:GetReactionColors"></a>
     <strong>Focus:GetReactionColors ()</strong>
     </dt>
@@ -607,13 +698,18 @@
 
 
 </dd>
+</dl>
+    <h2 class="section-header "><a name="Data"></a>Data </h2>
+
+    <dl class="function">
     <dt>
     <a name = "Focus:GetData"></a>
-    <strong>Focus:GetData ([key])</strong>
+    <strong>Focus:GetData ([key=nil])</strong>
     </dt>
     <dd>
     Get specific focus data.
  If no key is specified, returns all the data.
+ See SetFocusInfo() for list of data available.
 
 
     <h3>Parameters:</h3>
@@ -621,7 +717,7 @@
         <li><span class="parameter">key</span>
             <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
 
-         (<em>optional</em>)
+         (<em>default</em> nil)
         </li>
     </ul>
 
@@ -638,6 +734,10 @@
 
 
 
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example"><span class="keyword">local</span> lvl = Focus:GetData(<span class="string">"unitLevel"</span>)</pre>
+    </ul>
 
 </dd>
     <dt>
@@ -666,7 +766,7 @@
 </dd>
     <dt>
     <a name = "Focus:ClearData"></a>
-    <strong>Focus:ClearData ([key])</strong>
+    <strong>Focus:ClearData ([key=nil])</strong>
     </dt>
     <dd>
     Delete specific or all focus data
@@ -677,7 +777,7 @@
         <li><span class="parameter">key</span>
             <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
 
-         (<em>optional</em>)
+         (<em>default</em> nil)
         </li>
     </ul>
 
@@ -686,12 +786,16 @@
 
 
 </dd>
+</dl>
+    <h2 class="section-header "><a name="Events"></a>Events </h2>
+
+    <dl class="function">
     <dt>
-    <a name = "Focus:HookEvent"></a>
-    <strong>Focus:HookEvent (eventName, callback)</strong>
+    <a name = "Focus:OnEvent"></a>
+    <strong>Focus:OnEvent (eventName, callback)</strong>
     </dt>
     <dd>
-    Post-hook a focus event.
+    Register event listener for a focus event.
 
 
     <h3>Parameters:</h3>
@@ -718,11 +822,11 @@
 
 </dd>
     <dt>
-    <a name = "Focus:UnhookEvent"></a>
-    <strong>Focus:UnhookEvent (eventName, eventID)</strong>
+    <a name = "Focus:RemoveEvent"></a>
+    <strong>Focus:RemoveEvent (eventName, eventID)</strong>
     </dt>
     <dd>
-    Remove existing event.
+    Remove existing event listener.
 
 
     <h3>Parameters:</h3>
@@ -743,68 +847,13 @@
 
 </dd>
 </dl>
-    <h2 class="section-header "><a name="Tables"></a>Tables</h2>
-
-    <dl class="function">
-    <dt>
-    <a name = "Events"></a>
-    <strong>Events</strong>
-    </dt>
-    <dd>
-    Hookable events.  Ran only if unit = focus.
-
-
-    <h3>Fields:</h3>
-    <ul>
-        <li><span class="parameter">UNIT_HEALTH_OR_POWER</span>
-         arg1=event or nil, arg2=unit or nil
-        </li>
-        <li><span class="parameter">UNIT_LEVEL</span>
-         arg1=event or nil, arg2=unit or nil
-        </li>
-        <li><span class="parameter">UNIT_AURA</span>
-         arg1=event or nil, arg2=unit or nil
-        </li>
-        <li><span class="parameter">UNIT_CLASSIFICATION_CHANGED</span>
-
-        </li>
-        <li><span class="parameter">PLAYER_FLAGS_CHANGED</span>
-
-        </li>
-        <li><span class="parameter">RAID_TARGET_UPDATE</span>
-
-        </li>
-        <li><span class="parameter">FOCUS_UNITID_EXISTS</span>
-         arg1=event, arg2=unit
-        </li>
-        <li><span class="parameter">FOCUS_SET</span>
-         arg1=event, arg2=unit
-        </li>
-        <li><span class="parameter">FOCUS_CHANGED</span>
-         arg1=event, arg2=unit
-        </li>
-        <li><span class="parameter">FOCUS_CLEAR</span>
-
-        </li>
-    </ul>
-
-
-
-
-    <h3>Usage:</h3>
-    <ul>
-        <pre class="example">Focus:HookEvent(<span class="string">"EVENT_NAME"</span>, callbackFunc)</pre>
-    </ul>
-
-</dd>
-</dl>
 
 
 </div> <!-- id="content" -->
 </div> <!-- id="main" -->
 <div id="about">
 <i>generated by <a href="http://github.com/stevedonovan/LDoc">LDoc 1.4.6</a></i>
-<i style="float:right;">Last updated 2017-02-23 12:56:35 </i>
+<i style="float:right;">Last updated 2017-02-26 23:06:51 </i>
 </div> <!-- id="about" -->
 </div> <!-- id="container" -->
 </body>
