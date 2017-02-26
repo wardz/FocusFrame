@@ -1,5 +1,6 @@
 ------------
 -- Documentation: https://wardz.github.io/FocusFrame/.
+-- Feel free to use or fork this module.
 -- See FocusFrame.lua for examples.
 -- @module FocusData
 -- @author Wardz
@@ -28,13 +29,14 @@ local PartyScanner
 local SetFocusAuras
 local CallHooks
 
--- Data event handling
+-- Event handling for data struct
 do
     local rawset = rawset
 
-    --- Focus events.
-    -- If you want to modify the built in focus frame,
-    -- hook/replace the functions inside FocusFrame.lua instead.
+    --- FocusData events.
+    -- List of events that you can register for.
+    -- (If you want to modify the built in focus frame,
+    -- hook the functions inside FocusFrame.lua instead.)
     -- @table Events
     -- @usage Focus:OnEvent("EVENT_NAME", callbackFunc)
     -- @field UNIT_HEALTH_OR_POWER arg1=event or nil, arg2=unit or nil
@@ -62,6 +64,7 @@ do
 
     rawData = { eventsThrottle = {} }
 
+    -- data = rawData, but:
     -- data.x will trigger events.
     -- rawData.x will not and has less overhead.
 
@@ -72,10 +75,9 @@ do
             return value
         end,
 
-        -- This function will be called everytime a property in data has been changed
+        -- This function is called everytime a property in data has been changed
         __newindex = function(self, key, value)
             local oldValue = rawData[key]
-            -- store property in rawData and not data
             rawset(rawData, key, value)
 
             -- Call event listeners if property has event
@@ -113,14 +115,6 @@ do
     local scantipTextLeft1 = _G["FocusDataScantipTextLeft1"]
     local scantipTextRight1 = _G["FocusDataScantipTextRight1"]
 
-    local function DeleteExistingAuras()
-        if rawData.health <= 0 then
-            return ClearBuffs(focusTargetName)
-        end
-
-        ClearBuffs(focusTargetName, rawData.unitIsEnemy == 1)
-    end
-
     local function SyncBuff(unit, i, texture, stack, debuffType, isDebuff)
         scantip:ClearLines()
         if isDebuff then
@@ -129,6 +123,7 @@ do
             scantip:SetUnitBuff(unit, i)
         end
 
+        -- Get buff name. UnitBuff only gives texture
         local name = scantipTextLeft1:GetText()
         if name then
             if not debuffType or debuffType == "" then
@@ -139,14 +134,14 @@ do
         end
     end
 
-    -- Scans unit for buffs and adds them to FSPELLCASTINGCORE
     function SetFocusAuras(unit) --local
-        -- Delete all buffs stored in DB, then readd them later if found on target
+        -- Delete all buffs stored in DB, then re-add them later if found on target
         -- This is needed when buffs are not removed in the combat log. (i.e unit out of range)
         -- If unit is enemy, only debuffs are deleted.
-        DeleteExistingAuras()
-
-        if rawData.health <= 0 then return end
+        if rawData.health <= 0 then
+            return ClearBuffs(focusTargetName)
+        end
+        ClearBuffs(focusTargetName, rawData.unitIsEnemy == 1)
 
         for i = 1, 5 do
             local texture = UnitBuff(unit, i)
@@ -175,8 +170,7 @@ do
         [0.75]	= { [0]	= 4,	[0.25]	= 8, },
     }
 
-    local function IsPlate(frame)
-        local overlayRegion = frame:GetRegions()
+    local function IsPlate(overlayRegion)
         if not overlayRegion or overlayRegion:GetObjectType() ~= "Texture"
         or overlayRegion:GetTexture() ~= [[Interface\Tooltips\Nameplate-Border]] then
             return false
@@ -185,22 +179,21 @@ do
     end
 
     function NameplateScanner() -- local
-        --if data.unitIsEnemy and GetCVar("nameplateShowEnemies") == "1" then return end
-        --if data.unitIsFriend and GetCVar("nameplateShowFriends") == "1" then return end
+        --if rawData.unitIsEnemy and GetCVar("nameplateShowEnemies") == "1" then return end
+        --if rawData.unitIsFriend and GetCVar("nameplateShowFriends") == "1" then return end
         local frames = { WorldFrame:GetChildren() }
 
         for _, plate in ipairs(frames) do
-            if IsPlate(plate) and plate:IsVisible() then
-                local _, _, name, level, _, raidIcon = plate:GetRegions()
-                local health = plate:GetChildren():GetValue()
+            local overlay, _, name, level, _, raidIcon = plate:GetRegions()
 
+            if plate:IsVisible() and IsPlate(overlay) then
                 if name:GetText() == focusTargetName then
                     if raidIcon and raidIcon:IsVisible() then
                         local ux, uy = raidIcon:GetTexCoord()
                         data.raidIcon = RaidIconCoordinate[ux][uy]
                     end
 
-                    data.health = health
+                    data.health = plate:GetChildren():GetValue()
                     data.unitLevel = tonumber(level:GetText())
                     return
                 end
@@ -222,7 +215,7 @@ local function SetFocusInfo(unit, resetRefresh)
 
     local getTime = GetTime()
 
-    -- Changing these will trigger event
+    -- Changing these will trigger event.
     -- Ran every 0.2s
     data.unit = unit
     SetFocusHealth(unit)
@@ -242,7 +235,7 @@ local function SetFocusInfo(unit, resetRefresh)
         end
     end
 
-    -- Data without event triggers
+    -- Data without event triggers.
     -- Ran every ~4s while unit is targeted
     rawData.playerCanAttack = UnitCanAttack("player", unit)
     rawData.unitCanAttack = UnitCanAttack(unit, "player")
@@ -281,17 +274,17 @@ do
         if members > 0 then
             local unit = groupType .. raidMemberIndex .. (rawData.unitIsEnemy == 1 and "target" or "")
             local unitPet = groupType .. "pet" .. raidMemberIndex .. (rawData.unitIsEnemy == 1 and "target" or "")
-            -- party1, party1target if focus is enemy
+            -- "party1", "party1target" if focus is enemy and so on
 
             if SetFocusInfo(unit, true) then
                 raidMemberIndex = 1
-                partyUnit = unit
+                partyUnit = unit -- cache unit id
             elseif SetFocusInfo(unitPet, true) then
                 raidMemberIndex = 1
                 partyUnit = unitPet
             else
                 partyUnit = nil
-                -- Scan for 1 target every frame instead of all at once
+                -- Scan 1 unitID every frame instead of all at once
                 raidMemberIndex = raidMemberIndex < members and raidMemberIndex + 1 or 1
             end
         end
@@ -300,7 +293,7 @@ end
 
 --------------------------------------
 -- Public API
--- Most of these can only be used after certain events,
+-- Most of these may only be used after certain events,
 -- or in an OnUpdate script with focus exist check.
 -- Documentation: https://wardz.github.io/FocusFrame/
 --------------------------------------
@@ -309,7 +302,7 @@ end
 -- @section misc
 
 --- Display focus UI error
--- @tparam[opt=false] string msg
+-- @tparam[opt=nil] string msg
 function Focus:ShowError(msg)
     UIErrorsFrame:AddMessage("|cffFF003F " .. (msg or "You have no focus.") .. "|r")
 end
@@ -423,11 +416,10 @@ function Focus:SetFocus(name)
     if not name or name == "" then
         name = UnitName("target")
     else
-        name = strlower(name)
         name = gsub(name, "(%l)(%w+)", ToUpper)
     end
 
-    local focusChanged = Focus:FocusExists()
+    local isFocusChanged = Focus:FocusExists()
     focusTargetName = name
     CURR_FOCUS_TARGET = name -- global
 
@@ -435,10 +427,12 @@ function Focus:SetFocus(name)
         rawData.init = true -- prevent calling events, FOCUS_SET will handle that here
         self:TargetFocus()
         rawData.init = nil
+
         CallHooks("FOCUS_SET", "target")
-        if focusChanged then
+        if isFocusChanged then
             CallHooks("FOCUS_CHANGED", "target")
         end
+
         self:TargetPrevious()
     else
         self:ClearFocus()
@@ -451,7 +445,7 @@ function Focus:IsDead()
     return rawData.health and rawData.health <= 0 --and data.unitIsConnected
 end
 
---- Remove focus & its data.
+--- Remove focus & all data.
 function Focus:ClearFocus()
     focusTargetName = nil
     CURR_FOCUS_TARGET = nil
@@ -465,6 +459,7 @@ end
 -- @section getters
 
 --- Get focus unit name.
+-- Global var CURR_FOCUS_TARGET may also be used.
 -- @treturn[1] string unit name
 -- @treturn[2] nil
 function Focus:GetName()
@@ -535,10 +530,10 @@ do
         local cast = GetCast(focusTargetName)
         if cast then
             local timeEnd, timeStart = cast.timeEnd, cast.timeStart
-            local gTime = GetTime()
+            local getTime = GetTime()
 
-            if gTime < timeEnd then
-                local t = timeEnd - gTime
+            if getTime < timeEnd then
+                local t = timeEnd - getTime
                 local timer = Round(t, t > 3 and 0 or 1)
                 local maxValue = timeEnd - timeStart
                 local value, sparkPosition
@@ -547,8 +542,8 @@ do
                     value = mod(t, timeEnd - timeStart)
                     sparkPosition = t / (timeEnd - timeStart)
                 else
-                    value = mod((gTime - timeStart), timeEnd - timeStart)
-                    sparkPosition = (gTime - timeStart) / (timeEnd - timeStart)
+                    value = mod((getTime - timeStart), timeEnd - timeStart)
+                    sparkPosition = (getTime - timeStart) / (timeEnd - timeStart)
                 end
 
                 if sparkPosition < 0 then
@@ -598,6 +593,7 @@ end
 
 --- Get specific focus data.
 -- If no key is specified, returns all the data.
+-- See SetFocusInfo() for list of data available.
 -- @tparam[opt=nil] string key
 -- @usage local lvl = Focus:GetData("unitLevel")
 -- @return[1] data or empty table
@@ -611,7 +607,6 @@ function Focus:GetData(key)
 end
 
 --- Insert/replace any focus data
--- @see SetFocusInfo
 -- @tparam string key
 -- @param value
 function Focus:SetData(key, value)
@@ -709,16 +704,18 @@ do
         end
     end
 
+    --------------------------------------------------------
+
     --- Events
     -- @section events
 
-    --- Post-hook a focus event.
+    --- Register event listener for a focus event.
     -- @tparam string eventName
     -- @tparam func callback
     -- @treturn number event ID
     function Focus:OnEvent(eventName, callback)
         if type(eventName) ~= "string" or type(callback) ~= "function" then
-            return error('Usage: HookEvent("event", callbackFunc)')
+            return error('Usage: OnEvent("event", callbackFunc)')
         end
 
         if not hookEvents[eventName] then
@@ -730,7 +727,7 @@ do
         return i
     end
 
-    --- Remove existing event.
+    --- Remove existing event listener.
     -- @tparam string eventName
     -- @tparam number eventID
     function Focus:RemoveEvent(eventName, eventID)
@@ -767,13 +764,8 @@ do
         data.unitIsPartyLeader = UnitIsPartyLeader(unit)
     end
 
-    function events:PLAYER_TARGET_CHANGED(event, unit)
-        --if Focus:UnitIsFocus("target") then rawData.refreshed = 0 end
-    end
-
     events:SetScript("OnEvent", EventHandler)
     events:SetScript("OnUpdate", OnUpdateHandler)
-    --events:RegisterEvent("PLAYER_TARGET_CHANGED")
     events:RegisterEvent("PLAYER_FLAGS_CHANGED")
     events:RegisterEvent("PARTY_LEADER_CHANGED")
     events:RegisterEvent("RAID_TARGET_UPDATE")
