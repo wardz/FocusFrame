@@ -7,14 +7,12 @@ local Cast 			= {} 		local casts 		= {}
 local Heal 			= {} 		local heals			= {}
 local InstaBuff 	= {} 		local iBuffs 		= {}
 local buff 			= {} 		local buffList 		= {}
-local dreturns 		= {} 		local dreturnsList 	= {}
 local buffQueue		= {}		local buffQueueList = {}
 Cast.__index   		= spellCast
 Heal.__index   		= Heal
 InstaBuff.__index 	= InstaBuff
 buff.__index 		= buff
 buffQueue.__index	= buffQueue
-dreturns.__index	= dreturns
 
 local Focus
 
@@ -22,15 +20,15 @@ local playerName = UnitName'player'
 
 -- Upvalues
 local SPELLINFO_CHANNELED_SPELLCASTS_TO_TRACK, SPELLINFO_INSTANT_SPELLCASTS_TO_TRACK =
-	  SPELLINFO_CHANNELED_SPELLCASTS_TO_TRACK, SPELLINFO_INSTANT_SPELLCASTS_TO_TRACK
+      SPELLINFO_CHANNELED_SPELLCASTS_TO_TRACK, SPELLINFO_INSTANT_SPELLCASTS_TO_TRACK
 
 local SPELLINFO_CHANNELED_HEALS_SPELLCASTS_TO_TRACK, SPELLINFO_SPELLCASTS_TO_TRACK =
-	  SPELLINFO_CHANNELED_HEALS_SPELLCASTS_TO_TRACK, SPELLINFO_SPELLCASTS_TO_TRACK
+      SPELLINFO_CHANNELED_HEALS_SPELLCASTS_TO_TRACK, SPELLINFO_SPELLCASTS_TO_TRACK
 
 local SPELLINFO_TRADECASTS_TO_TRACK = SPELLINFO_TRADECASTS_TO_TRACK
 
 local FSPELLINFO_BUFFS_TO_TRACK, FRGB_BORDER_DEBUFFS_COLOR, FRGB_SPELL_SCHOOL_COLORS =
-		FSPELLINFO_BUFFS_TO_TRACK, FRGB_BORDER_DEBUFFS_COLOR, FRGB_SPELL_SCHOOL_COLORS
+      FSPELLINFO_BUFFS_TO_TRACK, FRGB_BORDER_DEBUFFS_COLOR, FRGB_SPELL_SCHOOL_COLORS
 
 local tinsert, tremove, strfind, gsub, ipairs, pairs, GetTime, GetNetStats, setmetatable, tgetn =
 	  table.insert, table.remove, string.find, string.gsub, ipairs, pairs, GetTime, GetNetStats, setmetatable, table.getn
@@ -93,7 +91,7 @@ buff.create = function(tar, t, s, buffType, factor, time, texture, debuff, magic
 	--acnt.timeEnd   	= time + (buffType['duration'] or 0) * factor
 	acnt.timeEnd   	= 0
 	acnt.prio		= buffType['prio'] and buffType['prio'] or 0
-	acnt.border		= buffType['type'] and FRGB_BORDER_DEBUFFS_COLOR[buffType.type]	-- border rgb values depending on type of buff/debuff
+	acnt.border		= buffType['type'] and FRGB_BORDER_DEBUFFS_COLOR[strlower(buffType.type)]	-- border rgb values depending on type of buff/debuff
 	acnt.display 	= buffType['display'] == nil and true or buffType['display']
 	acnt.btype		= debuff
 	acnt.debuffType = buffType.type
@@ -102,31 +100,18 @@ buff.create = function(tar, t, s, buffType, factor, time, texture, debuff, magic
 end
 
 buffQueue.create = function(tar, spell, buffType, d, time)
-	local acnt     = {}
-	setmetatable(acnt, buffQueue)
-	acnt.target    	= tar
-	acnt.buffName	= spell
-	acnt.buffData   = buffType
-	--acnt.duration	= 
-	buffType['duration'] = buffType['cp'][d]
-
-	acnt.timeStart 	= time
-	acnt.timeEnd   	= time + 1 
-	return acnt
-end
-
-dreturns.create = function(tar, t, tEnd)
 	local acnt = {}
-	setmetatable(acnt, dreturns)
-	acnt.target 	= tar
-	acnt.type 		= t
-	acnt.factor 	= 1
-	acnt.k 			= 15
-	acnt.timeEnd 	= tEnd + acnt.k
+	acnt.target = tar
+	acnt.buffName = spell
+	acnt.buffData = buffType
+	acnt.timeStart = time
+	acnt.timeEnd = time + 1
+	setmetatable(acnt, buffQueue)
+
 	return acnt
 end
 
-local getAvgLatency = function()	--/script down, up, lagHome, lagWorld = GetNetStats() print(lagHome)
+local getAvgLatency = function()
 	local _, _, lat = GetNetStats()
 	return lat / 1000
 end
@@ -145,42 +130,69 @@ local removeExpiredTableEntries = function(time, tab)
 	end
 end
 
-local updateDRtimers = function(time, drtab, bufftab)
-	for k, v in pairs(drtab) do
-		for i, j in pairs(bufftab) do
-			if j.target == v.target and FSPELLINFO_BUFFS_TO_TRACK[j.spell]['dr'] then
-				if FSPELLINFO_BUFFS_TO_TRACK[j.spell]['dr'] == v.type then
-					v.timeEnd = time + v.k
+local forceHideTableItem = function(tab, caster, spell, debuffsOnly)
+	local i = 1
+
+	for k, v in pairs(tab) do
+		if v.caster == caster then
+			if not spell then
+				if debuffsOnly then
+					if v.btype then
+						tremove(tab, i)
+					end
+				else
+					tremove(tab, i)
+				end
+			else
+				if v.spell == spell then
+					if debuffsOnly then
+						if v.btype then
+							tremove(tab, i)
+						end
+					else
+						tremove(tab, i)
+					end
 				end
 			end
 		end
+
+		i = i + 1
+	end
+ 
+	if Focus:UnitIsFocus(caster, true) then
+		Focus:SetData("auraUpdate", 1)
 	end
 end
 
 local tableMaintenance = function(reset)
 	if reset then
-		casts = {} heals = {} iBuffs = {} buffList = {} dreturnsList = {}
+		casts = {}
+		heals = {}
+		iBuffs = {}
+		buffList = {}
+		Focus:SetData("auraUpdate", 1)
 	else
 		-- CASTS -- casts have a different removal parameter
 		local time = GetTime()
+		local latency = getAvgLatency()
 		local i = 1
 		for k, v in pairs(casts) do
-			if time > v.timeEnd or time > v.nextTick + getAvgLatency() then	-- channeling cast verification
+			if time > v.timeEnd or time > v.nextTick + latency then	-- channeling cast verification
 				tremove(casts, i)
 			end
 			i = i + 1
 		end
+
+		if Focus:IsDead() then
+			forceHideTableItem(buffList, Focus:GetName())
+		end
+
 		-- HEALS
 		removeExpiredTableEntries(time, heals)
 		--  CASTING SPEED BUFFS
 		removeExpiredTableEntries(time, iBuffs)
-		-- BUFFS / DEBUFFS
-		--removeExpiredTableEntries(time, buffList)
 		-- BUFFQUEUE
 		removeExpiredTableEntries(time, buffQueueList)
-		-- DRS
-		--updateDRtimers(time, dreturnsList, buffList)
-		--removeExpiredTableEntries(time, dreturnsList)
 	end
 end
 
@@ -195,9 +207,8 @@ end
 local checkForChannels = function(caster, spell)
 	local k = 1
 	for i, j in casts do
-		if j.caster == caster and j.spell == spell then--and (SPELLINFO_CHANNELED_SPELLCASTS_TO_TRACK[spell] ~= nil or SPELLINFO_CHANNELED_HEALS_SPELLCASTS_TO_TRACK[spell] ~= nil) then 
-			j.nextTick = GetTime() + j.tick --GetTime() + j.tick + getAvgLatency()--j.nextTick + j.tick --+ getAvgLatency()
-			--print(j.nextTick - j.timeStart)
+		if j.caster == caster and j.spell == spell then
+			j.nextTick = GetTime() + j.tick
 			return true 
 		end
 		k = k + 1
@@ -247,7 +258,7 @@ local newCast = function(caster, spell, channel)
 		if not checkForChannels(caster, spell) then
 			removeDoubleCast(caster)
 			local tMod = checkforCastTimeModBuffs(caster, spell)
-			if  tMod > 0 then
+			if tMod > 0 then
 				local n = Cast.create(caster, spell, info, tMod, time, channel)
 				tinsert(casts, n)
 			end
@@ -270,25 +281,6 @@ local newIBuff = function(caster, buff)
 	tinsert(iBuffs, b)
 end
 
-local function manageDR(time, tar, b, castOn)
-	if not FSPELLINFO_BUFFS_TO_TRACK[b] or FSPELLINFO_BUFFS_TO_TRACK[b]['dr'] then return 1 end
-	
-	for k, v in pairs(dreturnsList) do
-		if v.target == tar and v.type == FSPELLINFO_BUFFS_TO_TRACK[b]['dr'] then
-			v.factor = v.factor > .25 and v.factor / 2 or 0
-			--if v.factor > 0 then
-			--	v.timeEnd = time + FSPELLINFO_BUFFS_TO_TRACK[b]['duration'] * v.factor + v.k
-			--end
-			return v.factor
-		end
-	end
-	
-	if castOn then return 0 end		-- avoids creating a new DR entry if none was found
-	local n = dreturns.create(tar, FSPELLINFO_BUFFS_TO_TRACK[b]['dr'], FSPELLINFO_BUFFS_TO_TRACK[b]['duration'] + time)
-	tinsert(dreturnsList, n)
-	return 1
-end
-
 local function checkQueueBuff(tar, b)
 	for k, v in pairs(buffQueueList) do
 		if v.target == tar and v.buffName == b then
@@ -300,29 +292,28 @@ end
 
 local function newbuff(tar, b, s, castOn, texture, debuff, magictype, debuffStack, noEvent)
 	local time = getTimeMinusPing()--GetTime()
+	if not magictype then magictype = "none" end
 
 	-- check buff queue
 	if checkQueueBuff(tar, b) then return end
-	
-	--local drf = manageDR(time, tar, b, castOn)
-	
-	--if drf > 0 then		
-		-- remove buff if it exists
-		local i = 1
-		for k, v in pairs(buffList) do
-			if v.caster == tar and v.spell == b then
-				tremove(buffList, i)
-			end
-			i = i + 1
+
+	-- remove buff if it exists
+	local i = 1
+	for k, v in pairs(buffList) do
+		if v.caster == tar and v.spell == b then
+			tremove(buffList, i)
 		end
+		i = i + 1
+	end
 
-		local n = buff.create(tar, b, s, FSPELLINFO_BUFFS_TO_TRACK[b], 1, time, texture, debuff, magictype, debuffStack)
-		tinsert(buffList, n)
+	local n = buff.create(tar, b, s, FSPELLINFO_BUFFS_TO_TRACK[b], 1, time, texture, debuff, magictype, debuffStack)
+	tinsert(buffList, n)
 
-		if not noEvent then -- only trigger event when called outside FocusData
+	if not noEvent then -- only trigger event when called outside FocusData
+		if Focus:UnitIsFocus(tar, true) then
 			Focus:SetData("auraUpdate", 1)
 		end
-	--end
+	end
 end
 
 local function refreshBuff(tar, b, s)
@@ -330,7 +321,7 @@ local function refreshBuff(tar, b, s)
 	for i, j in pairs(SPELLINFO_DEBUFF_REFRESHING_SPELLS[b]) do
 		for k, v in pairs(buffList) do
 			if v.caster == tar and v.spell == j then
-				newbuff(tar, j, s, false, v.icon, v.btype, v.type)
+				newbuff(tar, j, s, false, v.icon, v.btype, v.debuffType)
 				return
 			end
 		end
@@ -348,47 +339,15 @@ local function processQueuedBuff(tar, b)
 
 	for k, v in pairs(buffQueueList) do
 		if v.target == tar and v.buffName == b then
-			local n = buff.create(v.target, v.buffName, 1, v.buffData, 1, time, v.icon, v.btype, v.type, v.stacks)
+			local n = buff.create(v.target, v.buffName, 1, v.buffData, 1, time, v.icon, v.btype, v.debuffType, v.stacks)
 			tinsert(buffList, n)
 			tremove(buffQueueList, k)
-			Focus:SetData("auraUpdate", 1)
+			if Focus:UnitIsFocus(tar, true) then
+				Focus:SetData("auraUpdate", 1)
+			end
 			return 
 		end
 	end
-end
-
------handleCast subfunctions-----------------------------------------------
----------------------------------------------------------------------------
-local forceHideTableItem = function(tab, caster, spell, debuffsOnly)
-	local i = 1
-
-	for k, v in pairs(tab) do
-		if v.caster == caster then
-			if not spell then
-				if debuffsOnly then
-					if v.btype then
-						tremove(tab, i)
-					end
-				else
-					tremove(tab, i)
-				end
-			else
-				if v.spell == spell then
-					if debuffsOnly then
-						if v.btype then
-							tremove(tab, i)
-						end
-					else
-						tremove(tab, i)
-					end
-				end
-			end
-		end
-
-		i = i + 1
-	end
-
-	Focus:SetData("auraUpdate", 1)
 end
 
 local CastCraftPerform = function()
@@ -782,7 +741,7 @@ local playerDeath = function()
 			Focus:SetData("maxHealth", 0)
 			Focus:SetData("power", 0)
 			Focus:SetData("maxPower", 0)
-			Focus:SetData("auraUpdate", 1)
+			--Focus:SetData("auraUpdate", 1)
 		end
 	end
 	
@@ -846,43 +805,8 @@ function FSPELLCASTINGCORENewBuff(tar, b, texture, debuff, magictype, debuffStac
 end
 
 function FSPELLCASTINGCOREClearBuffs(caster, debuffsOnly)
-	-- TODO merge with _SyncBuffData
 	forceHideTableItem(buffList, caster, nil, debuffsOnly)
 end
-
---[[function FocusFrame_SyncBuffData(unit)
-	local target = UnitName(unit)
-	if target == CURR_FOCUS_TARGET then
-		local buffs = {}
-		local index = 1
-		for k, v in ipairs(buffList) do
-			if v.caster == target then
-				buffs[v.icon] = index
-			end
-			index = index + 1
-		end
-
-		if UnitIsFriend(unit, "player") == 1 then
-			for i = 1, 5 do
-				local buff = UnitBuff(unit, i) or ""
-
-				if not buffs[buff] then
-					tremove(buffList, buffs[buff])
-					--print("remove " .. buff)
-				end
-			end
-		end
-
-		for i = 1, 16 do
-			local buff = UnitDebuff(unit, i)
-			if not buff then break end
-
-			if not buffs[buff] then
-				tremove(buffList, buffs[buff])
-			end
-		end
-	end
-end]]
 
 FSPELLCASTINGCOREgetCast = function(caster)
 	if caster then
@@ -900,7 +824,7 @@ FSPELLCASTINGCOREgetDebuffs = function(caster)
 	if not caster then return end
 
 	local list = {}
-	for k, v in pairs(buffList) do
+	for k, v in ipairs(buffList) do
 		if v.target == caster then
 			if v.btype then
 				tinsert(list, v)
@@ -915,7 +839,7 @@ FSPELLCASTINGCOREgetBuffs = function(caster)
 	if not caster then return end
 
 	local list = {}
-	for k, v in pairs(buffList) do
+	for k, v in ipairs(buffList) do
 		if v.target == caster then
 			if not v.btype then
 				tinsert(list, v)
@@ -929,7 +853,7 @@ end
 ------------------------------------
 
 do
-	local refresh, interval = 0, 0.5
+	local refresh, interval = 0, 0.4
 
 	local function OnUpdate()
 		refresh = refresh - arg1

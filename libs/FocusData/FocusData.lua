@@ -19,17 +19,14 @@ local data
 local GetTime, next, strfind, UnitName, TargetLastTarget, TargetByName, strlower, type, tgetn =
       GetTime, next, strfind, UnitName, TargetLastTarget, TargetByName, strlower, type, table.getn
 
-local FSPELLCASTINGCOREgetDebuffs, FSPELLCASTINGCOREgetBuffs, FRGB_BORDER_DEBUFFS_COLOR = FSPELLCASTINGCOREgetDebuffs, FSPELLCASTINGCOREgetBuffs, FRGB_BORDER_DEBUFFS_COLOR
+local FSPELLCASTINGCOREgetDebuffs, FSPELLCASTINGCOREgetBuffs, FRGB_BORDER_DEBUFFS_COLOR =
+      FSPELLCASTINGCOREgetDebuffs, FSPELLCASTINGCOREgetBuffs, FRGB_BORDER_DEBUFFS_COLOR
 
 -- Functions
 local NameplateScanner
 local PartyScanner
 local SetFocusAuras
 local CallHooks
-
-FocusDataScantip = CreateFrame("GameTooltip", "FocusDataScantip", nil, "GameTooltipTemplate")
-FocusDataScantip:SetOwner(UIParent, "ANCHOR_NONE")
-FocusDataScantip:SetFrameStrata("TOOLTIP")
 
 -- Data event handling
 do
@@ -91,6 +88,8 @@ do
                     local last = rawData.eventsThrottle[key] or 0
                     if (getTime - last) < 0.1 then return end
                     rawData.eventsThrottle[key] = getTime
+                else
+                    if not focusTargetName then return end
                 end
 
                 CallHooks(events[key], rawData.unit)
@@ -104,6 +103,11 @@ do
     local ClearBuffs = FSPELLCASTINGCOREClearBuffs
     local NewBuff = FSPELLCASTINGCORENewBuff
     local UnitBuff, UnitDebuff = UnitBuff, UnitDebuff
+
+    -- global for now.
+    FocusDataScantip = CreateFrame("GameTooltip", "FocusDataScantip", nil, "GameTooltipTemplate")
+    FocusDataScantip:SetOwner(UIParent, "ANCHOR_NONE")
+    FocusDataScantip:SetFrameStrata("TOOLTIP")
 
     local scantip = _G["FocusDataScantip"]
     local scantipTextLeft1 = _G["FocusDataScantipTextLeft1"]
@@ -127,12 +131,11 @@ do
 
         local name = scantipTextLeft1:GetText()
         if name then
-            local magicType = debuffType or scantipTextRight1:GetText()
-            if not magicType or magicType == "" then
-                magicType = "none"
+            if not debuffType or debuffType == "" then
+                debuffType = "none"
             end
 
-            NewBuff(focusTargetName, name, texture, isDebuff, magicType, stack)
+            NewBuff(focusTargetName, name, texture, isDebuff, debuffType, stack)
         end
     end
 
@@ -140,7 +143,10 @@ do
     function SetFocusAuras(unit) --local
         -- Delete all buffs stored in DB, then readd them later if found on target
         -- This is needed when buffs are not removed in the combat log. (i.e unit out of range)
+        -- If unit is enemy, only debuffs are deleted.
         DeleteExistingAuras()
+
+        if rawData.health <= 0 then return end
 
         for i = 1, 5 do
             local texture = UnitBuff(unit, i)
@@ -215,43 +221,48 @@ local function SetFocusInfo(unit, resetRefresh)
 	if not Focus:UnitIsFocus(unit) then return false end
 
     local getTime = GetTime()
+
+    -- Changing these will trigger event
+    -- Ran every 0.2s
     data.unit = unit
     SetFocusHealth(unit)
+    SetFocusAuras(unit)
+    data.raidIcon = GetRaidTargetIndex(unit)
+    data.unitClassification = UnitClassification(unit)
+    data.unitLevel = UnitLevel(unit)
+    data.unitIsPartyLeader = UnitIsPartyLeader(unit)
 
     if resetRefresh then
-        rawData.refresh = 0
+        rawData.refreshed = nil
     end
 
-    --if (getTime - (rawData.refreshed or 0)) > 1 then
-        -- Changing these will trigger event
-        SetFocusAuras(unit)
-        data.raidIcon = GetRaidTargetIndex(unit)
-        data.unitClassification = UnitClassification(unit)
-        data.unitLevel = UnitLevel(unit)
-        data.unitIsPartyLeader = UnitIsPartyLeader(unit)
+    if rawData.refreshed then
+        if (getTime - rawData.refreshed) < 4 then
+            return true
+        end
+    end
 
-        -- Data without event triggers
-        -- TODO throttle these even more
-        rawData.playerCanAttack = UnitCanAttack("player", unit)
-        rawData.unitCanAttack = UnitCanAttack(unit, "player")
-        rawData.unitIsEnemy = rawData.playerCanAttack == 1 and rawData.unitCanAttack == 1 and 1 -- UnitIsEnemy() does not count neutral targets
-        rawData.unitIsTapped = UnitIsTapped(unit)
-        rawData.unitIsTappedByPlayer = UnitIsTappedByPlayer(unit)
-        rawData.unitIsFriend = UnitIsFriend(unit, "player")
-        rawData.unitReaction = UnitReaction(unit, "player")
-        rawData.unitIsPVP = UnitIsPVP(unit)
-        rawData.unitIsConnected = UnitIsConnected(unit)
-        rawData.unitFactionGroup = UnitFactionGroup(unit)
-        rawData.unitClass = UnitClass(unit)
-        rawData.unitName = GetUnitName(unit)
-        rawData.unitIsPlayer = UnitIsPlayer(unit)
-        rawData.unitIsCivilian = UnitIsCivilian(unit)
-        rawData.unitIsCorpse = UnitIsCorpse(unit)
-        rawData.unitIsPVPFreeForAll = UnitIsPVPFreeForAll(unit)
-        rawData.unitPlayerControlled = UnitPlayerControlled(unit)
-        rawData.refreshed = getTime
-        -- More data can be sat using Focus:SetData() in FOCUS_SET event
-    --end
+    -- Data without event triggers
+    -- Ran every ~4s while unit is targeted
+    rawData.playerCanAttack = UnitCanAttack("player", unit)
+    rawData.unitCanAttack = UnitCanAttack(unit, "player")
+    rawData.unitIsEnemy = rawData.playerCanAttack == 1 and rawData.unitCanAttack == 1 and 1 -- UnitIsEnemy() does not count neutral targets
+    rawData.unitIsTapped = UnitIsTapped(unit)
+    rawData.unitIsTappedByPlayer = UnitIsTappedByPlayer(unit)
+    rawData.unitIsFriend = UnitIsFriend(unit, "player")
+    rawData.unitReaction = UnitReaction(unit, "player")
+    rawData.unitIsPVP = UnitIsPVP(unit)
+    rawData.unitIsConnected = UnitIsConnected(unit)
+    rawData.unitFactionGroup = UnitFactionGroup(unit)
+    rawData.unitClass = UnitClass(unit)
+    rawData.unitName = GetUnitName(unit)
+    rawData.unitIsPlayer = UnitIsPlayer(unit)
+    rawData.unitIsCivilian = UnitIsCivilian(unit)
+    rawData.unitIsCorpse = UnitIsCorpse(unit)
+    rawData.unitIsPVPFreeForAll = UnitIsPVPFreeForAll(unit)
+    rawData.unitPlayerControlled = UnitPlayerControlled(unit)
+    rawData.refreshed = getTime
+    -- More data can be sat using Focus:SetData() in FOCUS_SET event
 
 	return true
 end
@@ -386,7 +397,7 @@ function Focus:TargetFocus(name)
         self.needRetarget = false
     end
 
-    SetFocusInfo("target")
+    SetFocusInfo("target", true)
 end
 
 -- @private
@@ -418,6 +429,7 @@ function Focus:SetFocus(name)
 
     local focusChanged = Focus:FocusExists()
     focusTargetName = name
+    CURR_FOCUS_TARGET = name -- global
 
     if focusTargetName then
         rawData.init = true -- prevent calling events, FOCUS_SET will handle that here
@@ -442,6 +454,7 @@ end
 --- Remove focus & its data.
 function Focus:ClearFocus()
     focusTargetName = nil
+    CURR_FOCUS_TARGET = nil
     partyUnit = nil
     self:ClearData()
 

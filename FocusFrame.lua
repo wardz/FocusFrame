@@ -18,9 +18,8 @@ end
 
 -- Upvalues
 local GetHealth, GetPower = Focus.GetHealth, Focus.GetPower
-local GetPowerColor = Focus.GetPowerColor
-
-function FocusFrame_HealthUpdate()
+local GetPowerColor, IsDead = Focus.GetPowerColor, Focus.IsDead
+function FocusFrame_HealthUpdate() -- ran very frequent
 	local health, maxHealth = GetHealth()
 	local mana, maxMana = GetPower()
 
@@ -36,10 +35,8 @@ function FocusFrame_HealthUpdate()
 		FocusFrameManaBarText:SetText(nil)
 	end
 
-	if Focus:IsDead() then
+	if IsDead() then
 		FocusDeadText:Show()
-		FocusFrameHealthBarText:SetText(nil)
-		FocusFrameManaBarText:SetText(nil)
 	else
 		FocusDeadText:Hide()
 	end
@@ -168,22 +165,30 @@ function FocusFrame_OnClick(button)
 end
 
 local GetCast = Focus.GetCast
-function FocusFrame_CastingBarUpdate()
-	local cast, value, maxValue, sparkPosition, timer = GetCast()
+local refresh = 0
+function FocusFrame_CastingBarUpdate() -- ran every fps
+	refresh = refresh - arg1
+	if refresh < 0 then
+		local cast, value, maxValue, sparkPosition, timer = GetCast()
+		local castbar = FocusFrameCastingBar
 
-	if cast then
-		local castbar = FocusFrame.cast
-		castbar:SetMinMaxValues(0, maxValue)
-		castbar:SetValue(value)
+		if cast then
+			castbar:SetMinMaxValues(0, maxValue)
+			castbar:SetValue(value)
+			castbar.spark:SetPoint("CENTER", castbar, "LEFT", sparkPosition * castbar:GetWidth(), 0)
 
-		castbar.spark:SetPoint("CENTER", castbar, "LEFT", sparkPosition * castbar:GetWidth(), 0)
-		castbar.text:SetText(cast.spell)
-		castbar.timer:SetText(timer .. "s")
-		castbar.icon:SetTexture(cast.icon)
-		castbar:SetAlpha(castbar:GetAlpha())
-		castbar:Show()
-	else
-		FocusFrame.cast:Hide()
+			if not castbar:IsVisible() or castbar.text:GetText() ~= cast.spell then
+				castbar.text:SetText(cast.spell)
+				castbar.timer:SetText(timer)
+				castbar.icon:SetTexture(cast.icon)
+				castbar:SetAlpha(castbar:GetAlpha())
+				castbar:Show()
+			end
+		else
+			castbar:Hide()
+		end
+
+		refresh = 0.1
 	end
 end
 
@@ -197,8 +202,8 @@ end
 
 do
 	local GetBuffs, GetDebuffs = Focus.GetBuffs, Focus.GetDebuffs
-	local GetDebuffColor = Focus.GetDebuffColor
 
+	-- Blizzard's terrible buff positioning..
 	local function PositionBuffs(numDebuffs, numBuffs)
 		local debuffWrap = 6
 		if Focus:GetData("unitIsFriend") == 1 then
@@ -291,13 +296,15 @@ do
 		end
 
 		for i = 1, 16 do
-			local debuffBorder = _G["FocusFrameDebuff" .. i .. "Border"]
 			local button = _G["FocusFrameDebuff" .. i]
 			local debuff = debuffs[i]
 
 			if debuff then
 				local debuffCount = _G["FocusFrameDebuff" .. i .. "Count"]
-				local color = GetDebuffColor(debuff.debuffType)
+				local debuffBorder = _G["FocusFrameDebuff" .. i .. "Border"]
+
+				local color = Focus:GetDebuffColor(debuff.debuffType)
+
 				local debuffStack = debuff.stacks
 				_G["FocusFrameDebuff" .. i .. "Icon"]:SetTexture(debuff.icon)
 
@@ -324,7 +331,7 @@ end
 
 -- Create castbar
 -- TODO add to xml
-FocusFrame.cast = CreateFrame("StatusBar", "FocusFrame_Castbar", FocusFrame)
+FocusFrame.cast = CreateFrame("StatusBar", "FocusFrameCastingBar", FocusFrame)
 FocusFrame.cast:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar")
 FocusFrame.cast:SetStatusBarColor(0.4, 1, 0)
 FocusFrame.cast:SetHeight(13)
@@ -342,7 +349,6 @@ FocusFrame.cast.spark:SetBlendMode("ADD")
 FocusFrame.cast.border = FocusFrame.cast:CreateTexture(nil, "OVERLAY")
 FocusFrame.cast.border:SetPoint("TOPLEFT", -23, 20)
 FocusFrame.cast.border:SetPoint("TOPRIGHT", 23, 20)
---FocusFrame.cast.border:SetWidth(150)
 FocusFrame.cast.border:SetHeight(50)
 FocusFrame.cast.border:SetTexture("Interface\\AddOns\\FocusFrame\\mods\\UI-CastingBar-Border-Small.blp")
 
@@ -358,7 +364,7 @@ FocusFrame.cast.timer:SetTextColor(1, 1, 1)
 FocusFrame.cast.timer:SetFont(STANDARD_TEXT_FONT, 9)
 FocusFrame.cast.timer:SetShadowColor(0, 0, 0)
 FocusFrame.cast.timer:SetPoint("RIGHT", FocusFrame.cast, 28, 2)
-FocusFrame.cast.timer:SetText("2.0s")
+FocusFrame.cast.timer:SetText("2.0")
 
 FocusFrame.cast.icon = FocusFrame.cast:CreateTexture(nil, "OVERLAY", nil, 7)
 FocusFrame.cast.icon:SetWidth(20)
@@ -366,7 +372,7 @@ FocusFrame.cast.icon:SetHeight(20)
 FocusFrame.cast.icon:SetPoint("LEFT", FocusFrame.cast, -25, 0)
 FocusFrame.cast.icon:SetTexture("Interface\\Icons\\Spell_shadow_lifedrain02")
 
--- [[ Events ]]
+-- [[ Register events ]]
 Focus:OnEvent("FOCUS_SET", FocusFrame_Refresh)
 Focus:OnEvent("FOCUS_CLEAR", FocusFrame_OnHide)
 Focus:OnEvent("RAID_TARGET_UPDATE", FocusFrame_UpdateRaidTargetIcon)
@@ -378,7 +384,6 @@ Focus:OnEvent("UNIT_LEVEL", FocusFrame_CheckLevel)
 Focus:OnEvent("UNIT_FACTION", FocusFrame_CheckFaction)
 Focus:OnEvent("UNIT_CLASSIFICATION_CHANGED", FocusFrame_CheckClassification)
 Focus:OnEvent("UNIT_PORTRAIT_UPDATE", FocusFrame_CheckPortrait)
---Focus:OnEvent("FOCUS_CASTING", FocusFrame_CastingBarUpdate)
 
 --[[ Chat commands ]]
 
@@ -388,6 +393,7 @@ SlashCmdList.FOCUSOPTIONS = function(msg)
 	local space = strfind(msg or "", " ")
 	local cmd = strsub(msg, 1, space and (space-1))
 	local value = tonumber(strsub(msg, space or -1))
+
 	local print = function(x) DEFAULT_CHAT_FRAME:AddMessage(x) end
 	
 	if cmd == "scale" and value then

@@ -445,6 +445,8 @@
 
 				SetTextStatusBarText(FocusFrameHealthBar, FocusFrameHealthBarText);
 				SetTextStatusBarText(FocusFrameManaBar, FocusFrameManaBarText);
+				SetTextStatusBarTextZeroText(FocusFrameHealthBar, "")
+				SetTextStatusBarTextZeroText(FocusFrameManaBar, "")
 				FocusFrameHealthBar.textLockable = 1;
 				FocusFrameManaBar.textLockable = 1;
 			</OnLoad>
