@@ -4,7 +4,7 @@ FocusFrameDB = FocusFrameDB or { unlock = true, scale = 1 }
 
 function FocusFrame_Refresh(event, unit)
 	FocusName:SetText(UnitName(unit))
-	FocusFrame_CheckPortrait(event, unit) -- required here for classportraits support
+	--FocusFrame_CheckPortrait(event, unit)
 
 	FocusFrame:SetScale(FocusFrameDB.scale)
 	FocusFrame:SetScript("OnUpdate", FocusFrame_CastingBarUpdate)
@@ -19,6 +19,7 @@ end
 -- Upvalues
 local GetHealth, GetPower = Focus.GetHealth, Focus.GetPower
 local GetPowerColor, IsDead = Focus.GetPowerColor, Focus.IsDead
+
 function FocusFrame_HealthUpdate() -- ran very frequent
 	local health, maxHealth = GetHealth()
 	local mana, maxMana = GetPower()
@@ -74,18 +75,18 @@ function FocusFrame_OnHide()
 end
 
 function FocusFrame_CheckLevel()
-	local targetLevel = Focus:GetData("unitLevel")
+	local level, isCorpse = Focus:GetData("unitLevel", "unitIsCorpse")
 
-	if Focus:GetData("unitIsCorpse") == 1 then
+	if isCorpse == 1 then
 		FocusLevelText:Hide()
 		FocusHighLevelTexture:Show()
-	elseif targetLevel > 0 then
+	elseif level > 0 then
 		-- Normal level target
-		FocusLevelText:SetText(targetLevel)
+		FocusLevelText:SetText(level)
 
 		-- Color level number
 		if Focus:GetData("unitCanAttack") == 1 then
-			local color = GetDifficultyColor(targetLevel)
+			local color = GetDifficultyColor(level)
 			FocusLevelText:SetVertexColor(color.r, color.g, color.b)
 		else
 			FocusLevelText:SetVertexColor(1.0, 0.82, 0.0)
@@ -166,8 +167,8 @@ end
 
 local GetCast = Focus.GetCast
 function FocusFrame_CastingBarUpdate() -- ran every fps
-	local cast, value, maxValue, sparkPosition, timer = GetCast()
 	local castbar = FocusFrameCastingBar
+	local cast, value, maxValue, sparkPosition, timer = GetCast()
 
 	if cast then
 		castbar:SetMinMaxValues(0, maxValue)
@@ -198,7 +199,6 @@ do
 	local GetBuffs = Focus.GetBuffs
 
 	local function PositionBuffs(numDebuffs, numBuffs)
-		local debuffWrap = 6
 		if Focus:GetData("unitIsFriend") == 1 then
 			FocusFrameBuff1:SetPoint("TOPLEFT", "FocusFrame", "BOTTOMLEFT", 5, 32)
 			FocusFrameDebuff1:SetPoint("TOPLEFT", "FocusFrameBuff1", "BOTTOMLEFT", 0, -2)
@@ -207,6 +207,7 @@ do
 			FocusFrameBuff1:SetPoint("TOPLEFT", "FocusFrameDebuff7", "BOTTOMLEFT", 0, -2)
 		end
 
+		local debuffWrap = 6
 		local debuffSize, debuffFrameSize
 		if numDebuffs >= debuffWrap then
 			debuffSize = 17
@@ -247,24 +248,18 @@ do
 		_G["FocusFrameDebuff"..(debuffWrap + 2)]:ClearAllPoints()
 		_G["FocusFrameDebuff"..(debuffWrap + 2)]:SetPoint("LEFT", _G["FocusFrameDebuff"..(debuffWrap + 1)], "RIGHT", 3, 0)
 
-		-- Set anchor for the last row if debuffWrap is 5
-		if debuffWrap == 5 then
-			FocusFrameDebuff11:ClearAllPoints()
-			FocusFrameDebuff11:SetPoint("TOPLEFT", "FocusFrameDebuff6", "BOTTOMLEFT", 0, -2)
-		else
-			FocusFrameDebuff11:ClearAllPoints()
-			FocusFrameDebuff11:SetPoint("LEFT", "FocusFrameDebuff10", "RIGHT", 3, 0)
-		end
+		FocusFrameDebuff11:ClearAllPoints()
+		FocusFrameDebuff11:SetPoint("LEFT", "FocusFrameDebuff10", "RIGHT", 3, 0)
 
 		-- Move castbar
 		local amount = numBuffs + numDebuffs
 		if Focus:GetData("unitIsEnemy") == 1 then
 			if numBuffs >= 1 then
-				FocusFrame.cast:SetPoint("BOTTOMLEFT", FocusFrame, 15, -70)
+				FocusFrameCastingBar:SetPoint("BOTTOMLEFT", FocusFrame, 15, -70)
 			end
 		else
 			local y = amount > 7 and -70 or -35
-			FocusFrame.cast:SetPoint("BOTTOMLEFT", FocusFrame, 15, y)
+			FocusFrameCastingBar:SetPoint("BOTTOMLEFT", FocusFrame, 15, y)
 		end
 	end
 
@@ -298,7 +293,6 @@ do
 				local debuffBorder = _G["FocusFrameDebuff" .. i .. "Border"]
 
 				local color = Focus:GetDebuffColor(debuff.debuffType)
-
 				local debuffStack = debuff.stacks
 				_G["FocusFrameDebuff" .. i .. "Icon"]:SetTexture(debuff.icon)
 
@@ -381,10 +375,8 @@ Focus:OnEvent("UNIT_PORTRAIT_UPDATE", FocusFrame_CheckPortrait)
 --Focus:OnEvent("FOCUS_UNITID_EXISTS", FocusFrame_CheckFaction)
 
 --[[ Chat commands ]]
-
 SLASH_FOCUSOPTIONS1 = "/foption"
 SlashCmdList.FOCUSOPTIONS = function(msg)
-	-- strsplit doesn't exist in lua 5.0 :/
 	local space = strfind(msg or "", " ")
 	local cmd = strsub(msg, 1, space and (space-1))
 	local value = tonumber(strsub(msg, space or -1))

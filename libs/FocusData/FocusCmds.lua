@@ -11,6 +11,7 @@ SLASH_MFOCUS1 = "/mfocus"
 SLASH_FCAST1 = "/fcast"
 SLASH_FITEM1 = "/fitem"
 SLASH_FSWAP1 = "/fswap"
+SLASH_FASSIST1 = "/fassist"
 SLASH_TARFOCUS1 = "/tarfocus"
 SLASH_CLEARFOCUS1 = "/clearfocus"
 
@@ -33,7 +34,7 @@ SlashCmdList.FCAST = function(spell)
 end
 
 SlashCmdList.FITEM = function(msg)
-    if Focus:FocusExists(true) then
+    if Focus:FocusExists(true) and msg then
         msg = strlower(msg)
     
         for i = 0, 19 do
@@ -64,5 +65,11 @@ SlashCmdList.FSWAP = function()
         local target = UnitName("target")
         Focus:TargetFocus()
         Focus:SetFocus(target)
+    end
+end
+
+SlashCmdList.FASSIST = function()
+    if Focus:FocusExists(true) then
+        SlashCmdList.ASSIST(Focus:GetName())
     end
 end
