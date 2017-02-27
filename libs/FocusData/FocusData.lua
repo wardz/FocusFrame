@@ -46,6 +46,7 @@ do
     -- @field FOCUS_SET arg1=event, arg2=unit
     -- @field FOCUS_CHANGED arg1=event, arg2=unit
     -- @field FOCUS_CLEAR
+    -- @field UNIT_FACTION arg1=event, arg2=unit
     local events = {
         health              = "UNIT_HEALTH_OR_POWER",
         maxHealth           = "UNIT_HEALTH_OR_POWER",
@@ -57,6 +58,9 @@ do
         unitIsPartyLeader   = "PLAYER_FLAGS_CHANGED",
         raidIcon            = "RAID_TARGET_UPDATE",
         unit                = "FOCUS_UNITID_EXISTS",
+        unitIsPVP           = "UNIT_FACTION",
+        unitIsTapped        = "UNIT_FACTION",
+        unitIsTappedByPlayer = "UNIT_FACTION",
     }
 
     rawData = { eventsThrottle = {} }
@@ -218,6 +222,9 @@ local function SetFocusInfo(unit, resetRefresh)
     data.unitClassification = UnitClassification(unit)
     data.unitLevel = UnitLevel(unit)
     data.unitIsPartyLeader = UnitIsPartyLeader(unit)
+    data.unitIsPVP = UnitIsPVP(unit)
+    data.unitIsTapped = UnitIsTapped(unit)
+    data.unitIsTappedByPlayer = UnitIsTappedByPlayer(unit)
 
     if resetRefresh then
         rawData.refreshed = nil
@@ -234,11 +241,8 @@ local function SetFocusInfo(unit, resetRefresh)
     rawData.playerCanAttack = UnitCanAttack("player", unit)
     rawData.unitCanAttack = UnitCanAttack(unit, "player")
     rawData.unitIsEnemy = rawData.playerCanAttack == 1 and rawData.unitCanAttack == 1 and 1 -- UnitIsEnemy() does not count neutral targets
-    rawData.unitIsTapped = UnitIsTapped(unit)
-    rawData.unitIsTappedByPlayer = UnitIsTappedByPlayer(unit)
     rawData.unitIsFriend = UnitIsFriend(unit, "player")
     rawData.unitReaction = UnitReaction(unit, "player")
-    rawData.unitIsPVP = UnitIsPVP(unit)
     rawData.unitIsConnected = UnitIsConnected(unit)
     rawData.unitFactionGroup = UnitFactionGroup(unit)
     rawData.unitClass = UnitClass(unit)

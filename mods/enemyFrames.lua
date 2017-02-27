@@ -69,9 +69,10 @@ local showPortraitDebuff = function()
         portraitDebuff:Show()
     else
         portraitDebuff:Hide()
-        portraitDebuff.cd:Hide()		
+        portraitDebuff.cd:Hide()
         portraitDebuff.bgText:Hide()
         portraitDebuff.debuffText:Hide()
+        portraitDebuff.duration:SetText(nil)
     end
 end
 
@@ -88,8 +89,10 @@ f:SetScript("OnUpdate", function()
         else
             --if portraitDebuff:IsVisible() then
                 portraitDebuff:Hide()
-                portraitDebuff.cd:Hide()		
+                portraitDebuff.cd:Hide()
                 portraitDebuff.bgText:Hide()
+                portraitDebuff.debuffText:Hide()
+                portraitDebuff.duration:SetText(nil)
             --end
         end
 
