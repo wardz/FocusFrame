@@ -58,16 +58,15 @@ local CLASS_BUTTONS = {
 	},
 }
 
-local orig_FocusFrame_CheckPortrait = FocusFrame_CheckPortrait
-FocusFrame_CheckPortrait = function(event, unit)
-    orig_FocusFrame_CheckPortrait(event, unit)
-
+local Focus = getglobal("FocusData")
+Focus:OnEvent("UNIT_PORTRAIT_UPDATE", function(event, unit)
     if UnitExists(unit) == 1 and UnitIsPlayer(unit) == 1 then
         local _, class = UnitClass(unit)
+		local coords = CLASS_BUTTONS[class]
 
         FocusPortrait:SetTexture(iconPath, true)
-        FocusPortrait:SetTexCoord(unpack(CLASS_BUTTONS[class]))
+        FocusPortrait:SetTexCoord(coords[1], coords[2], coords[3], coords[4])
     else
         FocusPortrait:SetTexCoord(0, 1, 0, 1)
     end
-end
+end)

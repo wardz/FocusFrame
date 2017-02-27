@@ -14,13 +14,13 @@ SLASH_FSWAP1 = "/fswap"
 SLASH_TARFOCUS1 = "/tarfocus"
 SLASH_CLEARFOCUS1 = "/clearfocus"
 
-SlashCmdList.FOCUS = function(msg) Focus:SetFocus(strlower(msg or "")) end
+SlashCmdList.FOCUS = function(msg) Focus:SetFocus(msg) end
 SlashCmdList.TARFOCUS = function() Focus:TargetFocus() end
 SlashCmdList.CLEARFOCUS = function() Focus:ClearFocus() end
 
 SlashCmdList.MFOCUS = function()
     if UnitExists("mouseover") then
-        Focus:SetFocus(UnitName("mouseover"))
+        Focus:SetFocus(UnitName("mouseover"), true)
     end
 end
 

@@ -165,30 +165,24 @@ function FocusFrame_OnClick(button)
 end
 
 local GetCast = Focus.GetCast
-local refresh = 0
 function FocusFrame_CastingBarUpdate() -- ran every fps
-	refresh = refresh - arg1
-	if refresh < 0 then
-		local cast, value, maxValue, sparkPosition, timer = GetCast()
-		local castbar = FocusFrameCastingBar
+	local cast, value, maxValue, sparkPosition, timer = GetCast()
+	local castbar = FocusFrameCastingBar
 
-		if cast then
-			castbar:SetMinMaxValues(0, maxValue)
-			castbar:SetValue(value)
-			castbar.spark:SetPoint("CENTER", castbar, "LEFT", sparkPosition * castbar:GetWidth(), 0)
+	if cast then
+		castbar:SetMinMaxValues(0, maxValue)
+		castbar:SetValue(value)
+		castbar.spark:SetPoint("CENTER", castbar, "LEFT", sparkPosition * castbar:GetWidth(), 0)
+		castbar.timer:SetText(timer)
 
-			if not castbar:IsVisible() or castbar.text:GetText() ~= cast.spell then
-				castbar.text:SetText(cast.spell)
-				castbar.timer:SetText(timer)
-				castbar.icon:SetTexture(cast.icon)
-				castbar:SetAlpha(castbar:GetAlpha())
-				castbar:Show()
-			end
-		else
-			castbar:Hide()
+		if not castbar:IsVisible() or castbar.text:GetText() ~= cast.spell then
+			castbar.text:SetText(cast.spell)
+			castbar.icon:SetTexture(cast.icon)
+			castbar:SetAlpha(castbar:GetAlpha())
+			castbar:Show()
 		end
-
-		refresh = 0.1
+	else
+		castbar:Hide()
 	end
 end
 
@@ -201,9 +195,8 @@ function FocusFrame_CheckLeader()
 end
 
 do
-	local GetBuffs, GetDebuffs = Focus.GetBuffs, Focus.GetDebuffs
+	local GetBuffs = Focus.GetBuffs
 
-	-- Blizzard's terrible buff positioning..
 	local function PositionBuffs(numDebuffs, numBuffs)
 		local debuffWrap = 6
 		if Focus:GetData("unitIsFriend") == 1 then
@@ -275,9 +268,10 @@ do
 		end
 	end
 
-	function FocusDebuffButton_Update()
-		local buffs = GetBuffs()
-		local debuffs = GetDebuffs()
+	function FocusDebuffButton_Update() -- ran very frequent
+		local buffData = GetBuffs()
+		local buffs = buffData.buffs
+		local debuffs = buffData.debuffs
 		local numBuffs = 0
 		local numDebuffs = 0
 
@@ -384,6 +378,7 @@ Focus:OnEvent("UNIT_LEVEL", FocusFrame_CheckLevel)
 Focus:OnEvent("UNIT_FACTION", FocusFrame_CheckFaction)
 Focus:OnEvent("UNIT_CLASSIFICATION_CHANGED", FocusFrame_CheckClassification)
 Focus:OnEvent("UNIT_PORTRAIT_UPDATE", FocusFrame_CheckPortrait)
+--Focus:OnEvent("FOCUS_UNITID_EXISTS",)
 
 --[[ Chat commands ]]
 

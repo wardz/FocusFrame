@@ -183,8 +183,8 @@ local tableMaintenance = function(reset)
 			i = i + 1
 		end
 
-		if Focus:IsDead() then
-			forceHideTableItem(buffList, Focus:GetName())
+		if CURR_FOCUS_TARGET and Focus:IsDead() then
+			forceHideTableItem(buffList, CURR_FOCUS_TARGET)
 		end
 
 		-- HEALS
@@ -820,29 +820,16 @@ FSPELLCASTINGCOREgetCast = function(caster)
 	return nil
 end
 
-FSPELLCASTINGCOREgetDebuffs = function(caster)
-	if not caster then return end
-
-	local list = {}
-	for k, v in ipairs(buffList) do
-		if v.target == caster then
-			if v.btype then
-				tinsert(list, v)
-			end
-		end
-	end
-
-	return list
-end
-
 FSPELLCASTINGCOREgetBuffs = function(caster)
 	if not caster then return end
+	local list = { buffs = {}, debuffs = {} }
 
-	local list = {}
 	for k, v in ipairs(buffList) do
 		if v.target == caster then
 			if not v.btype then
-				tinsert(list, v)
+				tinsert(list.buffs, v)
+			else
+				tinsert(list.debuffs, v)
 			end
 		end
 	end
@@ -853,7 +840,7 @@ end
 ------------------------------------
 
 do
-	local refresh, interval = 0, 0.4
+	local refresh, interval = 0, 0.3
 
 	local function OnUpdate()
 		refresh = refresh - arg1

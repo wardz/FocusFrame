@@ -20,8 +20,7 @@ local data
 local GetTime, next, strfind, UnitName, TargetLastTarget, TargetByName, strlower, type, tgetn =
       GetTime, next, strfind, UnitName, TargetLastTarget, TargetByName, strlower, type, table.getn
 
-local FSPELLCASTINGCOREgetDebuffs, FSPELLCASTINGCOREgetBuffs, FRGB_BORDER_DEBUFFS_COLOR =
-      FSPELLCASTINGCOREgetDebuffs, FSPELLCASTINGCOREgetBuffs, FRGB_BORDER_DEBUFFS_COLOR
+local FSPELLCASTINGCOREgetBuffs, FRGB_BORDER_DEBUFFS_COLOR = FSPELLCASTINGCOREgetBuffs, FRGB_BORDER_DEBUFFS_COLOR
 
 -- Functions
 local NameplateScanner
@@ -35,8 +34,6 @@ do
 
     --- FocusData events.
     -- List of events that you can register for.
-    -- (If you want to modify the built in focus frame,
-    -- hook the functions inside FocusFrame.lua instead.)
     -- @table Events
     -- @usage Focus:OnEvent("EVENT_NAME", callbackFunc)
     -- @field UNIT_HEALTH_OR_POWER arg1=event or nil, arg2=unit or nil
@@ -82,17 +79,16 @@ do
 
             -- Call event listeners if property has event
             if not rawData.init and events[key] then
-                local getTime = GetTime()
+                if not focusTargetName then return end
                 if key ~= "auraUpdate" then
                     if oldValue and oldValue == value then return end
-                    if key == "unit" and not value then return end
-
-                    local last = rawData.eventsThrottle[key] or 0
-                    if (getTime - last) < 0.1 then return end
-                    rawData.eventsThrottle[key] = getTime
-                else
-                    if not focusTargetName then return end
                 end
+                if key == "unit" and not value then return end
+
+                local getTime = GetTime()
+                local last = rawData.eventsThrottle[key] or 0
+                if (getTime - last) < 0.1 then return end
+                rawData.eventsThrottle[key] = getTime
 
                 CallHooks(events[key], rawData.unit)
             end
@@ -106,8 +102,7 @@ do
     local NewBuff = FSPELLCASTINGCORENewBuff
     local UnitBuff, UnitDebuff = UnitBuff, UnitDebuff
 
-    -- global for now.
-    FocusDataScantip = CreateFrame("GameTooltip", "FocusDataScantip", nil, "GameTooltipTemplate")
+    local FocusDataScantip = CreateFrame("GameTooltip", "FocusDataScantip", nil, "GameTooltipTemplate")
     FocusDataScantip:SetOwner(UIParent, "ANCHOR_NONE")
     FocusDataScantip:SetFrameStrata("TOOLTIP")
 
@@ -139,7 +134,7 @@ do
         -- This is needed when buffs are not removed in the combat log. (i.e unit out of range)
         -- If unit is enemy, only debuffs are deleted.
         if rawData.health <= 0 then
-            return ClearBuffs(focusTargetName)
+            return ClearBuffs(focusTargetName, false)
         end
         ClearBuffs(focusTargetName, rawData.unitIsEnemy == 1)
 
@@ -181,9 +176,8 @@ do
     function NameplateScanner() -- local
         --if rawData.unitIsEnemy and GetCVar("nameplateShowEnemies") == "1" then return end
         --if rawData.unitIsFriend and GetCVar("nameplateShowFriends") == "1" then return end
-        local frames = { WorldFrame:GetChildren() }
 
-        for _, plate in ipairs(frames) do
+        for _, plate in ipairs({ WorldFrame:GetChildren() }) do
             local overlay, _, name, level, _, raidIcon = plate:GetRegions()
 
             if plate:IsVisible() and IsPlate(overlay) then
@@ -412,11 +406,14 @@ local ToUpper = function(a, b) return strupper(a) .. b end
 
 --- Set current target as focus, or name if given.
 -- @tparam[opt=nil] string name
-function Focus:SetFocus(name)
+function Focus:SetFocus(name, isMouseover)
     if not name or name == "" then
         name = UnitName("target")
     else
-        name = gsub(name, "(%l)(%w+)", ToUpper)
+        if not isMouseover then
+            name = strlower(name)
+            name = gsub(name, "(%l)(%w+)", ToUpper)
+        end
     end
 
     local isFocusChanged = Focus:FocusExists()
@@ -494,18 +491,11 @@ function Focus:GetDebuffColor(debuffType)
     return debuffType and FRGB_BORDER_DEBUFFS_COLOR[strlower(debuffType)] or { 0, 0, 0, 0 }
 end
 
---- Get table containing all buff data for focus.
+--- Get table containing all buff+debuff data for focus.
 -- Should be ran in an OnUpdate script or OnEvent("UNIT_AURA")
 -- @treturn table data or empty table
 function Focus:GetBuffs()
     return FSPELLCASTINGCOREgetBuffs(focusTargetName) or {}
-end
-
---- Get table containing all debuff data for focus.
--- Should be ran in an OnUpdate script or OnEvent("UNIT_AURA")
--- @treturn table data or empty table
-function Focus:GetDebuffs()
-    return FSPELLCASTINGCOREgetDebuffs(focusTargetName) or {}
 end
 
 do
@@ -594,13 +584,19 @@ end
 --- Get specific focus data.
 -- If no key is specified, returns all the data.
 -- See SetFocusInfo() for list of data available.
--- @tparam[opt=nil] string key
+-- @tparam[opt=nil] string key1
+-- @tparam[opt=nil] string key2
+-- @tparam[opt=nil] string key3
+-- @tparam[opt=nil] string key4
 -- @usage local lvl = Focus:GetData("unitLevel")
+-- @usage local lvl, class, name = Focus:GetData("unitLevel", "unitClass", "unitName")
+-- @usage local data = Focus:GetData()
 -- @return[1] data or empty table
 -- @return[2] nil
-function Focus:GetData(key)
-    if key then
-        return rawData[key] or nil
+function Focus:GetData(key1, key2, key3, key4, key5)
+    if key1 then
+        if key5 then error("max 4 keys") end
+        return rawData[key1], key2 and rawData[key2], key3 and rawData[key3], key4 and rawData[key4]
     else
         return rawData or {}
     end
@@ -643,7 +639,7 @@ do
 
     -- Call all eventlisteners for given event.
     function CallHooks(event, arg1, arg2, arg3, arg4, recursive) --local
-        --if rawData.init then return end
+        if rawData.init then return end
 
         local callbacks = hookEvents[event]
         if callbacks then
@@ -655,7 +651,7 @@ do
         if not recursive and event == "FOCUS_SET" then
             -- Trigger all events for easy GUI updating
             for evnt, _ in next, hookEvents do
-                if evnt ~= "FOCUS_CLEAR" then
+                if evnt ~= "FOCUS_CLEAR" and evnt ~= "FOCUS_SET" then
                     CallHooks(evnt, arg1, arg2, arg3, arg4, true)
                 end
             end
@@ -665,7 +661,7 @@ do
     local EventHandler = function()
         if strfind(event, "UNIT_") or strfind(event, "PLAYER_") then
             -- Run only events for focus
-            if not Focus:UnitIsFocus(arg1) then return end
+            if not Focus:UnitIsFocus(arg1 or "player") then return end
         end
 
         if event == "UNIT_DISPLAYPOWER" or event == "UNIT_HEALTH" or event == "UNIT_MANA"
@@ -748,6 +744,10 @@ do
         SetFocusAuras(unit)
     end
 
+    function events:PLAYER_AURAS_CHANGED(event)
+        SetFocusAuras("player")
+    end
+
     function events:UNIT_LEVEL(event, unit)
         data.unitLevel = UnitLevel(unit)
     end
@@ -767,6 +767,7 @@ do
     events:SetScript("OnEvent", EventHandler)
     events:SetScript("OnUpdate", OnUpdateHandler)
     events:RegisterEvent("PLAYER_FLAGS_CHANGED")
+    events:RegisterEvent("PLAYER_AURAS_CHANGED")
     events:RegisterEvent("PARTY_LEADER_CHANGED")
     events:RegisterEvent("RAID_TARGET_UPDATE")
     events:RegisterEvent("UNIT_PORTRAIT_UPDATE")
