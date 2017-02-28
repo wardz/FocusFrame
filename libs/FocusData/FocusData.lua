@@ -192,7 +192,11 @@ do
                     end
 
                     data.health = plate:GetChildren():GetValue()
-                    data.unitLevel = tonumber(level:GetText())
+
+                    local lvl = level:GetText()
+                    if lvl then -- lvl is not shown when unit is skull (too high lvl)
+                        data.unitLevel = tonumber(lvl)
+                    end
                     return
                 end
             end
@@ -219,9 +223,7 @@ local function SetFocusInfo(unit, resetRefresh)
     SetFocusHealth(unit)
     SetFocusAuras(unit)
     data.raidIcon = GetRaidTargetIndex(unit)
-    data.unitClassification = UnitClassification(unit)
     data.unitLevel = UnitLevel(unit)
-    data.unitIsPartyLeader = UnitIsPartyLeader(unit)
     data.unitIsPVP = UnitIsPVP(unit)
     data.unitIsTapped = UnitIsTapped(unit)
     data.unitIsTappedByPlayer = UnitIsTappedByPlayer(unit)
@@ -235,6 +237,9 @@ local function SetFocusInfo(unit, resetRefresh)
             return true
         end
     end
+
+    data.unitIsPartyLeader = UnitIsPartyLeader(unit)
+    data.unitClassification = UnitClassification(unit)
 
     -- Data without event triggers.
     -- Ran every ~4s while unit is targeted
@@ -363,8 +368,8 @@ end
 
 --- Target the focus.
 -- @tparam[opt=nil] string name
-function Focus:TargetFocus(name)
-    if not self:FocusExists() then
+function Focus:TargetFocus(name, setFocusName)
+    if not setFocusName and not self:FocusExists() then
         return self:ShowError()
     end
 
@@ -388,6 +393,10 @@ function Focus:TargetFocus(name)
         self.needRetarget = false
     end
 
+    if setFocusName then
+        focusTargetName = UnitName("target")
+        CURR_FOCUS_TARGET = focusTargetName -- global
+    end
     SetFocusInfo("target", true)
 end
 
@@ -410,28 +419,23 @@ local ToUpper = function(a, b) return strupper(a) .. b end
 
 --- Set current target as focus, or name if given.
 -- @tparam[opt=nil] string name
-function Focus:SetFocus(name, isMouseover)
+function Focus:SetFocus(name)
     if not name or name == "" then
         name = UnitName("target")
-    else
-        if not isMouseover then
-            name = strlower(name)
-            name = gsub(name, "(%l)(%w+)", ToUpper)
-        end
     end
 
     local isFocusChanged = Focus:FocusExists()
-    focusTargetName = name
-    CURR_FOCUS_TARGET = name -- global
 
-    if focusTargetName then
+    if name then
         rawData.init = true -- prevent calling events, FOCUS_SET will handle that here
-        self:TargetFocus()
+        self:TargetFocus(name, true)
         rawData.init = nil
 
-        CallHooks("FOCUS_SET", "target")
-        if isFocusChanged then
-            CallHooks("FOCUS_CHANGED", "target")
+        if self:FocusExists() then
+            CallHooks("FOCUS_SET", "target")
+            if isFocusChanged then
+                CallHooks("FOCUS_CHANGED", "target")
+            end
         end
 
         self:TargetPrevious()
@@ -623,7 +627,7 @@ function Focus:ClearData(key)
     if key then
         data[key] = nil
     else
-        for k, v in next, data do
+        for k, v in pairs(rawData) do
             if k == "eventsThrottle" then
                 rawData[k] = {}
             else

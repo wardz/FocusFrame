@@ -21,7 +21,7 @@ SlashCmdList.CLEARFOCUS = function() Focus:ClearFocus() end
 
 SlashCmdList.MFOCUS = function()
     if UnitExists("mouseover") then
-        Focus:SetFocus(UnitName("mouseover"), true)
+        Focus:SetFocus(UnitName("mouseover"))
     end
 end
 
