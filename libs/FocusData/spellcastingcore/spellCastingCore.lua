@@ -77,9 +77,7 @@ end
 buff.create = function(tar, t, s, buffType, factor, time, texture, debuff, magictype, debuffStack)
 	local acnt = {}
 	buffType = buffType or {}
-	if magictype and not buffType.type then
-		buffType.type = strlower(magictype)
-	end
+	buffType.type = buffType.type or strlower(magictype)
 
 	setmetatable(acnt, buff)
 	acnt.target    	= tar

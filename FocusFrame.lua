@@ -85,7 +85,7 @@ function FocusFrame_CheckLevel()
 		FocusLevelText:SetText(level)
 
 		-- Color level number
-		if Focus:GetData("unitCanAttack") == 1 then
+		if Focus:GetData("playerCanAttack") == 1 then
 			local color = GetDifficultyColor(level)
 			FocusLevelText:SetVertexColor(color.r, color.g, color.b)
 		else
