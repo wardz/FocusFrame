@@ -142,6 +142,8 @@ do
         end
         ClearBuffs(focusTargetName, rawData.unitIsEnemy == 1)
 
+        -- TODO add support for Detect Magic
+
         for i = 1, 5 do
             local texture = UnitBuff(unit, i)
             if not texture then break end
@@ -397,6 +399,7 @@ function Focus:TargetFocus(name, setFocusName)
         focusTargetName = UnitName("target")
         CURR_FOCUS_TARGET = focusTargetName -- global
     end
+
     SetFocusInfo("target", true)
 end
 

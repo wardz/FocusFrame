@@ -34,76 +34,85 @@ local tinsert, tremove, strfind, gsub, ipairs, pairs, GetTime, GetNetStats, setm
 	  table.insert, table.remove, string.find, string.gsub, ipairs, pairs, GetTime, GetNetStats, setmetatable, table.getn
 
 Cast.create = function(caster, spell, info, timeMod, time, inv)
-	local acnt = {}
+	local acnt = {
+		caster = caster,
+		spell = spell,
+		icon = info.icon,
+		timeStart = time,
+		timeEnd = time + info.casttime * timeMod,
+		tick = info.tick or 0,
+		inverse = inv,
+		class = info.class,
+		school = info.school and FRGB_SPELL_SCHOOL_COLORS[info.school],
+		immuneColor = info.immune and { 0.7, 0.7, 0.7 },
+		immune = info.immune
+
+	}
+	acnt.nextTick = info.tick and time + acnt.tick or acnt.timeEnd
 	setmetatable(acnt, Cast)
-	acnt.caster     = caster
-	acnt.spell      = spell
-	acnt.icon       = info['icon']
-	acnt.timeStart  = time
-	acnt.timeEnd    = time + info['casttime']*timeMod
-	acnt.tick	    = info['tick'] and info['tick'] or 0 
-	acnt.nextTick	= info['tick'] and time + acnt.tick or acnt.timeEnd 
-	acnt.inverse    = inv	
-	acnt.class		= info['class']
-	acnt.school		= info['school'] and FRGB_SPELL_SCHOOL_COLORS[info['school']]
-	acnt.borderClr	= info['immune'] and {.3, .3, .3} or {.1, .1, .1}
+
 	return acnt
 end
 
 Heal.create = function(n, no, crit, time)
-   local acnt = {}
-   setmetatable(acnt,Heal)
-   acnt.target    = n
-   acnt.amount    = no
-   acnt.crit      = crit
-   acnt.timeStart = time
-   acnt.timeEnd   = time + 2
-   acnt.y         = 0
+   local acnt = {
+	   target = n,
+	   amount = no,
+	   crit = crit,
+	   timeStart = time,
+	   timeEnd = time + 2,
+	   y = 0
+   }
+   setmetatable(acnt, Heal)
+
    return acnt
 end
 
 InstaBuff.create = function(c, b, list, time)
-   local acnt = {}
-   setmetatable(acnt,InstaBuff)
-   acnt.caster    	= c
-   acnt.spell      	= b
-   acnt.timeMod 	= list['mod']
-   acnt.spellList 	= list['list']
-   acnt.timeStart	= time
-   acnt.timeEnd   	= time + 10	--planned obsolescence
+   local acnt = {
+	   caster = c,
+	   spell = b,
+	   timeMod = list.mod,
+	   spellList = list.list,
+	   timeStart = time,
+	   timeEnd = time + 10
+   }
+   setmetatable(acnt, InstaBuff)
+
    return acnt
 end
 
 buff.create = function(tar, t, s, buffType, factor, time, texture, debuff, magictype, debuffStack)
-	local acnt = {}
 	buffType = buffType or {}
 	buffType.type = buffType.type or strlower(magictype)
 
+	local acnt = {
+		target = tar,
+		caster = tar,
+		spell = t,
+		stacks = debuffStack or s or 0,
+		icon = texture or buffType.icon,
+		timeStart = time,
+		timeEnd = 0,
+		prio = buffType.prio or 0,
+		border =  buffType.type and FRGB_BORDER_DEBUFFS_COLOR[strlower(buffType.type)],
+		display = buffType.display == nil and true or buffType.display,
+		btype = debuff,
+		debuffType = buffType.type,
+	}
 	setmetatable(acnt, buff)
-	acnt.target    	= tar
-	acnt.caster    	= tar	-- facilitate entry removal
-	acnt.spell      = t
-	acnt.stacks		= debuffStack or s or 0
-	acnt.icon      	= texture and texture or buffType['icon']
-	acnt.timeStart 	= time
-	--acnt.timeEnd   	= time + (buffType['duration'] or 0) * factor
-	acnt.timeEnd   	= 0
-	acnt.prio		= buffType['prio'] and buffType['prio'] or 0
-	acnt.border		= buffType['type'] and FRGB_BORDER_DEBUFFS_COLOR[strlower(buffType.type)]	-- border rgb values depending on type of buff/debuff
-	acnt.display 	= buffType['display'] == nil and true or buffType['display']
-	acnt.btype		= debuff
-	acnt.debuffType = buffType.type
 
 	return acnt
 end
 
 buffQueue.create = function(tar, spell, buffType, d, time)
-	local acnt = {}
-	acnt.target = tar
-	acnt.buffName = spell
-	acnt.buffData = buffType
-	acnt.timeStart = time
-	acnt.timeEnd = time + 1
+	local acnt = {
+		target = tar,
+		buffName = spell,
+		buffData = buffType,
+		timeStart = time,
+		timeEnd = time + 1
+	}
 	setmetatable(acnt, buffQueue)
 
 	return acnt
@@ -182,6 +191,8 @@ local tableMaintenance = function(reset)
 		end
 
 		if CURR_FOCUS_TARGET and Focus:IsDead() then
+			-- need to call this in OnUpdate aswell to avoid any possible data 
+			-- race conditions from events
 			forceHideTableItem(buffList, CURR_FOCUS_TARGET)
 		end
 
@@ -307,7 +318,7 @@ local function newbuff(tar, b, s, castOn, texture, debuff, magictype, debuffStac
 	local n = buff.create(tar, b, s, FSPELLINFO_BUFFS_TO_TRACK[b], 1, time, texture, debuff, magictype, debuffStack)
 	tinsert(buffList, n)
 
-	if not noEvent then -- only trigger event when called outside FocusData
+	if not noEvent then
 		if Focus:UnitIsFocus(tar, true) then
 			Focus:SetData("auraUpdate", 1)
 		end
@@ -326,7 +337,7 @@ local function refreshBuff(tar, b, s)
 	end
 end
 
-local function queueBuff(tar, spell, b, d)
+local function queueBuff(tar, spell, b, d) -- TODO why is this needed?
 	local time = getTimeMinusPing()--GetTime()
 	local bq = buffQueue.create(tar, spell, b, d, time)
 	tinsert(buffQueueList, bq) 
@@ -731,7 +742,9 @@ local playerDeath = function()
 			--tableMaintenance(true)
 		else
 			forceHideTableItem(casts, c, nil)
-			forceHideTableItem(buffList, c, nil)
+			if Focus:GetName() ~= c then -- buffList is cleared in OnUpdate for focus
+				forceHideTableItem(buffList, c, nil)
+			end
 		end
 
 		if Focus:UnitIsFocus(c, true) then
@@ -818,27 +831,32 @@ FSPELLCASTINGCOREgetCast = function(caster)
 	return nil
 end
 
-FSPELLCASTINGCOREgetBuffs = function(caster)
-	if not caster then return end
+do
 	local list = { buffs = {}, debuffs = {} }
 
-	for k, v in ipairs(buffList) do
-		if v.target == caster then
-			if not v.btype then
-				tinsert(list.buffs, v)
-			else
-				tinsert(list.debuffs, v)
+	FSPELLCASTINGCOREgetBuffs = function(caster)
+		if not caster then return end
+		list.buffs = {}
+		list.debuffs = {}
+
+		for k, v in ipairs(buffList) do
+			if v.target == caster then
+				if not v.btype then
+					tinsert(list.buffs, v)
+				else
+					tinsert(list.debuffs, v)
+				end
 			end
 		end
-	end
 
-	return list
+		return list
+	end
 end
 
 ------------------------------------
 
 do
-	local refresh, interval = 0, 0.3
+	local refresh, interval = 0, 0.39
 
 	local function OnUpdate()
 		refresh = refresh - arg1

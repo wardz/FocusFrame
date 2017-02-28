@@ -176,6 +176,12 @@ function FocusFrame_CastingBarUpdate() -- ran every fps
 		castbar.spark:SetPoint("CENTER", castbar, "LEFT", sparkPosition * castbar:GetWidth(), 0)
 		castbar.timer:SetText(timer)
 
+		if cast.immune then
+			castbar.shield:Show()
+		else
+			castbar.shield:Hide()
+		end
+
 		if not castbar:IsVisible() or castbar.text:GetText() ~= cast.spell then
 			castbar.text:SetText(cast.spell)
 			castbar.icon:SetTexture(cast.icon)
@@ -199,7 +205,8 @@ do
 	local GetBuffs = Focus.GetBuffs
 
 	local function PositionBuffs(numDebuffs, numBuffs)
-		if Focus:GetData("unitIsFriend") == 1 then
+		local unitIsFriend = Focus:GetData("unitIsFriend")
+		if unitIsFriend == 1 then
 			FocusFrameBuff1:SetPoint("TOPLEFT", "FocusFrame", "BOTTOMLEFT", 5, 32)
 			FocusFrameDebuff1:SetPoint("TOPLEFT", "FocusFrameBuff1", "BOTTOMLEFT", 0, -2)
 		else
@@ -253,13 +260,15 @@ do
 
 		-- Move castbar
 		local amount = numBuffs + numDebuffs
-		if Focus:GetData("unitIsEnemy") == 1 then
+		local y = amount > 7 and -70 or -35
+		if unitIsFriend ~= 1 then
 			if numBuffs >= 1 then
-				FocusFrameCastingBar:SetPoint("BOTTOMLEFT", FocusFrame, 15, -70)
+				FocusFrameCastingBar:SetPoint("BOTTOMLEFT", _G["FocusFrameBuff1"], 0, -35)
+			else
+				FocusFrameCastingBar:SetPoint("BOTTOMLEFT", FocusFrame, 20, y)
 			end
 		else
-			local y = amount > 7 and -70 or -35
-			FocusFrameCastingBar:SetPoint("BOTTOMLEFT", FocusFrame, 15, y)
+			FocusFrameCastingBar:SetPoint("BOTTOMLEFT", FocusFrame, 20, y)
 		end
 	end
 
@@ -357,8 +366,15 @@ FocusFrame.cast.timer:SetText("2.0")
 FocusFrame.cast.icon = FocusFrame.cast:CreateTexture(nil, "OVERLAY", nil, 7)
 FocusFrame.cast.icon:SetWidth(20)
 FocusFrame.cast.icon:SetHeight(20)
-FocusFrame.cast.icon:SetPoint("LEFT", FocusFrame.cast, -25, 0)
+FocusFrame.cast.icon:SetPoint("LEFT", FocusFrame.cast, -23, 1)
 FocusFrame.cast.icon:SetTexture("Interface\\Icons\\Spell_shadow_lifedrain02")
+
+FocusFrame.cast.shield = FocusFrame.cast:CreateTexture(nil, "OVERLAY")
+FocusFrame.cast.shield:SetPoint("TOPLEFT", -28, 20)
+FocusFrame.cast.shield:SetPoint("TOPRIGHT", 18, 20)
+FocusFrame.cast.shield:SetHeight(50)
+FocusFrame.cast.shield:SetTexture("Interface\\AddOns\\FocusFrame\\mods\\UI-CastingBar-Small-Shield.blp")
+FocusFrame.cast.shield:Hide()
 
 -- [[ Register events ]]
 Focus:OnEvent("FOCUS_SET", FocusFrame_Refresh)
@@ -373,6 +389,7 @@ Focus:OnEvent("UNIT_FACTION", FocusFrame_CheckFaction)
 Focus:OnEvent("UNIT_CLASSIFICATION_CHANGED", FocusFrame_CheckClassification)
 Focus:OnEvent("UNIT_PORTRAIT_UPDATE", FocusFrame_CheckPortrait)
 --Focus:OnEvent("FOCUS_UNITID_EXISTS", FocusFrame_CheckFaction)
+--Focus:OnEvent("FOCUS_CHANGED", function() print("ran") end)
 
 --[[ Chat commands ]]
 SLASH_FOCUSOPTIONS1 = "/foption"
