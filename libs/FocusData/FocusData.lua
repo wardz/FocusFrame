@@ -85,13 +85,15 @@ do
             if not rawData.init and events[key] then
                 if not focusTargetName then return end
                 if key ~= "auraUpdate" then
-                    if oldValue and oldValue == value then return end
+                    if oldValue == value then return end
                 end
                 if key == "unit" and not value then return end
 
                 local getTime = GetTime()
-                local last = rawData.eventsThrottle[key] or 0
-                if (getTime - last) < 0.1 then return end
+                local last = rawData.eventsThrottle[key]
+                if last then
+                    if (getTime - last) < 0.1 then return end
+                end
                 rawData.eventsThrottle[key] = getTime
 
                 CallHooks(events[key], rawData.unit)
@@ -115,7 +117,9 @@ do
     local scantipTextLeft1 = _G["FocusDataScantipTextLeft1"]
     local scantipTextRight1 = _G["FocusDataScantipTextRight1"]
 
-    local prevTexture, prevAmount = "", 0
+    local prevTexture = ""
+    local prevAmount = 0
+    local prevRan = false
 
     local function SyncBuff(unit, i, texture, stack, debuffType, isDebuff)
         scantip:ClearLines()
@@ -175,8 +179,8 @@ do
             SyncBuff(unit, i, texture, stack, debuffType, true)
         end
 
-        prevAmount = GetLastAura(focusTargetName)
         CallHooks("UNIT_AURA")
+        prevAmount = GetLastAura(focusTargetName)
     end
 end
 
@@ -417,7 +421,7 @@ function Focus:TargetFocus(name, setFocusName)
     end
 
     if setFocusName then
-        -- name is case sensitive, so we'll just let UnitName handle the parsing
+        -- name is case sensitive, so we'll just let UnitName handle the parsing for
         -- /focus <name>
         focusTargetName = UnitName("target")
         CURR_FOCUS_TARGET = focusTargetName -- global
@@ -434,7 +438,7 @@ function Focus:TargetPrevious()
         if UnitName("target") ~= self.oldTarget then
             -- TargetLastTarget seems to bug out randomly,
             -- so use this as fallback
-            self:TargetFocus()
+            self:TargetFocus(self.oldTarget)
         end
     elseif not self.oldTarget then
         ClearTarget()
@@ -681,6 +685,7 @@ do
 
         local callbacks = hookEvents[event]
         if callbacks then
+            --if not recursive then print(event) end
             for i = 1, tgetn(callbacks) do
                 callbacks[i](event, arg1, arg2, arg3, arg4)
             end
