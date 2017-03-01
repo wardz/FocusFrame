@@ -92,7 +92,7 @@
 	<td class="summary">Use any unit function on focus target, i.e CastSpellByName.</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#Focus:TargetFocus">Focus:TargetFocus ([name=nil])</a></td>
+	<td class="name" nowrap><a href="#Focus:TargetFocus">Focus:TargetFocus ([name=nil[, setFocusName=false]])</a></td>
 	<td class="summary">Target the focus.</td>
 	</tr>
 	<tr>
@@ -132,11 +132,7 @@
 	</tr>
 	<tr>
 	<td class="name" nowrap><a href="#Focus:GetBuffs">Focus:GetBuffs ()</a></td>
-	<td class="summary">Get table containing all buff data for focus.</td>
-	</tr>
-	<tr>
-	<td class="name" nowrap><a href="#Focus:GetDebuffs">Focus:GetDebuffs ()</a></td>
-	<td class="summary">Get table containing all debuff data for focus.</td>
+	<td class="summary">Get table containing all buff+debuff data for focus.</td>
 	</tr>
 	<tr>
 	<td class="name" nowrap><a href="#Focus:GetCast">Focus:GetCast ()</a></td>
@@ -150,7 +146,7 @@
 <h2><a href="#Data">Data </a></h2>
 <table class="function_list">
 	<tr>
-	<td class="name" nowrap><a href="#Focus:GetData">Focus:GetData ([key=nil])</a></td>
+	<td class="name" nowrap><a href="#Focus:GetData">Focus:GetData ([key1=nil[, key2=nil[, key3=nil[, key4=nil]]]])</a></td>
 	<td class="summary">Get specific focus data.</td>
 	</tr>
 	<tr>
@@ -188,8 +184,6 @@
     <dd>
     FocusData events.
  List of events that you can register for.
- (If you want to modify the built in focus frame,
- hook the functions inside FocusFrame.lua instead.)
 
 
     <h3>Fields:</h3>
@@ -223,6 +217,9 @@
         </li>
         <li><span class="parameter">FOCUS_CLEAR</span>
 
+        </li>
+        <li><span class="parameter">UNIT_FACTION</span>
+         arg1=event, arg2=unit
         </li>
     </ul>
 
@@ -391,7 +388,7 @@
 </dd>
     <dt>
     <a name = "Focus:TargetFocus"></a>
-    <strong>Focus:TargetFocus ([name=nil])</strong>
+    <strong>Focus:TargetFocus ([name=nil[, setFocusName=false]])</strong>
     </dt>
     <dd>
     Target the focus.
@@ -403,6 +400,11 @@
             <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
 
          (<em>default</em> nil)
+        </li>
+        <li><span class="parameter">setFocusName</span>
+            <span class="types"><span class="type">bool</span></span>
+         if true, sets focus name to UnitName("target")
+         (<em>default</em> false)
         </li>
     </ul>
 
@@ -596,28 +598,7 @@
     <strong>Focus:GetBuffs ()</strong>
     </dt>
     <dd>
-    Get table containing all buff data for focus.
- Should be ran in an OnUpdate script or OnEvent("UNIT_AURA")
-
-
-
-    <h3>Returns:</h3>
-    <ol>
-
-           <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.5">table</a></span>
-        data or empty table
-    </ol>
-
-
-
-
-</dd>
-    <dt>
-    <a name = "Focus:GetDebuffs"></a>
-    <strong>Focus:GetDebuffs ()</strong>
-    </dt>
-    <dd>
-    Get table containing all debuff data for focus.
+    Get table containing all buff+debuff data for focus.
  Should be ran in an OnUpdate script or OnEvent("UNIT_AURA")
 
 
@@ -704,7 +685,7 @@
     <dl class="function">
     <dt>
     <a name = "Focus:GetData"></a>
-    <strong>Focus:GetData ([key=nil])</strong>
+    <strong>Focus:GetData ([key1=nil[, key2=nil[, key3=nil[, key4=nil]]]])</strong>
     </dt>
     <dd>
     Get specific focus data.
@@ -714,7 +695,22 @@
 
     <h3>Parameters:</h3>
     <ul>
-        <li><span class="parameter">key</span>
+        <li><span class="parameter">key1</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+
+         (<em>default</em> nil)
+        </li>
+        <li><span class="parameter">key2</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+
+         (<em>default</em> nil)
+        </li>
+        <li><span class="parameter">key3</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+
+         (<em>default</em> nil)
+        </li>
+        <li><span class="parameter">key4</span>
             <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
 
          (<em>default</em> nil)
@@ -736,7 +732,9 @@
 
     <h3>Usage:</h3>
     <ul>
-        <pre class="example"><span class="keyword">local</span> lvl = Focus:GetData(<span class="string">"unitLevel"</span>)</pre>
+        <li><pre class="example"><span class="keyword">local</span> lvl = Focus:GetData(<span class="string">"unitLevel"</span>)</pre></li>
+        <li><pre class="example"><span class="keyword">local</span> lvl, class, name = Focus:GetData(<span class="string">"unitLevel"</span>, <span class="string">"unitClass"</span>, <span class="string">"unitName"</span>)</pre></li>
+        <li><pre class="example"><span class="keyword">local</span> data = Focus:GetData()</pre></li>
     </ul>
 
 </dd>
@@ -853,7 +851,7 @@
 </div> <!-- id="main" -->
 <div id="about">
 <i>generated by <a href="http://github.com/stevedonovan/LDoc">LDoc 1.4.6</a></i>
-<i style="float:right;">Last updated 2017-02-26 23:06:51 </i>
+<i style="float:right;">Last updated 2017-03-01 01:38:54 </i>
 </div> <!-- id="about" -->
 </div> <!-- id="container" -->
 </body>
