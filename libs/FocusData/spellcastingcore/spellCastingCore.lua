@@ -178,7 +178,9 @@ local tableMaintenance = function(reset)
 		heals = {}
 		iBuffs = {}
 		buffList = {}
-		Focus:SetData("auraUpdate", 1)
+		if Focus:FocusExists() then
+			Focus:ClearFocus()
+		end
 	else
 		-- CASTS -- casts have a different removal parameter
 		local time = GetTime()

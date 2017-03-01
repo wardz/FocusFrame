@@ -33,7 +33,8 @@ do
     local rawset = rawset
 
     --- FocusData events.
-    -- List of events that you can register for.
+    -- List of events that you can register for. All events can be
+    -- registered multiple times.
     -- @table Events
     -- @usage Focus:OnEvent("EVENT_NAME", callbackFunc)
     -- @field UNIT_HEALTH_OR_POWER arg1=event or nil, arg2=unit or nil

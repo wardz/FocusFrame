@@ -376,7 +376,7 @@ FocusFrame.cast.shield:SetHeight(50)
 FocusFrame.cast.shield:SetTexture("Interface\\AddOns\\FocusFrame\\mods\\UI-CastingBar-Small-Shield.blp")
 FocusFrame.cast.shield:Hide()
 
--- [[ Register events ]]
+--[[ Register events ]]
 Focus:OnEvent("FOCUS_SET", FocusFrame_Refresh)
 Focus:OnEvent("FOCUS_CLEAR", FocusFrame_OnHide)
 Focus:OnEvent("RAID_TARGET_UPDATE", FocusFrame_UpdateRaidTargetIcon)
