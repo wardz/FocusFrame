@@ -59,7 +59,7 @@ local CLASS_BUTTONS = {
 }
 
 local Focus = getglobal("FocusData")
-Focus:OnEvent("UNIT_PORTRAIT_UPDATE", function(event, unit)
+Focus:OnEvent("UNIT_PORTRAIT_UPDATE", function(event, unit) -- ran after FocusFrame_CheckPortrait
     if UnitExists(unit) == 1 and UnitIsPlayer(unit) == 1 then
         local _, class = UnitClass(unit)
 		local coords = CLASS_BUTTONS[class]

@@ -391,6 +391,10 @@ Focus:OnEvent("UNIT_PORTRAIT_UPDATE", FocusFrame_CheckPortrait)
 --Focus:OnEvent("FOCUS_UNITID_EXISTS", function() print("ran1") end)
 --Focus:OnEvent("FOCUS_CHANGED", function() print("ran2") end)
 
+-- See mods\classPortraits.lua for example of hooking FocusFrame_x() event functions.
+-- Also please keep in mind unitid argument is not guaranteed to be passed into callback everytime
+-- for most of the events.
+
 --[[ Chat commands ]]
 SLASH_FOCUSOPTIONS1 = "/foption"
 SlashCmdList.FOCUSOPTIONS = function(msg)

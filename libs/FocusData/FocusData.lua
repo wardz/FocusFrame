@@ -28,6 +28,10 @@ local PartyScanner
 local SetFocusAuras
 local CallHooks
 
+--------------------------------------
+-- Core
+--------------------------------------
+
 -- Event handling for data struct
 do
     local rawset = rawset
@@ -763,6 +767,10 @@ do
         if not hookEvents[eventName] then
             hookEvents[eventName] = {}
         end
+
+        --[[if not events:IsEventRegistered(eventName) then
+            events:RegisterEvent(eventName)
+        end]]
 
         local i = tgetn(hookEvents[eventName]) + 1
         hookEvents[eventName][i] = callback
