@@ -123,6 +123,8 @@ do
 
     local function SyncBuff(unit, i, texture, stack, debuffType, isDebuff)
         scantip:ClearLines()
+        scantipTextRight1:SetText(nil) -- ClearLines hides right text instead of clearing it
+
         if isDebuff then
             scantip:SetUnitDebuff(unit, i)
         else
@@ -132,8 +134,8 @@ do
         -- Get buff name. UnitBuff only gives texture
         local name = scantipTextLeft1:GetText()
         if name then
-            if not debuffType or debuffType == "" then
-                debuffType = "none"
+            if isDebuff and not debuffType or debuffType == "" then
+                debuffType = scantipTextRight1:GetText()
             end
 
             NewBuff(focusTargetName, name, texture, isDebuff, debuffType, stack)
@@ -154,7 +156,7 @@ do
     end
 
     function SetFocusAuras(unit) --local
-        if not HasAurasChanged() then return end
+        --if not HasAurasChanged() then return end
 
         -- Delete all buffs stored in DB, then re-add them later if found on target
         -- This is needed when buffs are not removed in the combat log. (i.e unit out of range)
@@ -179,8 +181,8 @@ do
             SyncBuff(unit, i, texture, stack, debuffType, true)
         end
 
-        CallHooks("UNIT_AURA")
         prevAmount = GetLastAura(focusTargetName)
+        CallHooks("UNIT_AURA")
     end
 end
 

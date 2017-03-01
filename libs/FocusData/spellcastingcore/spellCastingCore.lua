@@ -84,7 +84,7 @@ end
 
 buff.create = function(tar, t, s, buffType, factor, time, texture, debuff, magictype, debuffStack)
 	buffType = buffType or {}
-	buffType.type = buffType.type or strlower(magictype)
+	buffType.type = magictype and strlower(magictype) or buffType.type or "none"
 
 	local acnt = {
 		target = tar,
@@ -302,7 +302,7 @@ end
 
 local function newbuff(tar, b, s, castOn, texture, debuff, magictype, debuffStack, noEvent)
 	local time = getTimeMinusPing()--GetTime()
-	if not magictype then magictype = "none" end
+	--if not magictype then magictype = "none" end
 
 	-- check buff queue
 	if checkQueueBuff(tar, b) then return end
@@ -852,27 +852,20 @@ do
 
 	FSPELLCASTINGCOREgetBuffs = function(caster)
 		if not caster then return end
+		list.buffs = {}
+		list.debuffs = {}
 
-		local buffIndex, debuffIndex = 0, 0
 		for k, v in ipairs(buffList) do
 			if v.target == caster then
 				if not v.btype then
-					buffIndex = buffIndex + 1
-					list.buffs[buffIndex] = v
+					tinsert(list.buffs, v)
 				else
-					debuffIndex = debuffIndex + 1
-					list.debuffs[debuffIndex] = v
+					tinsert(list.debuffs, v)
 				end
 			end
 		end
 
-		-- buffs after this index will be ignored
-		-- This way we don't have to create a new table every OnUpdate call,
-		-- we can just overwrite old values instead
-		list.buffs[buffIndex + 1] = nil
-		list.debuffs[debuffIndex + 1] = nil
-
-		return list -- do not use (i)pairs on this!
+		return list
 	end
 end
 
