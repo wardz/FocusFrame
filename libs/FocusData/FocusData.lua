@@ -390,6 +390,7 @@ end
 
 --- Target the focus.
 -- @tparam[opt=nil] string name
+-- @tparam[opt=false] bool setFocusName if true, sets focus name to UnitName("target")
 function Focus:TargetFocus(name, setFocusName)
     if not setFocusName and not self:FocusExists() then
         return self:ShowError()
@@ -416,6 +417,8 @@ function Focus:TargetFocus(name, setFocusName)
     end
 
     if setFocusName then
+        -- name is case sensitive, so we'll just let UnitName handle the parsing
+        -- /focus <name>
         focusTargetName = UnitName("target")
         CURR_FOCUS_TARGET = focusTargetName -- global
     end
