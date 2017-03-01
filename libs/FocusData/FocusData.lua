@@ -327,7 +327,7 @@ end
 -- @section misc
 
 --- Display focus UI error
--- @tparam[opt=nil] string msg
+-- @tparam[opt="You have no focus"] string msg
 function Focus:ShowError(msg)
     UIErrorsFrame:AddMessage("|cffFF003F " .. (msg or "You have no focus.") .. "|r")
 end
@@ -413,6 +413,7 @@ function Focus:TargetFocus(name, setFocusName)
 
         self.needRetarget = true
     else
+        print("ran")
         self.needRetarget = false
     end
 
@@ -451,8 +452,9 @@ function Focus:SetFocus(name)
     end
 
     local isFocusChanged = Focus:FocusExists()
+    focusTargetName = name
 
-    if name then
+    if focusTargetName then
         rawData.init = true -- prevent calling events, FOCUS_SET will handle that here
         self:TargetFocus(name, true)
         rawData.init = nil
