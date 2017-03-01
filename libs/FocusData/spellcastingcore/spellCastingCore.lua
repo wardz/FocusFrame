@@ -852,20 +852,27 @@ do
 
 	FSPELLCASTINGCOREgetBuffs = function(caster)
 		if not caster then return end
-		list.buffs = {}
-		list.debuffs = {}
 
+		local buffIndex, debuffIndex = 0, 0
 		for k, v in ipairs(buffList) do
 			if v.target == caster then
 				if not v.btype then
-					tinsert(list.buffs, v)
+					buffIndex = buffIndex + 1
+					list.buffs[buffIndex] = v
 				else
-					tinsert(list.debuffs, v)
+					debuffIndex = debuffIndex + 1
+					list.debuffs[debuffIndex] = v
 				end
 			end
 		end
 
-		return list
+		-- buffs after this index will be ignored
+		-- This way we don't have to create a new table every OnUpdate call,
+		-- we can just overwrite old values instead
+		list.buffs[buffIndex + 1] = nil
+		list.debuffs[debuffIndex + 1] = nil
+
+		return list -- do not use (i)pairs on this!
 	end
 end
 

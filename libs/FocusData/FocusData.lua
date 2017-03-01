@@ -72,7 +72,7 @@ do
     data = setmetatable({}, {
         __index = function(self, key)
             local value = rawData[key]
-            if value == nil then error("invalid key: " .. key) end
+            if value == nil then error("unknown key: " .. key) end
             return value
         end,
 
@@ -413,7 +413,6 @@ function Focus:TargetFocus(name, setFocusName)
 
         self.needRetarget = true
     else
-        print("ran")
         self.needRetarget = false
     end
 
@@ -464,6 +463,8 @@ function Focus:SetFocus(name)
             if isFocusChanged then
                 CallHooks("FOCUS_CHANGED", "target")
             end
+        else
+            self:ClearFocus()
         end
 
         self:TargetPrevious()
@@ -529,6 +530,7 @@ end
 
 --- Get table containing all buff+debuff data for focus.
 -- Should be ran in an OnUpdate script or OnEvent("UNIT_AURA")
+-- This list can only be traversed in a for loop. Do not use pairs!
 -- @treturn table data or empty table
 function Focus:GetBuffs()
     return FSPELLCASTINGCOREgetBuffs(focusTargetName) or {}
