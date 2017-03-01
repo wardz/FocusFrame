@@ -100,6 +100,7 @@ buff.create = function(tar, t, s, buffType, factor, time, texture, debuff, magic
 		btype = debuff,
 		debuffType = buffType.type,
 	}
+	
 	setmetatable(acnt, buff)
 
 	return acnt
@@ -311,6 +312,7 @@ local function newbuff(tar, b, s, castOn, texture, debuff, magictype, debuffStac
 	for k, v in pairs(buffList) do
 		if v.caster == tar and v.spell == b then
 			tremove(buffList, i)
+			break
 		end
 		i = i + 1
 	end
@@ -817,6 +819,20 @@ end
 
 function FSPELLCASTINGCOREClearBuffs(caster, debuffsOnly)
 	forceHideTableItem(buffList, caster, nil, debuffsOnly)
+end
+
+function FSPELLCASTINGCOREGetLastBuffInfo(caster)
+	local texture
+	local i = 0
+
+	for k, v in ipairs(buffList) do
+		if v.target == caster then
+			texture = v.icon
+			i = i + 1
+		end
+	end
+
+	return i, texture
 end
 
 FSPELLCASTINGCOREgetCast = function(caster)

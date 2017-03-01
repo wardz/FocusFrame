@@ -104,6 +104,7 @@ end
 do
     local ClearBuffs = FSPELLCASTINGCOREClearBuffs
     local NewBuff = FSPELLCASTINGCORENewBuff
+    local GetLastAura = FSPELLCASTINGCOREGetLastBuffInfo
     local UnitBuff, UnitDebuff = UnitBuff, UnitDebuff
 
     local FocusDataScantip = CreateFrame("GameTooltip", "FocusDataScantip", nil, "GameTooltipTemplate")
@@ -113,6 +114,8 @@ do
     local scantip = _G["FocusDataScantip"]
     local scantipTextLeft1 = _G["FocusDataScantipTextLeft1"]
     local scantipTextRight1 = _G["FocusDataScantipTextRight1"]
+
+    local prevTexture, prevAmount = "", 0
 
     local function SyncBuff(unit, i, texture, stack, debuffType, isDebuff)
         scantip:ClearLines()
@@ -130,13 +133,29 @@ do
             end
 
             NewBuff(focusTargetName, name, texture, isDebuff, debuffType, stack)
+            prevTexture = texture
         end
     end
 
+    local function HasAurasChanged()
+        local len, texture = GetLastAura(focusTargetName)
+
+        if len == prevAmount then
+            if prevTexture == texture then
+                return false
+            end
+        end
+
+        return true
+    end
+
     function SetFocusAuras(unit) --local
+        if not HasAurasChanged() then return end
+
         -- Delete all buffs stored in DB, then re-add them later if found on target
         -- This is needed when buffs are not removed in the combat log. (i.e unit out of range)
         -- If unit is enemy, only debuffs are deleted.
+        -- TODO continue only if buffList has changed
         if rawData.health <= 0 then
             return ClearBuffs(focusTargetName, false)
         end
@@ -156,6 +175,7 @@ do
             SyncBuff(unit, i, texture, stack, debuffType, true)
         end
 
+        prevAmount = GetLastAura(focusTargetName)
         CallHooks("UNIT_AURA")
     end
 end
