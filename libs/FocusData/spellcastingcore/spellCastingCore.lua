@@ -172,7 +172,7 @@ local forceHideTableItem = function(tab, caster, spell, debuffsOnly)
 		i = i + 1
 	end
  
-	if hasChanged and Focus:UnitIsFocus(caster, true) then
+	if Focus:UnitIsFocus(caster, true) then
 		Focus:SetData("auraUpdate", 1)
 	end
 end
