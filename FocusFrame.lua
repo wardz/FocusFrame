@@ -1,372 +1,236 @@
-local UnitName, strsub, TargetByName = UnitName, string.sub, TargetByName
-local FocusFrame_SetFocusInfo = FocusFrame_SetFocusInfo
-local FocusFrame_GetFocusData = FocusFrame_GetFocusData
+local _G = getfenv(0)
+local Focus = _G["FocusData"]
+FocusFrameDB = FocusFrameDB or { unlock = true, scale = 1 }
 
-CURR_FOCUS_TARGET = nil
+-- See mods\classPortraits.lua for example of hooking local FocusFrame_x() event functions.
+-- Global functions can be hooked as usual.
 
-if not print then
-	print = function(x) DEFAULT_CHAT_FRAME:AddMessage(x or "false") end
+local function FocusFrame_Refresh(event, unit)
+	FocusName:SetText(UnitName(unit))
+	--FocusFrame_CheckPortrait(event, unit)
+
+	FocusFrame:SetScale(FocusFrameDB.scale)
+	FocusFrame:SetScript("OnUpdate", FocusFrame_CastingBarUpdate)
+	FocusFrame:Show()
 end
 
-local function UnitIsFocus(unit)
-	return UnitName(unit) == CURR_FOCUS_TARGET
+local function FocusFrame_CheckPortrait(event, unit)
+	SetPortraitTexture(FocusPortrait, unit)
+	FocusPortrait:SetAlpha(1)
 end
 
-local function GetFocusID()
-	if UnitExists("target") and UnitIsFocus("target") then
-		return "target"
-	elseif UnitExists("mouseover") and UnitIsFocus("mouseover") then
-		return "mouseover"
-	end
-	-- partyX/raidX is handled elsewhere
-end
+-- Upvalues
+local GetHealth, GetPower = Focus.GetHealth, Focus.GetPower
+local GetPowerColor, IsDead = Focus.GetPowerColor, Focus.IsDead
 
-local function ClearFocus()
-	CURR_FOCUS_TARGET = nil
-	FocusFrame_DeleteFocusData()
-	FocusFrame_Refresh()
-end
+local function FocusFrame_HealthUpdate() -- ran very frequent
+	local health, maxHealth = GetHealth()
+	local mana, maxMana = GetPower()
 
-local function TargetUnitOrFocus(name, isNotPlayer)
-	name = name or CURR_FOCUS_TARGET
-	if isNotPlayer == nil then
-		local data = FocusFrame_GetFocusData(name)
-		isNotPlayer = data and data.npc == "2"
-	end
+	FocusFrameHealthBar:SetMinMaxValues(0, maxHealth)
+	FocusFrameHealthBar:SetValue(health)
+	FocusFrameManaBar:SetMinMaxValues(0, maxMana)
+	FocusFrameManaBar:SetValue(mana)
 
-	if isNotPlayer then
-		local _name = strsub(name, 1, -2)
-		TargetByName(_name, false)
-		-- Removing last char from npc name will make the game engine
-		-- do a scan for nearest enemy with similar name.
-		-- If you do target with exact name you may end up targetting a mob
-		-- 40 yards behind you even if there's a mob standing right next to you
-
-		if UnitIsDead("target") == 1 then
-			TargetByName(CURR_FOCUS_TARGET, true)
-			-- Nearest unit is dead, so revert back to old targetting system
-			-- incase it can pickup the mob
-		end
+	if FocusFrameManaBar:IsShown() then
+		local color = GetPowerColor()
+		FocusFrameManaBar:SetStatusBarColor(color.r, color.g, color.b)
 	else
-		TargetByName(name, true)
-	end
-end
-
-local function FocusAction(func, arg1, arg2)
-	local oldTarget = UnitName("target")
-	local data = FocusFrame_GetFocusData(CURR_FOCUS_TARGET)
-	local isNotPlayer = data and data.npc == "2" and true or false
-	local retarget = false
-
-	if not oldTarget or oldTarget ~= CURR_FOCUS_TARGET then
-		TargetUnitOrFocus(nil, isNotPlayer)
-		retarget = true
+		FocusFrameManaBarText:SetText(nil)
 	end
 
-	if func then
-		-- TODO is there vararg in this lua version?
-		func(arg1, arg2)
-	end
-
-	if oldTarget and retarget then
-		TargetLastTarget()
-
-		if UnitName("target") ~= oldTarget then
-			-- TargetLastTarget() may bug out randomly so use this as fallback
-			-- Note that TargetLastTarget() is able to distinguish between npcs with same name
-			TargetUnitOrFocus(oldTarget, isNotPlayer)
-		end
-	elseif not oldTarget then
-		ClearTarget()
-	end
-end
-
---SlashCmdList.FOCUS(name)
-local function SetFocus(name)
-	CURR_FOCUS_TARGET = name
-
-	if name then
-		FocusAction(FocusFrame_Refresh, "target")
+	if IsDead() then
+		FocusDeadText:Show()
 	else
-		ClearFocus()
+		FocusDeadText:Hide()
 	end
 end
 
--- Chat Commands
+local function FocusFrame_UpdateRaidTargetIcon()
+	local index = Focus:GetData("raidIcon")
 
-SLASH_FOCUS1 = "/focus"
-SlashCmdList["FOCUS"] = function(name)
-	if not name or name == "" then
-		name = UnitName("target")
+	if index then
+		SetRaidTargetIconTexture(FocusRaidTargetIcon, index)
+		FocusRaidTargetIcon:Show()
 	else
-		name = strlower(name)
-		name = string.gsub(name, "^%l", string.upper)
-	end
-
-	SetFocus(name)
-end
-
-SLASH_MFOCUS1 = "/mfocus"
-SlashCmdList["MFOCUS"] = function()
-	if UnitExists("mouseover") then
-		SetFocus(UnitName("mouseover"))
+		FocusRaidTargetIcon:Hide()
 	end
 end
 
-SLASH_FCAST1 = "/fcast"
-SlashCmdList["FCAST"] = function(spell)
-	if CURR_FOCUS_TARGET then
-		FocusAction(CastSpellByName, spell)
+function FocusFrame_OnShow()
+	-- Ran on FOCUS_SET. "target" = focus here
+	if UnitIsEnemy("target", "player") then
+		PlaySound("igCreatureAggroSelect")
+	elseif UnitIsFriend("player", "target") then
+		PlaySound("igCharacterNPCSelect")
 	else
-		UIErrorsFrame:AddMessage("|cffFF003F You have no focus.|r")
+		PlaySound("igCreatureNeutralSelect")
 	end
 end
 
-SLASH_FITEM1 = "/fitem"
-SlashCmdList["FITEM"] = function(msg)
-	if CURR_FOCUS_TARGET then
-		local scantip = getglobal("FocusScantip")
-		local scantipTextLeft1 = getglobal("FocusScantipTextLeft1")
-		msg = strlower(msg)
-	
-		for i = 0, 19 do
-			scantip:ClearLines()
-			scantip:SetInventoryItem("player", i)
-			local text = scantipTextLeft1:GetText()
-			if text and strlower(text) == msg then
-				return FocusAction(UseInventoryItem, i)
-			end
-		end
-
-		for i = 0, 4 do
-			for j = 1, GetContainerNumSlots(i) do
-				scantip:ClearLines()
-				scantip:SetBagItem(i, j)
-
-				local text = scantipTextLeft1:GetText()
-				if text and strlower(text) == msg then
-					return FocusAction(UseContainerItem, i, j)
-				end
-			end
-		end
+function FocusFrame_OnHide() -- can't be hooked, global due to xml
+	if FocusFrame:IsVisible() then -- called by FOCUS_CLEAR instead of OnHide
+		FocusFrame:SetScript("OnUpdate", nil) -- not rly needed but w/e
+		FocusFrame:Hide()
 	else
-		UIErrorsFrame:AddMessage("|cffFF003F You have no focus.|r")
+		PlaySound("INTERFACESOUND_LOSTTARGETUNIT")
 	end
 end
 
-SLASH_TARFOCUS1 = "/tarfocus"
-SlashCmdList["TARFOCUS"] = function()
-	if CURR_FOCUS_TARGET then
-		TargetUnitOrFocus()
-	else
-		UIErrorsFrame:AddMessage("|cffFF003F You have no focus.|r")
-	end
-end
+local function FocusFrame_CheckLevel()
+	local level, isCorpse = Focus:GetData("unitLevel", "unitIsCorpse")
 
-SLASH_CLEARFOCUS1 = "/clearfocus"
-SlashCmdList["CLEARFOCUS"] = ClearFocus
+	if isCorpse == 1 then
+		FocusLevelText:Hide()
+		FocusHighLevelTexture:Show()
+	elseif level > 0 then
+		-- Normal level target
+		FocusLevelText:SetText(level)
 
-SLASH_FOCUSOPTIONS1 = "/foption"
-SlashCmdList["FOCUSOPTIONS"] = function(msg)
-	local space = string.find(msg or "", " ")
-	local cmd = string.sub(msg, 1, space and (space - 1))
-	local value = tonumber(string.sub(msg, space or -1))
-	local print = function(x) DEFAULT_CHAT_FRAME:AddMessage(x) end
-	
-	if cmd == "scale" and value then
-		local x = value > 0.1 and value <= 2 and value or 1
-		FocusFrame:SetScale(x)
-		FocusFrameDB.scale = x
-		print("Scale set to " .. x)
-	elseif cmd == "lock" then
-		FocusFrameDB.unlock = not FocusFrameDB.unlock
-		print("Frame is now " .. (FocusFrameDB.unlock and "un" or "") .. "locked.")
-	else
-		print("Valid commands are:\n/foption scale 1 - Change frame size (0.2 - 2)\n/foption lock - Toggle dragging of frame")
-	end
-end
-
--- Modified Blizzard TargetFrame
--- https://github.com/tekkub/wow-ui-source/blob/1.12.1/FrameXML/TargetFrame.lua
-function FocusFrame_OnLoad()
-	this:RegisterEvent("PLAYER_ENTERING_WORLD")
-	this:RegisterEvent("PLAYER_FLAGS_CHANGED")
-	this:RegisterEvent("RAID_TARGET_UPDATE")
-	this:RegisterEvent("UNIT_CLASSIFICATION_CHANGED")
-	this:RegisterEvent("UNIT_PORTRAIT_UPDATE")
-	this:RegisterEvent("UNIT_HEALTH")
-	this:RegisterEvent("UNIT_LEVEL")
-	this:RegisterEvent("UNIT_FACTION")
-	this:RegisterEvent("UNIT_AURA")
-	this:RegisterEvent("UNIT_MANA")
-	this:RegisterEvent("UNIT_RAGE")
-	this:RegisterEvent("UNIT_FOCUS")
-	this:RegisterEvent("UNIT_ENERGY")
-
-	SetTextStatusBarText(FocusFrameHealthBar, FocusFrameHealthBarText)
-	FocusFrameHealthBar.textLockable = 1
-
-	SetTextStatusBarText(FocusFrameManaBar, FocusFrameManaBarText)
-	FocusFrameManaBar.textLockable = 1
-
-	FocusFrameDB = FocusFrameDB or { unlock = true }
-end
-
-function FocusFrame_Refresh(unitID)
-	if not CURR_FOCUS_TARGET then
-		return FocusFrame:Hide()
-	end
-
-	local unit = unitID or GetFocusID()
-	if unit then
-		FocusName:SetText(GetUnitName(unit))
-		SetPortraitTexture(FocusPortrait, unit)
-		FocusPortrait:SetAlpha(1.0)
-
-		if UnitIsPartyLeader(unit) then
-			FocusLeaderIcon:Show()
+		-- Color level number
+		if Focus:GetData("playerCanAttack") == 1 then
+			local color = GetDifficultyColor(level)
+			FocusLevelText:SetVertexColor(color.r, color.g, color.b)
 		else
-			FocusLeaderIcon:Hide()
+			FocusLevelText:SetVertexColor(1.0, 0.82, 0.0)
 		end
 
-		FocusFrame_CheckLevel(unit)
-		FocusFrame_CheckFaction(unit)
-		FocusFrame_CheckClassification(unit)
-		FocusFrame_CheckDead(unit)
-		FocusFrame_CheckDishonorableKill(unit)
-		FocusFrame_UpdateRaidTargetIcon(unit)
-
-		FocusFrame_SetFocusInfo(unit)
-		FocusFrame_HealthUpdate(unit)
-		FocusDebuffButton_Update(unit)
-
-		FocusFrame:SetScale(FocusFrameDB.scale or 1)
-		FocusFrame:Show()
+		FocusLevelText:Show()
+		FocusHighLevelTexture:Hide()
+	else
+		-- Target is too high level to tell
+		FocusLevelText:Hide()
+		FocusHighLevelTexture:Show()
 	end
 end
 
-do
-	local refresh, interval = 0, 0.2
-	function FocusFrame_OnUpdate(elapsed)
-		refresh = refresh - elapsed
-		if refresh < 0 then
-			if CURR_FOCUS_TARGET then
-				if GetFocusID() then -- Focus is current target/mouseover
-					FocusFrame_Refresh()
-				else
-					-- Update values that doesn't require unitID
-					FocusDebuffButton_Update()
-					FocusFrame_HealthUpdate()
-					FocusFrame_CheckDead()
-				end
-			else
-				FocusFrame:Hide()
-			end
-
-			refresh = interval
-		end
-	end
-end
-
-do
-	local ManaBarColor = ManaBarColor
-
-	function FocusFrame_HealthUpdate(unit)
-		if unit then
-			-- sync values first to avoid calling UnitHealth() stuff below
-			FocusFrame_SetFocusInfo(unit)
-		end
-
-		local data = FocusFrame_GetFocusData(CURR_FOCUS_TARGET)
-		FocusFrameHealthBar:SetMinMaxValues(0, data.maxHealth or 100)
-		FocusFrameHealthBar:SetValue(data.health or 100)
-		FocusFrameManaBar:SetMinMaxValues(0, data.maxMana or 100)
-		FocusFrameManaBar:SetValue(data.mana or 0)
-
-		if FocusFrameManaBar:IsShown() then
-			local info = ManaBarColor[data.power]
-			if info then
-				FocusFrameManaBar:SetStatusBarColor(info.r, info.g, info.b)
-			end
+local function FocusFrame_CheckFaction()
+	if Focus:GetData("unitPlayerControlled") == 1 then
+		local r, g, b = Focus:GetReactionColors()
+		FocusFrameNameBackground:SetVertexColor(r, g, b)
+		FocusPortrait:SetVertexColor(1.0, 1.0, 1.0)
+	elseif Focus:GetData("unitIsTapped") == 1 and Focus:GetData("unitIsTappedByPlayer") ~= 1 then
+		FocusFrameNameBackground:SetVertexColor(0.5, 0.5, 0.5)
+		FocusPortrait:SetVertexColor(0.5, 0.5, 0.5)
+	elseif Focus:GetData("unitIsCivilian") == 1 then
+		FocusFrameNameBackground:SetVertexColor(1.0, 1.0, 1.0)
+		FocusPortrait:SetVertexColor(1.0, 1.0, 1.0)
+	else
+		local reaction = Focus:GetData("unitReaction")
+		if reaction then
+			local color = UnitReactionColor[reaction]
+			FocusFrameNameBackground:SetVertexColor(color.r, color.g, color.b)
 		else
-			FocusFrameManaBarText:SetText(nil)
+			FocusFrameNameBackground:SetVertexColor(0, 0, 1.0)
+		end
+
+		FocusPortrait:SetVertexColor(1.0, 1.0, 1.0)
+	end
+
+	-- PvP Icon
+	local factionGroup = Focus:GetData("unitFactionGroup")
+	if Focus:GetData("unitIsPVPFreeForAll") == 1 then
+		FocusPVPIcon:SetTexture("Interface\\TargetingFrame\\UI-PVP-FFA")
+		FocusPVPIcon:Show()
+	elseif factionGroup and Focus:GetData("unitIsPVP") == 1 then
+		FocusPVPIcon:SetTexture("Interface\\TargetingFrame\\UI-PVP-" .. factionGroup)
+		FocusPVPIcon:Show()
+	else
+		FocusPVPIcon:Hide()
+	end
+end
+
+local function FocusFrame_CheckClassification()
+	local classification = Focus:GetData("unitClassification")
+
+	if classification == "worldboss" or classification == "rareelite" or classification == "elite" then
+		FocusFrameTexture:SetTexture("Interface\\TargetingFrame\\UI-TargetingFrame-Elite")
+	elseif classification == "rare" then
+		FocusFrameTexture:SetTexture("Interface\\TargetingFrame\\UI-TargetingFrame-Rare")
+	else
+		FocusFrameTexture:SetTexture("Interface\\TargetingFrame\\UI-TargetingFrame")
+	end
+end
+
+function FocusFrame_OnClick(button)
+	if SpellIsTargeting() and button == "RightButton" then
+		return SpellStopTargeting()
+	end
+
+	if button == "LeftButton" then
+		if SpellIsTargeting() then
+			Focus:Call(SpellTargetUnit)
+		elseif CursorHasItem() then
+			Focus:Call(DropItemOnUnit)
+		else
+			Focus:TargetFocus()
 		end
 	end
 end
 
-do
-	local getglobal, UnitBuff, UnitDebuff = getglobal, UnitBuff, UnitDebuff
-	local FRGB_BORDER_DEBUFFS_COLOR, strlower = FRGB_BORDER_DEBUFFS_COLOR, string.lower
-	local MAX_FOCUS_DEBUFFS = 16
-	local MAX_FOCUS_BUFFS = 5
+local GetCast = Focus.GetCast
+function FocusFrame_CastingBarUpdate() -- global, ran every fps
+	local castbar = FocusFrameCastingBar
+	local cast, value, maxValue, sparkPosition, timer = GetCast()
 
-	local GetAllBuffs = FSPELLCASTINGCOREgetBuffs
-	local FocusFrame_SyncBuffData = FocusFrame_SyncBuffData
-	local StoreBuff
+	if cast then
+		castbar:SetMinMaxValues(0, maxValue)
+		castbar:SetValue(value)
+		castbar.spark:SetPoint("CENTER", castbar, "LEFT", sparkPosition * castbar:GetWidth(), 0)
+		castbar.timer:SetText(timer)
 
-	do
-		local FocusFrame_NewBuff = FocusFrame_NewBuff
-		local scantip = getglobal("FocusScantip")
-		local scantipTextLeft1 = getglobal("FocusScantipTextLeft1")
-		local scantipTextRight1 = getglobal("FocusScantipTextRight1")
-
-		function StoreBuff(unit, i, texture, debuff, mtype, debuffStack) --local
-			scantip:ClearLines()
-			if debuff then
-				scantip:SetUnitDebuff(unit, i)
-			else
-				scantip:SetUnitBuff(unit, i)
-			end
-
-			local name = scantipTextLeft1:GetText()
-			local magicType = mtype or scantipTextRight1:GetText()
-			if not magicType or magicType == "" then magicType = "none" end
-
-			if name then
-				-- sync targeted unit buffs with buff lib data
-				FocusFrame_NewBuff(CURR_FOCUS_TARGET, name, texture, debuff, magicType, debuffStack)
-			end
+		if cast.immune then
+			castbar.shield:Show()
+		else
+			castbar.shield:Hide()
 		end
+
+		if not castbar:IsVisible() or castbar.text:GetText() ~= cast.spell then
+			castbar.text:SetText(cast.spell)
+			castbar.icon:SetTexture(cast.icon)
+			castbar:SetAlpha(castbar:GetAlpha())
+			castbar:Show()
+		end
+	else
+		castbar:Hide()
 	end
+end
 
-	local function PositionBuffs(unit, enemy, numDebuffs, numBuffs)
-		local debuffFrame, debuffWrap, debuffSize, debuffFrameSize, button;
-		local targetofTarget = false --FocusTargetofTargetFrame:IsShown();
+local function FocusFrame_CheckLeader()
+	if Focus:GetData("unitIsPartyLeader") == 1 then
+		FocusLeaderIcon:Show()
+	else
+		FocusLeaderIcon:Hide()
+	end
+end
 
-		if enemy == "1" or unit and UnitIsFriend("player", unit) then
+local FocusDebuffButton_Update
+do
+	local GetBuffs = Focus.GetBuffs
+
+	local function PositionBuffs(numDebuffs, numBuffs)
+		local unitIsFriend = Focus:GetData("unitIsFriend")
+		if unitIsFriend == 1 then
 			FocusFrameBuff1:SetPoint("TOPLEFT", "FocusFrame", "BOTTOMLEFT", 5, 32)
 			FocusFrameDebuff1:SetPoint("TOPLEFT", "FocusFrameBuff1", "BOTTOMLEFT", 0, -2)
 		else
 			FocusFrameDebuff1:SetPoint("TOPLEFT", "FocusFrame", "BOTTOMLEFT", 5, 32)
-
-			if targetofTarget then
-				if numDebuffs < 5 then
-					FocusFrameBuff1:SetPoint("TOPLEFT", "FocusFrameDebuff6", "BOTTOMLEFT", 0, -2)
-				elseif numDebuffs >= 5 and numDebuffs < 10 then
-					FocusFrameBuff1:SetPoint("TOPLEFT", "FocusFrameDebuff6", "BOTTOMLEFT", 0, -2)
-				elseif numDebuffs >= 10 then
-					FocusFrameBuff1:SetPoint("TOPLEFT", "FocusFrameDebuff11", "BOTTOMLEFT", 0, -2)
-				end
-			else
-				FocusFrameBuff1:SetPoint("TOPLEFT", "FocusFrameDebuff7", "BOTTOMLEFT", 0, -2)
-			end
+			FocusFrameBuff1:SetPoint("TOPLEFT", "FocusFrameDebuff7", "BOTTOMLEFT", 0, -2)
 		end
-		
-		-- set the wrap point for the rows of de/buffs.
-		debuffWrap = targetofTarget and 5 or 6
 
-		-- and shrinks the debuffs if they begin to overlap the TargetFrame
-		if ( ( targetofTarget and ( numBuffs == 5 ) ) or ( numDebuffs >= debuffWrap ) ) then
+		local debuffWrap = 6
+		local debuffSize, debuffFrameSize
+		if numDebuffs >= debuffWrap then
 			debuffSize = 17
 			debuffFrameSize = 19
 		else
 			debuffSize = 21
 			debuffFrameSize = 23
 		end
-		
+
 		-- resize Buffs
 		for i = 1, 5 do
-			button = getglobal("FocusFrameBuff" .. i)
+			local button = _G["FocusFrameBuff" .. i]
 			if button then
 				button:SetWidth(debuffSize)
 				button:SetHeight(debuffSize)
@@ -375,8 +239,8 @@ do
 
 		-- resize Debuffs
 		for i = 1, 6 do
-			button = getglobal("FocusFrameDebuff" .. i)
-			debuffFrame = getglobal("FocusFrameDebuff" .. i .. "Border")
+			local button = _G["FocusFrameDebuff" .. i]
+			local debuffFrame = _G["FocusFrameDebuff" .. i .. "Border"]
 
 			if debuffFrame then
 				debuffFrame:SetWidth(debuffFrameSize)
@@ -388,86 +252,43 @@ do
 		end
 
 		-- Reset anchors for debuff wrapping
-		getglobal("FocusFrameDebuff"..debuffWrap):ClearAllPoints()
-		getglobal("FocusFrameDebuff"..debuffWrap):SetPoint("LEFT", getglobal("FocusFrameDebuff"..(debuffWrap - 1)), "RIGHT", 3, 0)
-		getglobal("FocusFrameDebuff"..(debuffWrap + 1)):ClearAllPoints()
-		getglobal("FocusFrameDebuff"..(debuffWrap + 1)):SetPoint("TOPLEFT", "FocusFrameDebuff1", "BOTTOMLEFT", 0, -2)
-		getglobal("FocusFrameDebuff"..(debuffWrap + 2)):ClearAllPoints()
-		getglobal("FocusFrameDebuff"..(debuffWrap + 2)):SetPoint("LEFT", getglobal("FocusFrameDebuff"..(debuffWrap + 1)), "RIGHT", 3, 0)
+		_G["FocusFrameDebuff"..debuffWrap]:ClearAllPoints()
+		_G["FocusFrameDebuff"..debuffWrap]:SetPoint("LEFT", _G["FocusFrameDebuff"..(debuffWrap - 1)], "RIGHT", 3, 0)
+		_G["FocusFrameDebuff"..(debuffWrap + 1)]:ClearAllPoints()
+		_G["FocusFrameDebuff"..(debuffWrap + 1)]:SetPoint("TOPLEFT", "FocusFrameDebuff1", "BOTTOMLEFT", 0, -2)
+		_G["FocusFrameDebuff"..(debuffWrap + 2)]:ClearAllPoints()
+		_G["FocusFrameDebuff"..(debuffWrap + 2)]:SetPoint("LEFT", _G["FocusFrameDebuff"..(debuffWrap + 1)], "RIGHT", 3, 0)
 
-		-- Set anchor for the last row if debuffWrap is 5
-		if debuffWrap == 5 then
-			FocusFrameDebuff11:ClearAllPoints()
-			FocusFrameDebuff11:SetPoint("TOPLEFT", "FocusFrameDebuff6", "BOTTOMLEFT", 0, -2)
-		else
-			FocusFrameDebuff11:ClearAllPoints()
-			FocusFrameDebuff11:SetPoint("LEFT", "FocusFrameDebuff10", "RIGHT", 3, 0)
-		end
+		FocusFrameDebuff11:ClearAllPoints()
+		FocusFrameDebuff11:SetPoint("LEFT", "FocusFrameDebuff10", "RIGHT", 3, 0)
 
 		-- Move castbar
 		local amount = numBuffs + numDebuffs
-		if targetofTarget then
-
-		else
-			if enemy == "2" or unit and UnitIsFriend("player", unit) ~= 1 then
-				if numBuffs >= 1 then
-					FocusFrame.cast:SetPoint("BOTTOMLEFT", FocusFrame, 15, -70)
-					return
-				end
+		local y = amount > 7 and -70 or -35
+		if unitIsFriend ~= 1 then
+			if numBuffs >= 1 then
+				FocusFrameCastingBar:SetPoint("BOTTOMLEFT", _G["FocusFrameBuff1"], 0, -35)
+			else
+				FocusFrameCastingBar:SetPoint("BOTTOMLEFT", FocusFrame, 20, y)
 			end
-			
-			local y = amount > 7 and -70 or -35
-			FocusFrame.cast:SetPoint("BOTTOMLEFT", FocusFrame, 15, y)
+		else
+			FocusFrameCastingBar:SetPoint("BOTTOMLEFT", FocusFrame, 20, y)
 		end
 	end
 
-	function FocusDebuffButton_Update(unit)
-		local buff, buffButton;
-		local button;
-		local numBuffs = 0;
-		local buffList, debuffList
-		local data = FocusFrame_GetFocusData(CURR_FOCUS_TARGET)
+	function FocusDebuffButton_Update() -- local, ran very frequent
+		local buffData = GetBuffs()
+		local buffs = buffData.buffs
+		local debuffs = buffData.debuffs
+		local numBuffs = 0
+		local numDebuffs = 0
 
-		local isFriend = unit and UnitIsFriend(unit, "player") == 1
+		for i = 1, 5 do
+			local buff = buffs[i]
+			local button = _G["FocusFrameBuff" .. i]
 
-		if unit then
-			if isFriend then
-				-- Delete all buffs
-				FocusFrame_ClearBuffs(CURR_FOCUS_TARGET)
-			else
-				-- Delete debuffs
-				FocusFrame_ClearBuffs(CURR_FOCUS_TARGET, true)
-			end
-		end
-
-		if (unit and UnitHealth(unit) <= 0) or data and data.health and data.health <= 0 then
-			-- Delete any existing buffs if unit is dead
-			FocusFrame_ClearBuffs(CURR_FOCUS_TARGET)
-		end
-	
-		if not unit or not isFriend then
-			local buffs = GetAllBuffs(CURR_FOCUS_TARGET)
-			buffList = buffs["buffs"]
-			debuffList = buffs["debuffs"]
-		end
-
-		-------------------------------------------------------------
-		-- Buffs
-		-------------------------------------------------------------
-		for i = 1, MAX_FOCUS_BUFFS do
-			if unit and isFriend then
-				-- TODO check for Detect Magic
-				buff = UnitBuff(unit, i);
-				if buff then
-					StoreBuff(unit, i, buff)
-				end
-			else
-				buff = buffList[i]
-			end
-
-			button = getglobal("FocusFrameBuff" .. i)
 			if buff then
-				getglobal("FocusFrameBuff" .. i .. "Icon"):SetTexture(not unit and buff.icon or buff)
+				_G["FocusFrameBuff" .. i .. "Icon"]:SetTexture(buff.icon)
 				button:Show()
 				button.id = i
 				numBuffs = numBuffs + 1
@@ -476,34 +297,17 @@ do
 			end
 		end
 
-		-------------------------------------------------------------
-		-- Debuffs
-		-------------------------------------------------------------
-		local debuff, debuffButton, debuffStack, debuffType;
-		local debuffCount;
-		local numDebuffs = 0;
-		local color
+		for i = 1, 16 do
+			local button = _G["FocusFrameDebuff" .. i]
+			local debuff = debuffs[i]
 
-		for i = 1, MAX_FOCUS_DEBUFFS do
-			local debuffBorder = getglobal("FocusFrameDebuff" .. i .. "Border");
-
-			if unit then
-				debuff, debuffStack, debuffType = UnitDebuff(unit, i);
-				if debuff then
-					if not debuffType or debuffType == "" then debuffType = "none" end
-					StoreBuff(unit, i, debuff, true, debuffType, debuffStack)
-				end
-			else
-				debuff = debuffList[i]
-				debuffStack = debuff and debuff.stacks or 0
-				debuffType = debuff and debuff.debuffType or nil
-			end
-
-			button = getglobal("FocusFrameDebuff" .. i)
 			if debuff then
-				getglobal("FocusFrameDebuff" .. i .. "Icon"):SetTexture(not unit and debuff.icon or debuff)
-				debuffCount = getglobal("FocusFrameDebuff" .. i .. "Count")
-				color = debuffType and FRGB_BORDER_DEBUFFS_COLOR[strlower(debuffType)] or {0, 0, 0, 0}
+				local debuffCount = _G["FocusFrameDebuff" .. i .. "Count"]
+				local debuffBorder = _G["FocusFrameDebuff" .. i .. "Border"]
+
+				local color = Focus:GetDebuffColor(debuff.debuffType)
+				local debuffStack = debuff.stacks
+				_G["FocusFrameDebuff" .. i .. "Icon"]:SetTexture(debuff.icon)
 
 				if debuffStack and debuffStack > 1 then
 					debuffCount:SetText(debuffStack)
@@ -522,234 +326,101 @@ do
 			button.id = i
 		end
 
-		PositionBuffs(unit, data and data.enemy, numDebuffs, numBuffs)
+		PositionBuffs(numDebuffs, numBuffs)
 	end
 end
 
-function FocusFrame_OnEvent(event)
-	if event == "UNIT_HEALTH" or event == "UNIT_MANA" or event == "UNIT_RAGE" or event == "UNIT_FOCUS" or event == "UNIT_ENERGY" then
-		if UnitIsFocus(arg1) then
-			FocusFrame_HealthUpdate(arg1)
-			FocusFrame_CheckDead(arg1)
-		end
+-- Create castbar
+-- TODO add to xml
+FocusFrame.cast = CreateFrame("StatusBar", "FocusFrameCastingBar", FocusFrame)
+FocusFrame.cast:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar")
+FocusFrame.cast:SetStatusBarColor(0.4, 1, 0)
+FocusFrame.cast:SetHeight(13)
+FocusFrame.cast:SetWidth(151)
+FocusFrame.cast:SetPoint("BOTTOMLEFT", FocusFrame, 15, -35)
+FocusFrame.cast:SetValue(0)
+FocusFrame.cast:Hide()
 
-	elseif event == "UNIT_AURA" then
-		if UnitIsFocus(arg1) then
-			FocusDebuffButton_Update(arg1)
-		end
+FocusFrame.cast.spark = FocusFrame.cast:CreateTexture(nil, "OVERLAY")
+FocusFrame.cast.spark:SetTexture([[Interface\CastingBar\UI-CastingBar-Spark]])
+FocusFrame.cast.spark:SetHeight(26)	
+FocusFrame.cast.spark:SetWidth(26)
+FocusFrame.cast.spark:SetBlendMode("ADD")
 
-	elseif event == "UNIT_PORTRAIT_UPDATE" then
-		if UnitIsFocus(arg1) then
-			SetPortraitTexture(FocusPortrait, arg1)
-		end
+FocusFrame.cast.border = FocusFrame.cast:CreateTexture(nil, "OVERLAY")
+FocusFrame.cast.border:SetPoint("TOPLEFT", -23, 20)
+FocusFrame.cast.border:SetPoint("TOPRIGHT", 23, 20)
+FocusFrame.cast.border:SetHeight(50)
+FocusFrame.cast.border:SetTexture("Interface\\AddOns\\FocusFrame\\mods\\UI-CastingBar-Border-Small.blp")
 
-	elseif event == "PLAYER_ENTERING_WORLD" and not FocusFrame:IsVisible() then
-		FocusFrame_Refresh()
+FocusFrame.cast.text = FocusFrame.cast:CreateFontString(nil, "OVERLAY")
+FocusFrame.cast.text:SetTextColor(1, 1, 1)
+FocusFrame.cast.text:SetFont(STANDARD_TEXT_FONT, 10)
+FocusFrame.cast.text:SetShadowColor(0, 0, 0)
+FocusFrame.cast.text:SetPoint("CENTER", FocusFrame.cast, 0, 2)
+FocusFrame.cast.text:SetText("Drain Life")
 
-	elseif event == "UNIT_LEVEL" then
-		if UnitIsFocus(arg1) then
-			FocusFrame_CheckLevel(arg1)
-		end
+FocusFrame.cast.timer = FocusFrame.cast:CreateFontString(nil, "OVERLAY")
+FocusFrame.cast.timer:SetTextColor(1, 1, 1)
+FocusFrame.cast.timer:SetFont(STANDARD_TEXT_FONT, 9)
+FocusFrame.cast.timer:SetShadowColor(0, 0, 0)
+FocusFrame.cast.timer:SetPoint("RIGHT", FocusFrame.cast, 28, 2)
+FocusFrame.cast.timer:SetText("2.0")
 
-	elseif event == "UNIT_FACTION" then
-		if UnitIsFocus(arg1) then
-			FocusFrame_CheckFaction(arg1)
-			FocusFrame_CheckLevel(arg1)
-		end
+FocusFrame.cast.icon = FocusFrame.cast:CreateTexture(nil, "OVERLAY", nil, 7)
+FocusFrame.cast.icon:SetWidth(20)
+FocusFrame.cast.icon:SetHeight(20)
+FocusFrame.cast.icon:SetPoint("LEFT", FocusFrame.cast, -23, 1)
+FocusFrame.cast.icon:SetTexture("Interface\\Icons\\Spell_shadow_lifedrain02")
 
-	elseif event == "UNIT_CLASSIFICATION_CHANGED" then
-		if UnitIsFocus(arg1) then
-			FocusFrame_CheckClassification(arg1)
-		end
+FocusFrame.cast.shield = FocusFrame.cast:CreateTexture(nil, "OVERLAY")
+FocusFrame.cast.shield:SetPoint("TOPLEFT", -28, 20)
+FocusFrame.cast.shield:SetPoint("TOPRIGHT", 18, 20)
+FocusFrame.cast.shield:SetHeight(50)
+FocusFrame.cast.shield:SetTexture("Interface\\AddOns\\FocusFrame\\mods\\UI-CastingBar-Small-Shield.blp")
+FocusFrame.cast.shield:Hide()
 
-	elseif event == "PLAYER_FLAGS_CHANGED" then
-		if UnitIsFocus(arg1) then
-			if UnitIsPartyLeader(arg1) then
-				FocusLeaderIcon:Show()
-			else
-				FocusLeaderIcon:Hide()
-			end
-		end
+--[[ Register events ]]
+Focus:OnEvent("FOCUS_SET", FocusFrame_Refresh)
+Focus:OnEvent("FOCUS_CLEAR", FocusFrame_OnHide)
+Focus:OnEvent("RAID_TARGET_UPDATE", FocusFrame_UpdateRaidTargetIcon)
+Focus:OnEvent("PLAYER_FLAGS_CHANGED", FocusFrame_CheckLeader)
+Focus:OnEvent("PARTY_LEADER_CHANGED", FocusFrame_CheckLeader)
+Focus:OnEvent("UNIT_HEALTH_OR_POWER", FocusFrame_HealthUpdate)
+Focus:OnEvent("UNIT_AURA", FocusDebuffButton_Update)
+Focus:OnEvent("UNIT_LEVEL", FocusFrame_CheckLevel)
+Focus:OnEvent("UNIT_FACTION", FocusFrame_CheckFaction)
+Focus:OnEvent("UNIT_CLASSIFICATION_CHANGED", FocusFrame_CheckClassification)
+Focus:OnEvent("UNIT_PORTRAIT_UPDATE", FocusFrame_CheckPortrait)
+Focus:OnEvent("FOCUS_UNITID_EXISTS", FocusFrame_CheckPortrait) -- update on retarget/mouseover aswell
+--Focus:OnEvent("FOCUS_CHANGED", function() print("ran2") end)
 
-	elseif event == "RAID_TARGET_UPDATE" then
-		FocusFrame_UpdateRaidTargetIcon()
-	end
-end
+--[[ Chat commands ]]
+SLASH_FOCUSOPTIONS1 = "/foption"
+SlashCmdList.FOCUSOPTIONS = function(msg)
+	local space = strfind(msg or "", " ")
+	local cmd = strsub(msg, 1, space and (space-1))
+	local value = tonumber(strsub(msg, space or -1))
 
-function FocusFrame_OnShow()
-	if UnitIsEnemy("target", "player") then
-		PlaySound("igCreatureAggroSelect")
-	elseif UnitIsFriend("player", "target") then
-		PlaySound("igCharacterNPCSelect")
-	else
-		PlaySound("igCreatureNeutralSelect")
-	end
-end
-
-function FocusFrame_OnHide()
-	PlaySound("INTERFACESOUND_LOSTTARGETUNIT");
-end
-
-function FocusFrame_CheckLevel(unit)
-	local targetLevel = UnitLevel(unit)
+	local print = function(x) DEFAULT_CHAT_FRAME:AddMessage(x) end
 	
-	if UnitIsCorpse(unit) then
-		FocusLevelText:Hide()
-		FocusHighLevelTexture:Show()
-	elseif targetLevel > 0 then
-		-- Normal level target
-		FocusLevelText:SetText(targetLevel)
-
-		-- Color level number
-		if UnitCanAttack("player", unit) then
-			local color = GetDifficultyColor(targetLevel)
-			FocusLevelText:SetVertexColor(color.r, color.g, color.b)
-		else
-			FocusLevelText:SetVertexColor(1.0, 0.82, 0.0)
-		end
-
-		FocusLevelText:Show()
-		FocusHighLevelTexture:Hide()
+	if cmd == "scale" and value then
+		local x = value > 0.1 and value <= 2 and value or 1
+		FocusFrame:SetScale(x)
+		FocusFrameDB.scale = x
+		print("Scale set to " .. x)
+	elseif cmd == "lock" then
+		FocusFrameDB.unlock = not FocusFrameDB.unlock
+		print("Frame is now " .. (FocusFrameDB.unlock and "un" or "") .. "locked.")
+	elseif cmd == "reset" then
+		FocusFrameDB.scale = 1
+		FocusFrameDB.unlock = true
+		FocusFrame:SetScale(1)
+		FocusFrame:SetPoint("TOPLEFT", 250, -300)
+		FocusFrame:StopMovingOrSizing() -- trigger db save
+		print("Frame has been reset.")
 	else
-		-- Target is too high level to tell
-		FocusLevelText:Hide()
-		FocusHighLevelTexture:Show()
-	end
-end
-
-do
-	local function GetUnitReactionColors(unit)
-		local r, g, b = 0, 0, 1
-
-		if UnitCanAttack(unit, "player") then
-			-- Hostile players are red
-			if UnitCanAttack("player", unit) then
-				r = UnitReactionColor[2].r
-				g = UnitReactionColor[2].g
-				b = UnitReactionColor[2].b
-			end
-		elseif UnitCanAttack("player", unit) then
-			-- Players we can attack but which are not hostile are yellow
-			r = UnitReactionColor[4].r
-			g = UnitReactionColor[4].g
-			b = UnitReactionColor[4].b
-		elseif UnitIsPVP(unit) then
-			-- Players we can assist but are PvP flagged are green
-			r = UnitReactionColor[6].r
-			g = UnitReactionColor[6].g
-			b = UnitReactionColor[6].b
-		end
-
-		return r, g, b
-	end
-
-	local function TogglePvPIcon(unit)
-		local factionGroup = UnitFactionGroup(unit)
-
-		if UnitIsPVPFreeForAll(unit) then
-			FocusPVPIcon:SetTexture("Interface\\TargetingFrame\\UI-PVP-FFA")
-			FocusPVPIcon:Show()
-		elseif factionGroup and UnitIsPVP(unit) then
-			FocusPVPIcon:SetTexture("Interface\\TargetingFrame\\UI-PVP-" .. factionGroup)
-			FocusPVPIcon:Show()
-		else
-			FocusPVPIcon:Hide()
-		end
-	end
-
-	function FocusFrame_CheckFaction(unit)
-		if UnitPlayerControlled(unit) then
-			local r, g, b = GetUnitReactionColors(unit)
-
-			FocusFrameNameBackground:SetVertexColor(r, g, b)
-			FocusPortrait:SetVertexColor(1.0, 1.0, 1.0)
-		elseif UnitIsTapped(unit) and not UnitIsTappedByPlayer(unit) then
-			FocusFrameNameBackground:SetVertexColor(0.5, 0.5, 0.5)
-			FocusPortrait:SetVertexColor(0.5, 0.5, 0.5)
-		else
-			local reaction = UnitReaction(unit, "player")
-
-			if reaction then
-				local r = UnitReactionColor[reaction].r
-				local g = UnitReactionColor[reaction].g
-				local b = UnitReactionColor[reaction].b
-
-				FocusFrameNameBackground:SetVertexColor(r, g, b)
-			else
-				FocusFrameNameBackground:SetVertexColor(0, 0, 1.0)
-			end
-
-			FocusPortrait:SetVertexColor(1.0, 1.0, 1.0);
-		end
-
-		TogglePvPIcon(unit)
-	end
-end
-
-function FocusFrame_CheckClassification(unit)
-	local classification = UnitClassification(unit)
-
-	if classification == "worldboss" or classification == "rareelite" or classification == "elite" then
-		FocusFrameTexture:SetTexture("Interface\\TargetingFrame\\UI-TargetingFrame-Elite");
-	elseif classification == "rare" then
-		FocusFrameTexture:SetTexture("Interface\\TargetingFrame\\UI-TargetingFrame-Rare");
-	else
-		FocusFrameTexture:SetTexture("Interface\\TargetingFrame\\UI-TargetingFrame");
-	end
-end
-
-function FocusFrame_CheckDead(unit)
-	if unit then
-		if (UnitHealth(unit) <= 0) and UnitIsConnected(unit) then
-			FocusDeadText:Show()
-		else
-			FocusDeadText:Hide()
-		end
-	else
-		local data = FocusFrame_GetFocusData(CURR_FOCUS_TARGET)
-		if data and data.health and data.health <= 0 then
-			FocusDeadText:Show()
-		else
-			FocusDeadText:Hide()
-		end
-	end
-end
-
-function FocusFrame_CheckDishonorableKill(unit)
-	if UnitIsCivilian(unit) then
-		FocusFrameNameBackground:SetVertexColor(1.0, 1.0, 1.0)
-	end
-end
-
-function FocusFrame_OnClick(button)
-	if SpellIsTargeting() and button == "RightButton" then
-		return SpellStopTargeting()
-	end
-
-	if button == "LeftButton" then
-		if SpellIsTargeting() then
-			FocusAction(SpellTargetUnit, "target")
-		elseif CursorHasItem() then
-			FocusAction(DropItemOnUnit, "target")
-		else
-			TargetUnitOrFocus()
-		end
-	end
-end
-
-function FocusFrame_UpdateRaidTargetIcon(unit)
-	local index
-	if not unit then
-		local data = FocusFrame_GetFocusData()
-		index = data and data.raidmark
-	else
-		index = GetRaidTargetIndex(unit)
-	end
-
-	if index then
-		SetRaidTargetIconTexture(FocusRaidTargetIcon, index)
-		FocusRaidTargetIcon:Show()
-	else
-		FocusRaidTargetIcon:Hide()
+		print("Valid commands are:\n/foption scale 1 - Change frame size (0.2 - 2)\n/foption lock - Toggle dragging of frame")
+		print("/foption reset - Reset to default settings.")
 	end
 end

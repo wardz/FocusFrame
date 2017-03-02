@@ -1,19 +1,8 @@
 <Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/
 ..\FrameXML\UI.xsd">
-	<Script file="FocusFrame.lua"/>
 
-	<GameTooltip name="FocusScantip" frameStrata="TOOLTIP" hidden="true" inherits="GameTooltipTemplate">
-		<Scripts>
-			<OnLoad>
-				this:SetOwner(UIParent, "ANCHOR_NONE");
-			</OnLoad>
-		</Scripts>
-	</GameTooltip>
-
-	<!-- Modified version of TargetFrame.xml
-		https://github.com/tekkub/wow-ui-source/blob/1.12.1/FrameXML/TargetFrame.xml
-	-->
-	<Button name="FocusDebuffButtonTemplate" virtual="true">
+	<!-- https://github.com/tekkub/wow-ui-source/blob/1.12.1/FrameXML/TargetFrame.xml -->
+	<Button name="FocusDebuffButtonTemplate" virtual="true" hidden="true">
 		<Size>
 			<AbsDimension x="17" y="17"/>
 		</Size>
@@ -59,7 +48,7 @@
 		</Layers>
 	</Button>
 
-	<Button name="FocusFrame" frameStrata="LOW" enableMouse="true" toplevel="true" movable="true" parent="UIParent">
+	<Button name="FocusFrame" frameStrata="LOW" enableMouse="true" toplevel="true" movable="true" parent="UIParent" hidden="true">
 		<Size>
 			<AbsDimension x="232" y="100"/>
 		</Size>
@@ -240,6 +229,7 @@
 				</Anchors>
 
 				<BarTexture file="Interface\TargetingFrame\UI-StatusBar"/>
+				<BarColor r="0" g="1" b="0"/>
 			</StatusBar>
 
 			<StatusBar name="FocusFrameManaBar" inherits="TextStatusBar" frameLevel="1">
@@ -448,21 +438,21 @@
 				</Anchors>
 			</Button>
 		</Frames>
+
 		<Scripts>
 			<OnLoad>
 				FocusFrame:RegisterForDrag("LeftButton");
-				FocusFrameHealthBar:SetStatusBarColor(0, 1, 0, 1);
-				FocusFrame_OnLoad();
+
+				SetTextStatusBarText(FocusFrameHealthBar, FocusFrameHealthBarText);
+				SetTextStatusBarText(FocusFrameManaBar, FocusFrameManaBarText);
+				SetTextStatusBarTextZeroText(FocusFrameHealthBar, "")
+				SetTextStatusBarTextZeroText(FocusFrameManaBar, "")
+				FocusFrameHealthBar.textLockable = 1;
+				FocusFrameManaBar.textLockable = 1;
 			</OnLoad>
-			<OnEvent>
-				FocusFrame_OnEvent(event);
-			</OnEvent>
 			<OnShow>
 				FocusFrame_OnShow();
 			</OnShow>
-			<OnUpdate>
-				FocusFrame_OnUpdate(arg1);
-			</OnUpdate>
 			<OnHide>
 				FocusFrame_OnHide();
 			</OnHide>

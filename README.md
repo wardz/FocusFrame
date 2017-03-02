@@ -35,6 +35,11 @@ Target the focus target:
 /tarfocus
 ```
 
+Swap focus and target:
+```
+/fswap
+```
+
 Clear current focus:
 ```
 /clearfocus
@@ -52,6 +57,11 @@ Toggle frame dragging:
 <sup>Hold down left mouse button on focus **portrait** to move it.</sup>
 ```
 /foption lock
+```
+
+Reset to default:
+```
+/foption reset
 ```
 
 ## Important
