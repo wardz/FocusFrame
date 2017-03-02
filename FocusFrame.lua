@@ -2,7 +2,10 @@ local _G = getfenv(0)
 local Focus = _G["FocusData"]
 FocusFrameDB = FocusFrameDB or { unlock = true, scale = 1 }
 
-function FocusFrame_Refresh(event, unit)
+-- See mods\classPortraits.lua for example of hooking local FocusFrame_x() event functions.
+-- Global functions can be hooked as usual.
+
+local function FocusFrame_Refresh(event, unit)
 	FocusName:SetText(UnitName(unit))
 	--FocusFrame_CheckPortrait(event, unit)
 
@@ -11,7 +14,7 @@ function FocusFrame_Refresh(event, unit)
 	FocusFrame:Show()
 end
 
-function FocusFrame_CheckPortrait(event, unit)
+local function FocusFrame_CheckPortrait(event, unit)
 	SetPortraitTexture(FocusPortrait, unit)
 	FocusPortrait:SetAlpha(1)
 end
@@ -20,7 +23,7 @@ end
 local GetHealth, GetPower = Focus.GetHealth, Focus.GetPower
 local GetPowerColor, IsDead = Focus.GetPowerColor, Focus.IsDead
 
-function FocusFrame_HealthUpdate() -- ran very frequent
+local function FocusFrame_HealthUpdate() -- ran very frequent
 	local health, maxHealth = GetHealth()
 	local mana, maxMana = GetPower()
 
@@ -43,7 +46,7 @@ function FocusFrame_HealthUpdate() -- ran very frequent
 	end
 end
 
-function FocusFrame_UpdateRaidTargetIcon()
+local function FocusFrame_UpdateRaidTargetIcon()
 	local index = Focus:GetData("raidIcon")
 
 	if index then
@@ -65,7 +68,7 @@ function FocusFrame_OnShow()
 	end
 end
 
-function FocusFrame_OnHide()
+function FocusFrame_OnHide() -- can't be hooked, global due to xml
 	if FocusFrame:IsVisible() then -- called by FOCUS_CLEAR instead of OnHide
 		FocusFrame:SetScript("OnUpdate", nil) -- not rly needed but w/e
 		FocusFrame:Hide()
@@ -74,7 +77,7 @@ function FocusFrame_OnHide()
 	end
 end
 
-function FocusFrame_CheckLevel()
+local function FocusFrame_CheckLevel()
 	local level, isCorpse = Focus:GetData("unitLevel", "unitIsCorpse")
 
 	if isCorpse == 1 then
@@ -101,7 +104,7 @@ function FocusFrame_CheckLevel()
 	end
 end
 
-function FocusFrame_CheckFaction()
+local function FocusFrame_CheckFaction()
 	if Focus:GetData("unitPlayerControlled") == 1 then
 		local r, g, b = Focus:GetReactionColors()
 		FocusFrameNameBackground:SetVertexColor(r, g, b)
@@ -137,7 +140,7 @@ function FocusFrame_CheckFaction()
 	end
 end
 
-function FocusFrame_CheckClassification()
+local function FocusFrame_CheckClassification()
 	local classification = Focus:GetData("unitClassification")
 
 	if classification == "worldboss" or classification == "rareelite" or classification == "elite" then
@@ -166,7 +169,7 @@ function FocusFrame_OnClick(button)
 end
 
 local GetCast = Focus.GetCast
-function FocusFrame_CastingBarUpdate() -- ran every fps
+function FocusFrame_CastingBarUpdate() -- global, ran every fps
 	local castbar = FocusFrameCastingBar
 	local cast, value, maxValue, sparkPosition, timer = GetCast()
 
@@ -193,7 +196,7 @@ function FocusFrame_CastingBarUpdate() -- ran every fps
 	end
 end
 
-function FocusFrame_CheckLeader()
+local function FocusFrame_CheckLeader()
 	if Focus:GetData("unitIsPartyLeader") == 1 then
 		FocusLeaderIcon:Show()
 	else
@@ -201,6 +204,7 @@ function FocusFrame_CheckLeader()
 	end
 end
 
+local FocusDebuffButton_Update
 do
 	local GetBuffs = Focus.GetBuffs
 
@@ -272,7 +276,7 @@ do
 		end
 	end
 
-	function FocusDebuffButton_Update() -- ran very frequent
+	function FocusDebuffButton_Update() -- local, ran very frequent
 		local buffData = GetBuffs()
 		local buffs = buffData.buffs
 		local debuffs = buffData.debuffs
@@ -390,10 +394,6 @@ Focus:OnEvent("UNIT_CLASSIFICATION_CHANGED", FocusFrame_CheckClassification)
 Focus:OnEvent("UNIT_PORTRAIT_UPDATE", FocusFrame_CheckPortrait)
 Focus:OnEvent("FOCUS_UNITID_EXISTS", FocusFrame_CheckPortrait) -- update on retarget/mouseover aswell
 --Focus:OnEvent("FOCUS_CHANGED", function() print("ran2") end)
-
--- See mods\classPortraits.lua for example of hooking FocusFrame_x() event functions.
--- Also please keep in mind unitid argument is not guaranteed to be passed into callback everytime
--- for most of the events.
 
 --[[ Chat commands ]]
 SLASH_FOCUSOPTIONS1 = "/foption"

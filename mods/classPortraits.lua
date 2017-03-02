@@ -59,7 +59,11 @@ local CLASS_BUTTONS = {
 }
 
 local Focus = getglobal("FocusData")
-Focus:OnEvent("UNIT_PORTRAIT_UPDATE", function(event, unit) -- ran after FocusFrame_CheckPortrait
+
+local UpdatePortrait = function(event, unit) -- ran after FocusFrame_CheckPortrait
+	-- Just a note if you're gonna hook any FocusFrame functions,
+	-- unit id argument is not always guaranteed for certain events, so you need to check 
+	-- if unit is nil before u use it
     if UnitExists(unit) == 1 and UnitIsPlayer(unit) == 1 then
         local _, class = UnitClass(unit)
 		local coords = CLASS_BUTTONS[class]
@@ -69,4 +73,7 @@ Focus:OnEvent("UNIT_PORTRAIT_UPDATE", function(event, unit) -- ran after FocusFr
     else
         FocusPortrait:SetTexCoord(0, 1, 0, 1)
     end
-end)
+end
+
+Focus:OnEvent("FOCUS_UNITID_EXISTS", UpdatePortrait) -- on focus targeted
+Focus:OnEvent("UNIT_PORTRAIT_UPDATE", UpdatePortrait) -- while focus is targeted
