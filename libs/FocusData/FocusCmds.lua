@@ -70,6 +70,10 @@ end
 
 SlashCmdList.FASSIST = function()
     if Focus:FocusExists(true) then
-        SlashCmdList.ASSIST(Focus:GetName())
+        Focus:TargetFocus()
+        AssistUnit("target") -- assist by name does not work with pets for some reason
+        if UnitName("target") == Focus:GetName() then
+            Focus:TargetPrevious()
+        end
     end
 end
