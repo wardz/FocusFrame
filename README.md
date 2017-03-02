@@ -40,6 +40,11 @@ Swap focus and target:
 /fswap
 ```
 
+Assist focus:
+```
+/fassist
+```
+
 Clear current focus:
 ```
 /clearfocus
