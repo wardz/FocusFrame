@@ -84,7 +84,7 @@ do
         -- This function is called everytime a property in data has been changed
         __newindex = function(self, key, value)
             if not focusTargetName then
-                return error("can't set data when focus is not sat")
+                return --error("can't set data when focus is not sat")
             end
 
             local oldValue = rawData[key]
