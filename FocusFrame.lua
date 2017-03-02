@@ -388,7 +388,7 @@ Focus:OnEvent("UNIT_LEVEL", FocusFrame_CheckLevel)
 Focus:OnEvent("UNIT_FACTION", FocusFrame_CheckFaction)
 Focus:OnEvent("UNIT_CLASSIFICATION_CHANGED", FocusFrame_CheckClassification)
 Focus:OnEvent("UNIT_PORTRAIT_UPDATE", FocusFrame_CheckPortrait)
---Focus:OnEvent("FOCUS_UNITID_EXISTS", function() print("ran1") end)
+Focus:OnEvent("FOCUS_UNITID_EXISTS", FocusFrame_CheckPortrait) -- update on retarget/mouseover aswell
 --Focus:OnEvent("FOCUS_CHANGED", function() print("ran2") end)
 
 -- See mods\classPortraits.lua for example of hooking FocusFrame_x() event functions.

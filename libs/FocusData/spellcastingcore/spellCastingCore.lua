@@ -8,7 +8,7 @@ local Heal 			= {} 		local heals			= {}
 local InstaBuff 	= {} 		local iBuffs 		= {}
 local buff 			= {} 		local buffList 		= {}
 local buffQueue		= {}		local buffQueueList = {}
-Cast.__index   		= spellCast
+Cast.__index   		= Cast
 Heal.__index   		= Heal
 InstaBuff.__index 	= InstaBuff
 buff.__index 		= buff
@@ -140,6 +140,7 @@ end
 
 local forceHideTableItem = function(tab, caster, spell, debuffsOnly)
 	local i = 1
+	local hasChanged = false
 
 	for k, v in pairs(tab) do
 		if v.caster == caster then
@@ -147,18 +148,22 @@ local forceHideTableItem = function(tab, caster, spell, debuffsOnly)
 				if debuffsOnly then
 					if v.btype then
 						tremove(tab, i)
+						hasChanged = true
 					end
 				else
 					tremove(tab, i)
+					hasChanged = true
 				end
 			else
 				if v.spell == spell then
 					if debuffsOnly then
 						if v.btype then
 							tremove(tab, i)
+							hasChanged = true
 						end
 					else
 						tremove(tab, i)
+						hasChanged = true
 					end
 				end
 			end
@@ -167,7 +172,7 @@ local forceHideTableItem = function(tab, caster, spell, debuffsOnly)
 		i = i + 1
 	end
  
-	if Focus:UnitIsFocus(caster, true) then
+	if hasChanged and Focus:UnitIsFocus(caster, true) then
 		Focus:SetData("auraUpdate", 1)
 	end
 end

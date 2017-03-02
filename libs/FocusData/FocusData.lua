@@ -83,12 +83,15 @@ do
 
         -- This function is called everytime a property in data has been changed
         __newindex = function(self, key, value)
+            if not focusTargetName then
+                return error("can't set data when focus is not sat")
+            end
+
             local oldValue = rawData[key]
             rawset(rawData, key, value)
 
             -- Call event listeners if property has event
             if not rawData.init and events[key] then
-                if not focusTargetName then return end
                 if key ~= "auraUpdate" then
                     if oldValue == value then return end
                 end
@@ -144,7 +147,7 @@ do
             end
 
             NewBuff(focusTargetName, name, texture, isDebuff, debuffType, stack)
-            prevTexture = texture
+            --prevTexture = texture
         end
     end
 
@@ -186,7 +189,7 @@ do
             SyncBuff(unit, i, texture, stack, debuffType, true)
         end
 
-        prevAmount = GetLastAura(focusTargetName)
+        --prevAmount = GetLastAura(focusTargetName)
         CallHooks("UNIT_AURA")
     end
 end
@@ -817,6 +820,14 @@ do
     function events:PARTY_LEADER_CHANGED(event, unit)
         data.unitIsPartyLeader = UnitIsPartyLeader(unit)
     end
+
+    function events:UNIT_PORTRAIT_UPDATE(event, unit)
+        CallHooks("UNIT_PORTRAIT_UPDATE", unit)
+    end
+
+    --[[function events:RAID_TARGET_UPDATE(event, unit)
+
+    end]]
 
     events:SetScript("OnEvent", EventHandler)
     events:SetScript("OnUpdate", OnUpdateHandler)
