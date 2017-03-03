@@ -825,10 +825,6 @@ do
         CallHooks("UNIT_PORTRAIT_UPDATE", unit)
     end
 
-    --[[function events:RAID_TARGET_UPDATE(event, unit)
-
-    end]]
-
     events:SetScript("OnEvent", EventHandler)
     events:SetScript("OnUpdate", OnUpdateHandler)
     events:RegisterEvent("PLAYER_FLAGS_CHANGED")
@@ -844,6 +840,7 @@ do
     events:RegisterEvent("UNIT_RAGE")
     events:RegisterEvent("UNIT_FOCUS")
     events:RegisterEvent("UNIT_ENERGY")
+    -- unit dead events are handled in spellcastingcore
 end
 
 -- Add to global namespace
