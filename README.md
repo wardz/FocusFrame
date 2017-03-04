@@ -1,4 +1,4 @@
-# FocusFrame [BETA]
+# FocusFrame
 Provides [focus targeting](http://wowwiki.wikia.com/wiki/Focus_target) & frame support for vanilla World of Warcraft. (1.12.1, English client only)
 
 >If you have never used focus before, it's basically a secondary target system that keeps track of a second unit other than the currently targeted unit. Once a focus is set, you can use macros to cast spells on the focus without having to lose your current target.
@@ -25,6 +25,11 @@ Cast spell on focus target:
 /fcast spellname
 ```
 
+Cast spell on focus target if sat, else cast on current target:
+```
+/fcast spellname-target
+```
+
 Use item effect on focus target:
 ```
 /fitem itemname
@@ -49,6 +54,14 @@ Clear current focus:
 ```
 /clearfocus
 ```
+
+If you need more advanced macros, you'll need to create your own script. "/fcast spell" can be accessed in scripts using 'SlashCmdList.FCAST("spell")'
+
+Example: This macro will cast polymorph on focus if SHIFT modifier is held down, or else it'll cast it on current target.
+```
+/run if IsShiftKeyDown() then SlashCmdList.FCAST("Polymorph") else CastSpellByName("Polymorph") end
+```
+
 
 ### Options
 
