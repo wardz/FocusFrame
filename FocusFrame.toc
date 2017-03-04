@@ -2,7 +2,7 @@
 ## Title: FocusFrame
 ## Notes: Focus frame support for vanilla.
 ## Author: Wardz
-## Version: 1.02b
+## Version: 1.04b
 ## SavedVariables: FocusFrameDB
 
 libs\FocusData\spellcastingcore\globals.lua
