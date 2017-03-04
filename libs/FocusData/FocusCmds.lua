@@ -5,6 +5,7 @@ local Focus = _G["FocusData"]
 
 local scantip = _G["FocusDataScantip"]
 local scantipTextLeft1 = _G["FocusDataScantipTextLeft1"]
+local strfind, strlower, gsub = strfind, strlower, gsub
 
 SLASH_FOCUS1 = "/focus"
 SLASH_MFOCUS1 = "/mfocus"
@@ -26,22 +27,56 @@ SlashCmdList.MFOCUS = function()
 end
 
 SlashCmdList.FCAST = function(spell)
-    if spell and strlower(spell) == "petattack" then
-        Focus:Call(PetAttack)
+    spell = strlower(spell or "")
+    local useOnTarget = false
+    local isSuffix = strfind(spell, "-target") ~= nil --hardcoded for now
+
+    if not Focus:FocusExists() and isSuffix then
+        useOnTarget = true
+    end
+
+    if isSuffix then
+        spell = gsub(spell, "-target", "")
+    end
+
+    if spell == "petattack" then
+        if useOnTarget then
+            PetAttack()
+        else
+            Focus:Call(PetAttack)
+        end
     else
-        Focus:Call(CastSpellByName, spell)
+        if useOnTarget then
+            CastSpellByName(spell)
+        else
+            Focus:Call(CastSpellByName, spell)
+        end
     end
 end
 
 SlashCmdList.FITEM = function(msg)
-    if Focus:FocusExists(true) and msg then
-        msg = strlower(msg)
-    
+    msg = strlower(msg or "")
+    local useOnTarget = false
+    local isSuffix = strfind(msg, "-target")
+
+    if not Focus:FocusExists() and isSuffix then
+        useOnTarget = true
+    end
+
+    if isSuffix then
+        msg = gsub(msg, "-target", "")
+    end
+
+    if useOnTarget or Focus:FocusExists() then
         for i = 0, 19 do
             scantip:ClearLines()
             scantip:SetInventoryItem("player", i)
             local text = scantipTextLeft1:GetText()
             if text and strlower(text) == msg then
+                if useOnTarget then
+                    return UseInventoryItem(i)
+                end
+    
                 return Focus:Call(UseInventoryItem, i)
             end
         end
@@ -53,6 +88,10 @@ SlashCmdList.FITEM = function(msg)
 
                 local text = scantipTextLeft1:GetText()
                 if text and strlower(text) == msg then
+                    if useOnTarget then
+                        return UseContainerItem(i, j)
+                    end
+
                     return Focus:Call(UseContainerItem, i, j)
                 end
             end
