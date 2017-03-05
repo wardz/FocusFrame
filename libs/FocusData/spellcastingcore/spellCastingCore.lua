@@ -538,7 +538,7 @@ local GainAfflict = function()
 		if SPELLINFO_INTERRUPT_BUFFS_TO_TRACK[s] then
 			forceHideTableItem(casts, c, nil)
 		end
-		
+
 		-- debuffs that slow spellcasting speed (tongues ...)
 		if SPELLINFO_TIME_MODIFIER_BUFFS_TO_TRACK[s] then
 			newIBuff(c, s)

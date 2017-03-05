@@ -7,7 +7,6 @@ FocusFrameDB = FocusFrameDB or { unlock = true, scale = 1 }
 
 local function FocusFrame_Refresh(event, unit)
 	FocusName:SetText(UnitName(unit))
-	--FocusFrame_CheckPortrait(event, unit)
 
 	FocusFrame:SetScale(FocusFrameDB.scale or 1)
 	FocusFrame:SetScript("OnUpdate", FocusFrame_CastingBarUpdate)

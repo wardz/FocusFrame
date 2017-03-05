@@ -17,8 +17,8 @@ local rawData
 local data
 
 -- Upvalues
-local GetTime, next, strfind, UnitName, TargetLastTarget, TargetByName, strlower, type, tgetn =
-      GetTime, next, strfind, UnitName, TargetLastTarget, TargetByName, strlower, type, table.getn
+local GetTime, next, strfind, UnitName, TargetLastTarget, TargetByName, strlower, type, pcall, tgetn =
+      GetTime, next, strfind, UnitName, TargetLastTarget, TargetByName, strlower, type, pcall, table.getn
 
 local FSPELLCASTINGCOREgetBuffs, FRGB_BORDER_DEBUFFS_COLOR = FSPELLCASTINGCOREgetBuffs, FRGB_BORDER_DEBUFFS_COLOR
 
@@ -394,7 +394,7 @@ function Focus:Call(func, arg1, arg2, arg3, arg4) -- no vararg in this lua versi
         if type(func) == "function" then
             arg1 = arg1 or "target" --focus
             self:TargetFocus()
-            func(arg1, arg2, arg3, arg4)
+            pcall(func, arg1, arg2, arg3, arg4)
             self:TargetPrevious()
         else
             error("Usage: Focus:Call(function, arg1,arg2,arg3,arg4)")
