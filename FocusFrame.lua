@@ -1,9 +1,6 @@
 local _G = getfenv(0)
-local Focus = _G["FocusData"]
+local Focus = _G.FocusData
 FocusFrameDB = FocusFrameDB or { unlock = true, scale = 1 }
-
--- See mods\classPortraits.lua for example of hooking local FocusFrame_x() event functions.
--- Global functions can be hooked as usual.
 
 local function FocusFrame_Refresh(event, unit)
 	FocusName:SetText(UnitName(unit))
@@ -18,13 +15,9 @@ local function FocusFrame_CheckPortrait(event, unit)
 	FocusPortrait:SetAlpha(1)
 end
 
--- Upvalues
-local GetHealth, GetPower = Focus.GetHealth, Focus.GetPower
-local GetPowerColor, IsDead = Focus.GetPowerColor, Focus.IsDead
-
-local function FocusFrame_HealthUpdate() -- ran very frequent
-	local health, maxHealth = GetHealth()
-	local mana, maxMana = GetPower()
+local function FocusFrame_HealthUpdate()
+	local health, maxHealth = Focus:GetHealth()
+	local mana, maxMana = Focus:GetPower()
 
 	FocusFrameHealthBar:SetMinMaxValues(0, maxHealth)
 	FocusFrameHealthBar:SetValue(health)
@@ -32,13 +25,13 @@ local function FocusFrame_HealthUpdate() -- ran very frequent
 	FocusFrameManaBar:SetValue(mana)
 
 	if FocusFrameManaBar:IsShown() then
-		local color = GetPowerColor()
+		local color = Focus:GetPowerColor()
 		FocusFrameManaBar:SetStatusBarColor(color.r, color.g, color.b)
 	else
 		FocusFrameManaBarText:SetText(nil)
 	end
 
-	if IsDead() then
+	if Focus:IsDead() then
 		FocusDeadText:Show()
 	else
 		FocusDeadText:Hide()
@@ -207,24 +200,25 @@ local FocusDebuffButton_Update
 do
 	local GetBuffs = Focus.GetBuffs
 
-	local function PositionBuffs(numDebuffs, numBuffs)
+	local function AdjustBuffs(numDebuffs, numBuffs)
 		local unitIsFriend = Focus:GetData("unitIsFriend")
-		if unitIsFriend == 1 then
-			FocusFrameBuff1:SetPoint("TOPLEFT", "FocusFrame", "BOTTOMLEFT", 5, 32)
-			FocusFrameDebuff1:SetPoint("TOPLEFT", "FocusFrameBuff1", "BOTTOMLEFT", 0, -2)
-		else
-			FocusFrameDebuff1:SetPoint("TOPLEFT", "FocusFrame", "BOTTOMLEFT", 5, 32)
-			FocusFrameBuff1:SetPoint("TOPLEFT", "FocusFrameDebuff7", "BOTTOMLEFT", 0, -2)
-		end
-
-		local debuffWrap = 6
 		local debuffSize, debuffFrameSize
+		local debuffWrap = 6
+
 		if numDebuffs >= debuffWrap then
 			debuffSize = 17
 			debuffFrameSize = 19
 		else
 			debuffSize = 21
 			debuffFrameSize = 23
+		end
+
+		if unitIsFriend == 1 then
+			FocusFrameBuff1:SetPoint("TOPLEFT", "FocusFrame", "BOTTOMLEFT", 5, 32)
+			FocusFrameDebuff1:SetPoint("TOPLEFT", "FocusFrameBuff1", "BOTTOMLEFT", 0, -2)
+		else
+			FocusFrameDebuff1:SetPoint("TOPLEFT", "FocusFrame", "BOTTOMLEFT", 5, 32)
+			FocusFrameBuff1:SetPoint("TOPLEFT", "FocusFrameDebuff7", "BOTTOMLEFT", 0, -2)
 		end
 
 		-- resize Buffs
@@ -257,19 +251,13 @@ do
 		_G["FocusFrameDebuff"..(debuffWrap + 1)]:SetPoint("TOPLEFT", "FocusFrameDebuff1", "BOTTOMLEFT", 0, -2)
 		_G["FocusFrameDebuff"..(debuffWrap + 2)]:ClearAllPoints()
 		_G["FocusFrameDebuff"..(debuffWrap + 2)]:SetPoint("LEFT", _G["FocusFrameDebuff"..(debuffWrap + 1)], "RIGHT", 3, 0)
-
 		FocusFrameDebuff11:ClearAllPoints()
 		FocusFrameDebuff11:SetPoint("LEFT", "FocusFrameDebuff10", "RIGHT", 3, 0)
 
-		-- Move castbar
-		local amount = numBuffs + numDebuffs
-		local y = amount > 7 and -70 or -35
-		if unitIsFriend ~= 1 then
-			if numBuffs >= 1 then
-				FocusFrameCastingBar:SetPoint("BOTTOMLEFT", _G["FocusFrameBuff1"], 0, -35)
-			else
-				FocusFrameCastingBar:SetPoint("BOTTOMLEFT", FocusFrame, 20, y)
-			end
+		-- Move castbar based on amount of auras shown
+		local y = (numBuffs + numDebuffs) > 7 and -70 or -35
+		if unitIsFriend ~= 1 and numBuffs >= 1 then
+			FocusFrameCastingBar:SetPoint("BOTTOMLEFT", _G["FocusFrameBuff1"], 0, -35)
 		else
 			FocusFrameCastingBar:SetPoint("BOTTOMLEFT", FocusFrame, 20, y)
 		end
@@ -325,7 +313,7 @@ do
 			button.id = i
 		end
 
-		PositionBuffs(numDebuffs, numBuffs)
+		AdjustBuffs(numDebuffs, numBuffs)
 	end
 end
 
@@ -350,7 +338,7 @@ FocusFrame.cast.border = FocusFrame.cast:CreateTexture(nil, "OVERLAY")
 FocusFrame.cast.border:SetPoint("TOPLEFT", -23, 20)
 FocusFrame.cast.border:SetPoint("TOPRIGHT", 23, 20)
 FocusFrame.cast.border:SetHeight(50)
-FocusFrame.cast.border:SetTexture("Interface\\AddOns\\FocusFrame\\mods\\UI-CastingBar-Border-Small.blp")
+FocusFrame.cast.border:SetTexture("Interface\\AddOns\\FocusFrame\\media\\UI-CastingBar-Border-Small.blp")
 
 FocusFrame.cast.text = FocusFrame.cast:CreateFontString(nil, "OVERLAY")
 FocusFrame.cast.text:SetTextColor(1, 1, 1)
@@ -376,10 +364,10 @@ FocusFrame.cast.shield = FocusFrame.cast:CreateTexture(nil, "OVERLAY")
 FocusFrame.cast.shield:SetPoint("TOPLEFT", -28, 20)
 FocusFrame.cast.shield:SetPoint("TOPRIGHT", 18, 20)
 FocusFrame.cast.shield:SetHeight(50)
-FocusFrame.cast.shield:SetTexture("Interface\\AddOns\\FocusFrame\\mods\\UI-CastingBar-Small-Shield.blp")
+FocusFrame.cast.shield:SetTexture("Interface\\AddOns\\FocusFrame\\media\\UI-CastingBar-Small-Shield.blp")
 FocusFrame.cast.shield:Hide()
 
---[[ Register events ]]
+-- Register events
 Focus:OnEvent("FOCUS_SET", FocusFrame_Refresh)
 Focus:OnEvent("FOCUS_CLEAR", FocusFrame_OnHide)
 Focus:OnEvent("RAID_TARGET_UPDATE", FocusFrame_UpdateRaidTargetIcon)
@@ -394,7 +382,7 @@ Focus:OnEvent("UNIT_PORTRAIT_UPDATE", FocusFrame_CheckPortrait)
 Focus:OnEvent("FOCUS_UNITID_EXISTS", FocusFrame_CheckPortrait) -- update on retarget/mouseover aswell
 --Focus:OnEvent("FOCUS_CHANGED", function() print("ran2") end)
 
---[[ Chat commands ]]
+-- Chat options
 SLASH_FOCUSOPTIONS1 = "/foption"
 SlashCmdList.FOCUSOPTIONS = function(msg)
 	local space = strfind(msg or "", " ")

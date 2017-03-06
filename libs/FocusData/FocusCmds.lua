@@ -1,10 +1,10 @@
 if SlashCmdList.MFOCUS then return end
 
 local _G = getfenv(0)
-local Focus = _G["FocusData"]
+local Focus = _G.FocusData
 
-local scantip = _G["FocusDataScantip"]
-local scantipTextLeft1 = _G["FocusDataScantipTextLeft1"]
+local scantip = _G.FocusDataScantip
+local scantipTextLeft1 = _G.FocusDataScantipTextLeft1
 local strfind, strlower, gsub = strfind, strlower, gsub
 
 SLASH_FOCUS1 = "/focus"
@@ -16,22 +16,32 @@ SLASH_FASSIST1 = "/fassist"
 SLASH_TARFOCUS1 = "/tarfocus"
 SLASH_CLEARFOCUS1 = "/clearfocus"
 
+-- Focus current target or by name
 SlashCmdList.FOCUS = function(msg) Focus:SetFocus(msg) end
+
+-- Target focus
 SlashCmdList.TARFOCUS = function() Focus:TargetFocus() end
+
+-- Remove focus
 SlashCmdList.CLEARFOCUS = function() Focus:ClearFocus() end
 
+-- Focus current mouseover target
 SlashCmdList.MFOCUS = function()
     if UnitExists("mouseover") then
         Focus:SetFocus(UnitName("mouseover"))
     end
 end
 
+-- Cast spell on focus
 SlashCmdList.FCAST = function(spell)
     spell = strlower(spell or "")
     local useOnTarget = false
     local isSuffix = strfind(spell, "-target") ~= nil --hardcoded for now
 
     if not Focus:FocusExists() and isSuffix then
+        -- Cast spell on curr target instead when no focus is sat
+        -- (This could be done with a simple macro instead but it'll keep nagging about
+        -- that no focus is sat in UIErrorsFrame)
         useOnTarget = true
     end
 
@@ -54,6 +64,7 @@ SlashCmdList.FCAST = function(spell)
     end
 end
 
+-- Use item on focus
 SlashCmdList.FITEM = function(msg)
     msg = strlower(msg or "")
     local useOnTarget = false
@@ -99,6 +110,7 @@ SlashCmdList.FITEM = function(msg)
     end
 end
 
+-- Swap focus and target
 SlashCmdList.FSWAP = function()
     if Focus:FocusExists(true) and UnitExists("target") then
         local target = UnitName("target")
@@ -107,11 +119,14 @@ SlashCmdList.FSWAP = function()
     end
 end
 
+-- Assist focus
 SlashCmdList.FASSIST = function()
     if Focus:FocusExists(true) then
         Focus:TargetFocus()
         AssistUnit("target") -- assist by name does not work with pets for some reason
+
         if UnitName("target") == Focus:GetName() then
+            -- Focus didn't have a target
             Focus:TargetPrevious()
         end
     end

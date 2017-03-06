@@ -2,7 +2,7 @@
 ## Title: FocusFrame
 ## Notes: Focus frame support for vanilla.
 ## Author: Wardz
-## Version: 1.05
+## Version: 1.1.0
 ## SavedVariables: FocusFrameDB
 
 libs\FocusData\spellcastingcore\globals.lua
@@ -15,5 +15,6 @@ libs\FocusData\FocusCmds.lua
 FocusFrame.xml
 FocusFrame.lua
 
+mods\loader.lua
 mods\enemyFrames.lua
 mods\classPortraits.lua
