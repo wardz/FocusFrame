@@ -28,6 +28,8 @@ Cast spell on focus target:
 Cast spell on focus target if sat, else cast on current target:
 ```
 /fcast spellname-target
+or:
+/fitem itemname-target
 ```
 
 Use item effect on focus target:
