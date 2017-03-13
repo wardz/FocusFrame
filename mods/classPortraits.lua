@@ -1,5 +1,7 @@
 -- Adds support for ClassPortraits addon.
-getglobal("FocusFrame_Loader"):Register("ClassPortraits", function(Focus)
+getfenv(0).Focus_Loader:Register("ClassPortraits", function(Focus)
+	-- ran when ADDON_LOADED event is fired for "ClassPortraits"
+	-- Not needed if you're gonna hook focus frame functions in your own addon.
 
 	local iconPath = "Interface\\Addons\\ClassPortraits\\UI-CLASSES-CIRCLES"
 
@@ -15,7 +17,7 @@ getglobal("FocusFrame_Loader"):Register("ClassPortraits", function(Focus)
 		["PALADIN"]	= { 0,			0.25,		0.5,	0.75 }
 	}
 
-	local UpdatePortrait = function(event, unit) -- ran after FocusFrame_CheckPortrait
+	local UpdatePortrait = function(event, unit) -- ran after focusframe CheckPortrait
 		-- Just a note if you're gonna hook any FocusFrame functions,
 		-- unit id argument is not always guaranteed for certain events, so you need to check 
 		-- if unit is nil before u use it
