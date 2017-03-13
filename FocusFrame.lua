@@ -1,21 +1,19 @@
 local _G = getfenv(0)
 local Focus = _G.FocusData
+local AurasUpdate
 FocusFrameDB = FocusFrameDB or { unlock = true, scale = 1 }
 
-local function FocusFrame_Refresh(event, unit)
-	FocusName:SetText(UnitName(unit))
+-- Local functions here can be hooked using Focus:OnEvent(). See mods\classPortraits.lua.
 
+local function ShowFrame(event, unit)
+	FocusName:SetText(UnitName(unit))
 	FocusFrame:SetScale(FocusFrameDB.scale or 1)
-	FocusFrame:SetScript("OnUpdate", FocusFrame_CastingBarUpdate)
+
+	FocusFrame:SetScript("OnUpdate", FocusFrame_CastingBarOnUpdate)
 	FocusFrame:Show()
 end
 
-local function FocusFrame_CheckPortrait(event, unit)
-	SetPortraitTexture(FocusPortrait, unit)
-	FocusPortrait:SetAlpha(1)
-end
-
-local function FocusFrame_HealthUpdate()
+local function HealthUpdate()
 	local health, maxHealth = Focus:GetHealth()
 	local mana, maxMana = Focus:GetPower()
 
@@ -38,7 +36,7 @@ local function FocusFrame_HealthUpdate()
 	end
 end
 
-local function FocusFrame_UpdateRaidTargetIcon()
+local function RaidTargetIconUpdate()
 	local index = Focus:GetData("raidIcon")
 
 	if index then
@@ -46,6 +44,33 @@ local function FocusFrame_UpdateRaidTargetIcon()
 		FocusRaidTargetIcon:Show()
 	else
 		FocusRaidTargetIcon:Hide()
+	end
+end
+
+function FocusFrame_CastingBarOnUpdate() -- ran every fps
+	local cast, value, maxValue, sparkPosition, timer = Focus:GetCast()
+
+	if cast then
+		local castbar = FocusFrameCastingBar
+		castbar:SetMinMaxValues(0, maxValue)
+		castbar:SetValue(value)
+		castbar.spark:SetPoint("CENTER", castbar, "LEFT", sparkPosition * castbar:GetWidth(), 0)
+		castbar.timer:SetText(timer)
+
+		if cast.immune then
+			castbar.shield:Show()
+		else
+			castbar.shield:Hide()
+		end
+
+		if not castbar:IsVisible() or castbar.text:GetText() ~= cast.spell then
+			castbar.text:SetText(cast.spell)
+			castbar.icon:SetTexture(cast.icon)
+			castbar:SetAlpha(castbar:GetAlpha())
+			castbar:Show()
+		end
+	else
+		FocusFrameCastingBar:Hide()
 	end
 end
 
@@ -62,14 +87,35 @@ end
 
 function FocusFrame_OnHide() -- can't be hooked, global due to xml
 	if FocusFrame:IsVisible() then -- called by FOCUS_CLEAR instead of OnHide
-		FocusFrame:SetScript("OnUpdate", nil) -- not rly needed but w/e
+		FocusFrame:SetScript("OnUpdate", nil)
 		FocusFrame:Hide()
 	else
 		PlaySound("INTERFACESOUND_LOSTTARGETUNIT")
 	end
 end
 
-local function FocusFrame_CheckLevel()
+function FocusFrame_OnClick(button)
+	if SpellIsTargeting() and button == "RightButton" then
+		return SpellStopTargeting()
+	end
+
+	if button == "LeftButton" then
+		if SpellIsTargeting() then
+			Focus:Call(SpellTargetUnit)
+		elseif CursorHasItem() then
+			Focus:Call(DropItemOnUnit)
+		else
+			Focus:TargetFocus()
+		end
+	end
+end
+
+local function CheckPortrait(event, unit)
+	SetPortraitTexture(FocusPortrait, unit)
+	FocusPortrait:SetAlpha(1)
+end
+
+local function CheckLevel()
 	local level, isCorpse = Focus:GetData("unitLevel", "unitIsCorpse")
 
 	if isCorpse == 1 then
@@ -96,7 +142,7 @@ local function FocusFrame_CheckLevel()
 	end
 end
 
-local function FocusFrame_CheckFaction()
+local function CheckFaction()
 	if Focus:GetData("unitPlayerControlled") == 1 then
 		local r, g, b = Focus:GetReactionColors()
 		FocusFrameNameBackground:SetVertexColor(r, g, b)
@@ -132,7 +178,7 @@ local function FocusFrame_CheckFaction()
 	end
 end
 
-local function FocusFrame_CheckClassification()
+local function CheckClassification()
 	local classification = Focus:GetData("unitClassification")
 
 	if classification == "worldboss" or classification == "rareelite" or classification == "elite" then
@@ -144,51 +190,7 @@ local function FocusFrame_CheckClassification()
 	end
 end
 
-function FocusFrame_OnClick(button)
-	if SpellIsTargeting() and button == "RightButton" then
-		return SpellStopTargeting()
-	end
-
-	if button == "LeftButton" then
-		if SpellIsTargeting() then
-			Focus:Call(SpellTargetUnit)
-		elseif CursorHasItem() then
-			Focus:Call(DropItemOnUnit)
-		else
-			Focus:TargetFocus()
-		end
-	end
-end
-
-local GetCast = Focus.GetCast
-function FocusFrame_CastingBarUpdate() -- global, ran every fps
-	local castbar = FocusFrameCastingBar
-	local cast, value, maxValue, sparkPosition, timer = GetCast()
-
-	if cast then
-		castbar:SetMinMaxValues(0, maxValue)
-		castbar:SetValue(value)
-		castbar.spark:SetPoint("CENTER", castbar, "LEFT", sparkPosition * castbar:GetWidth(), 0)
-		castbar.timer:SetText(timer)
-
-		if cast.immune then
-			castbar.shield:Show()
-		else
-			castbar.shield:Hide()
-		end
-
-		if not castbar:IsVisible() or castbar.text:GetText() ~= cast.spell then
-			castbar.text:SetText(cast.spell)
-			castbar.icon:SetTexture(cast.icon)
-			castbar:SetAlpha(castbar:GetAlpha())
-			castbar:Show()
-		end
-	else
-		castbar:Hide()
-	end
-end
-
-local function FocusFrame_CheckLeader()
+local function CheckLeader()
 	if Focus:GetData("unitIsPartyLeader") == 1 then
 		FocusLeaderIcon:Show()
 	else
@@ -196,7 +198,6 @@ local function FocusFrame_CheckLeader()
 	end
 end
 
-local FocusDebuffButton_Update
 do
 	local GetBuffs = Focus.GetBuffs
 
@@ -263,7 +264,7 @@ do
 		end
 	end
 
-	function FocusDebuffButton_Update() -- local, ran very frequent
+	function AurasUpdate() -- local, ran very frequent
 		local buffData = GetBuffs()
 		local buffs = buffData.buffs
 		local debuffs = buffData.debuffs
@@ -368,18 +369,18 @@ FocusFrame.cast.shield:SetTexture("Interface\\AddOns\\FocusFrame\\media\\UI-Cast
 FocusFrame.cast.shield:Hide()
 
 -- Register events
-Focus:OnEvent("FOCUS_SET", FocusFrame_Refresh)
+Focus:OnEvent("FOCUS_SET", ShowFrame)
 Focus:OnEvent("FOCUS_CLEAR", FocusFrame_OnHide)
-Focus:OnEvent("RAID_TARGET_UPDATE", FocusFrame_UpdateRaidTargetIcon)
-Focus:OnEvent("PLAYER_FLAGS_CHANGED", FocusFrame_CheckLeader)
-Focus:OnEvent("PARTY_LEADER_CHANGED", FocusFrame_CheckLeader)
-Focus:OnEvent("UNIT_HEALTH_OR_POWER", FocusFrame_HealthUpdate)
-Focus:OnEvent("UNIT_AURA", FocusDebuffButton_Update)
-Focus:OnEvent("UNIT_LEVEL", FocusFrame_CheckLevel)
-Focus:OnEvent("UNIT_FACTION", FocusFrame_CheckFaction)
-Focus:OnEvent("UNIT_CLASSIFICATION_CHANGED", FocusFrame_CheckClassification)
-Focus:OnEvent("UNIT_PORTRAIT_UPDATE", FocusFrame_CheckPortrait)
-Focus:OnEvent("FOCUS_UNITID_EXISTS", FocusFrame_CheckPortrait) -- update on retarget/mouseover aswell
+Focus:OnEvent("RAID_TARGET_UPDATE", RaidTargetIconUpdate)
+Focus:OnEvent("PLAYER_FLAGS_CHANGED", CheckLeader)
+Focus:OnEvent("PARTY_LEADER_CHANGED", CheckLeader)
+Focus:OnEvent("UNIT_HEALTH_OR_POWER", HealthUpdate)
+Focus:OnEvent("UNIT_AURA", AurasUpdate)
+Focus:OnEvent("UNIT_LEVEL", CheckLevel)
+Focus:OnEvent("UNIT_FACTION", CheckFaction)
+Focus:OnEvent("UNIT_CLASSIFICATION_CHANGED", CheckClassification)
+Focus:OnEvent("UNIT_PORTRAIT_UPDATE", CheckPortrait)
+Focus:OnEvent("FOCUS_UNITID_EXISTS", CheckPortrait) -- update on retarget/mouseover aswell
 --Focus:OnEvent("FOCUS_CHANGED", function() print("ran2") end)
 
 -- Chat options
@@ -390,7 +391,7 @@ SlashCmdList.FOCUSOPTIONS = function(msg)
 	local value = tonumber(strsub(msg, space or -1))
 
 	local print = function(x) DEFAULT_CHAT_FRAME:AddMessage(x) end
-	
+
 	if cmd == "scale" and value then
 		local x = value > 0.1 and value <= 2 and value or 1
 		FocusFrame:SetScale(x)
