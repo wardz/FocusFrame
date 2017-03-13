@@ -231,7 +231,6 @@
 				<BarTexture file="Interface\TargetingFrame\UI-StatusBar"/>
 				<BarColor r="0" g="1" b="0"/>
 			</StatusBar>
-
 			<StatusBar name="FocusFrameManaBar" inherits="TextStatusBar" frameLevel="1">
 				<Size>
 					<AbsDimension x="119" y="12"/>
@@ -441,32 +440,31 @@
 
 		<Scripts>
 			<OnLoad>
-				FocusFrame:RegisterForDrag("LeftButton");
-
-				SetTextStatusBarText(FocusFrameHealthBar, FocusFrameHealthBarText);
-				SetTextStatusBarText(FocusFrameManaBar, FocusFrameManaBarText);
+				FocusFrame:RegisterForDrag("LeftButton")
+				SetTextStatusBarText(FocusFrameHealthBar, FocusFrameHealthBarText)
+				SetTextStatusBarText(FocusFrameManaBar, FocusFrameManaBarText)
 				SetTextStatusBarTextZeroText(FocusFrameHealthBar, "")
 				SetTextStatusBarTextZeroText(FocusFrameManaBar, "")
-				FocusFrameHealthBar.textLockable = 1;
-				FocusFrameManaBar.textLockable = 1;
+				FocusFrameHealthBar.textLockable = 1
+				FocusFrameManaBar.textLockable = 1
 			</OnLoad>
 			<OnShow>
-				FocusFrame_OnShow();
+				FocusFrame_OnShow()
 			</OnShow>
 			<OnHide>
-				FocusFrame_OnHide();
+				FocusFrame_OnHide()
 			</OnHide>
 			<OnClick>
-				FocusFrame_OnClick(arg1);
+				FocusFrame_OnClick(arg1)
 			</OnClick>
 			<OnDragStart>
 				if FocusFrameDB.unlock then
-					FocusFrame:StartMoving();
+					FocusFrame:StartMoving()
 				end
 			</OnDragStart>
 			<OnDragStop>
 				if FocusFrameDB.unlock then
-					FocusFrame:StopMovingOrSizing();
+					FocusFrame:StopMovingOrSizing()
 				end
 			</OnDragStop>
 		</Scripts>
