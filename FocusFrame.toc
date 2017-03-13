@@ -5,7 +5,6 @@
 ## Version: 1.1.0
 ## SavedVariables: FocusFrameDB
 
-libs\FocusData\spellcastingcore\globals.lua
 libs\FocusData\spellcastingcore\buffs.lua
 libs\FocusData\spellcastingcore\spells.lua
 libs\FocusData\spellcastingcore\spellCastingCore.lua
