@@ -3,7 +3,7 @@ local Focus = _G.FocusData
 local AurasUpdate
 FocusFrameDB = FocusFrameDB or { unlock = true, scale = 1 }
 
--- Local functions here can be hooked using Focus:OnEvent(). See mods\classPortraits.lua.
+-- Local functions here can be hooked using Focus:OnEvent(). See mods\classPortraits.lua for example.
 
 local function ShowFrame(event, unit)
 	FocusName:SetText(UnitName(unit))
@@ -201,7 +201,7 @@ end
 do
 	local GetBuffs = Focus.GetBuffs
 
-	local function AdjustBuffs(numDebuffs, numBuffs)
+	local function AdjustAuras(numDebuffs, numBuffs)
 		local unitIsFriend = Focus:GetData("unitIsFriend")
 		local debuffSize, debuffFrameSize
 		local debuffWrap = 6
@@ -314,7 +314,7 @@ do
 			button.id = i
 		end
 
-		AdjustBuffs(numDebuffs, numBuffs)
+		AdjustAuras(numDebuffs, numBuffs)
 	end
 end
 

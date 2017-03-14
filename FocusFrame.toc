@@ -8,6 +8,7 @@
 libs\FocusData\spellcastingcore\buffs.lua
 libs\FocusData\spellcastingcore\spells.lua
 libs\FocusData\spellcastingcore\spellCastingCore.lua
+libs\FocusData\Localization.lua
 libs\FocusData\FocusData.lua
 libs\FocusData\FocusCmds.lua
 
@@ -17,3 +18,4 @@ FocusFrame.lua
 mods\loader.lua
 mods\enemyFrames.lua
 mods\classPortraits.lua
+mods\luna.lua

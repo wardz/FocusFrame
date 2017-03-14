@@ -1,7 +1,9 @@
 -- Adds support for ClassPortraits addon.
 getfenv(0).Focus_Loader:Register("ClassPortraits", function(Focus)
 	-- ran when ADDON_LOADED event is fired for "ClassPortraits"
-	-- Not needed if you're gonna hook focus frame functions in your own addon.
+	-- sent to gc on PLAYER_ENTERING_WORLD.
+
+	-- ^Not needed if you're gonna hook focus frame functions in your own addon.
 
 	local iconPath = "Interface\\Addons\\ClassPortraits\\UI-CLASSES-CIRCLES"
 

@@ -1,6 +1,7 @@
--- Adds support for enemyFrames addon
+-- Adds support for portrait debuff timers with enemyFrames addon
 getfenv(0).Focus_Loader:Register("enemyFrames", function(Focus)
 	-- ran when ADDON_LOADED event is fired for "enemyFrames"
+	-- sent to gc on PLAYER_ENTERING_WORLD
 
 	local getPrioBuff, floor, GetTime = SPELLCASTINGCOREgetPrioBuff, floor, GetTime
 
