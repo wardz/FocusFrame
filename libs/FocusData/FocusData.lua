@@ -715,7 +715,7 @@ do
 	end
 
 	local EventHandler = function()
-		if strfind(event, "UNIT_") or strfind(event, "PLAYER_") then
+		if strfind(event, "UNIT_") or strfind(event, "PLAYER_") or strfind(event, "CHAT_MSG") then
 			-- Run only events for focus
 			if not Focus:UnitIsFocus(arg1 or "player") then return end
 		end
