@@ -823,7 +823,9 @@ do
 	end
 
 	function events:PARTY_LEADER_CHANGED(event, unit)
-		data.unitIsPartyLeader = UnitIsPartyLeader(unit)
+		if Focus:UnitIsFocus(unit) then
+			data.unitIsPartyLeader = UnitIsPartyLeader(unit)
+		end
 	end
 
 	function events:UNIT_PORTRAIT_UPDATE(event, unit)
@@ -839,8 +841,9 @@ do
 		end
 	end
 
-	function events:CHAT_MSG_COMBAT_FRIENDLY_DEATH()
+	function events:CHAT_MSG_COMBAT_FRIENDLY_DEATH(event, arg1)
 		if not Focus:FocusExists() then return end
+
 		if focusTargetName == playerName and arg1 == L.YOU_DIE then
 			SetFocusHealth(nil, true)
 		elseif strfind(arg1, focusTargetName) then
@@ -867,7 +870,7 @@ do
 	events:RegisterEvent("PLAYER_FLAGS_CHANGED")
 	events:RegisterEvent("PLAYER_AURAS_CHANGED")
 	events:RegisterEvent("PARTY_LEADER_CHANGED")
-	events:RegisterEvent("RAID_TARGET_UPDATE")
+--	events:RegisterEvent("RAID_TARGET_UPDATE")
 	events:RegisterEvent("UNIT_PORTRAIT_UPDATE")
 	events:RegisterEvent("UNIT_CLASSIFICATION_CHANGED")
 	events:RegisterEvent("UNIT_HEALTH")
