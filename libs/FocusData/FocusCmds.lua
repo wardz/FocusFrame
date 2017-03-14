@@ -59,7 +59,10 @@ SlashCmdList.FCAST = function(spell)
 		if useOnTarget then
 			CastSpellByName(spell)
 		else
+			local sc = GetCVar("AutoSelfCast")
+			SetCVar("AutoSelfCast", "0")
 			Focus:Call(CastSpellByName, spell)
+			SetCVar("AutoSelfCast", sc)
 		end
 	end
 end
