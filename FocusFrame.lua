@@ -5,7 +5,7 @@ FocusFrameDB = FocusFrameDB or { unlock = true, scale = 1 }
 
 -- Local functions here can be hooked using Focus:OnEvent(). See mods\classPortraits.lua for example.
 
-local function ShowFrame(event, unit)
+local function OnFocusSat(event, unit)
 	FocusName:SetText(UnitName(unit))
 	FocusFrame:SetScale(FocusFrameDB.scale or 1)
 
@@ -369,7 +369,7 @@ FocusFrame.cast.shield:SetTexture("Interface\\AddOns\\FocusFrame\\media\\UI-Cast
 FocusFrame.cast.shield:Hide()
 
 -- Register events
-Focus:OnEvent("FOCUS_SET", ShowFrame)
+Focus:OnEvent("FOCUS_SET", OnFocusSat)
 Focus:OnEvent("FOCUS_CLEAR", FocusFrame_OnHide)
 Focus:OnEvent("RAID_TARGET_UPDATE", RaidTargetIconUpdate)
 Focus:OnEvent("PLAYER_FLAGS_CHANGED", CheckLeader)

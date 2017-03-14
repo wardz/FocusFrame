@@ -715,7 +715,8 @@ do
 	end
 
 	local EventHandler = function()
-		if strfind(event, "UNIT_") or strfind(event, "PLAYER_") then
+		if strfind(event, "UNIT_") or event == "PLAYER_FLAGS_CHANGED"
+		or event == "PLAYER_AURAS_CHANGED" or strfind(event, "PARTY_") then
 			-- Run only events for focus
 			if not Focus:UnitIsFocus(arg1 or "player") then return end
 		end
@@ -823,9 +824,7 @@ do
 	end
 
 	function events:PARTY_LEADER_CHANGED(event, unit)
-		if Focus:UnitIsFocus(unit) then
-			data.unitIsPartyLeader = UnitIsPartyLeader(unit)
-		end
+		data.unitIsPartyLeader = UnitIsPartyLeader(unit)
 	end
 
 	function events:UNIT_PORTRAIT_UPDATE(event, unit)
@@ -834,6 +833,7 @@ do
 
 	function events:CHAT_MSG_COMBAT_HOSTILE_DEATH(event, arg1)
 		if not Focus:FocusExists() then return end
+
 		if focusTargetName == playerName and arg1 == L.YOU_DIE then
 			SetFocusHealth(nil, true)
 		elseif strfind(arg1, focusTargetName) then
@@ -857,7 +857,7 @@ do
 		end
 	end
 
-	function events:PLAYER_ALIVE()
+	function events:PLAYER_ALIVE() -- releases spirit
 		if Focus:FocusExists() then
 			Focus:ClearFocus()
 		end

@@ -18,4 +18,4 @@ FocusFrame.lua
 mods\loader.lua
 mods\enemyFrames.lua
 mods\classPortraits.lua
-mods\luna.lua
+mods\clickcast.lua

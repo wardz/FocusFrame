@@ -1,10 +1,35 @@
 local Focus = getfenv(0).FocusData
+
 local Loader = CreateFrame("Frame")
 Loader.addons = {}
 
 local function debug(str)
 	if false then
 		DEFAULT_CHAT_FRAME:AddMessage(str)
+	end
+end
+
+--- Register callback to be ran when ADDON_LOADED event is fired for addonName
+-- @tparam string addonName (case sensitive?)
+-- @tparam func callback
+-- @tparam[opt=false] bool - True if addon is loaded on demand, and not instantly on login.
+function Loader:Register(addonName, callback, onDemand)
+	if type(addonName) ~= "string" or type(callback) ~= "function" then
+		return error('Usage: Register("name", callbackFunc, false)')
+	end
+
+	self.addons[addonName] = {
+		init = callback,
+		loaded = false,
+		hasRan = false,
+		onDemand = onDemand
+	}
+
+	debug("registered " .. addonName)
+
+	-- Trigger event ourselves if addon is already loaded
+	if IsAddOnLoaded(addonName) then
+		self:ADDON_LOADED(addonName)
 	end
 end
 
@@ -51,30 +76,6 @@ function Loader:PLAYER_ENTERING_WORLD()
 		end
 
 		debug("all free")
-	end
-end
-
---- Register callback to be ran when ADDON_LOADED event is fired for addonName
--- @tparam string addonName
--- @tparam func callback
--- @tparam[opt=false] bool - True if addon is loaded on demand, and not instantly on login.
-function Loader:Register(addonName, callback, onDemand)
-	if type(addonName) ~= "string" or type(callback) ~= "function" then
-		return error('Usage: Register("name", callbackFunc, false)')
-	end
-
-	self.addons[addonName] = {
-		init = callback,
-		loaded = false,
-		hasRan = false,
-		onDemand = onDemand
-	}
-
-	debug("registered " .. addonName)
-
-	-- Trigger event ourselves if addon is already loaded
-	if IsAddOnLoaded(addonName) then
-		self:ADDON_LOADED(addonName)
 	end
 end
 
