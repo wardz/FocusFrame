@@ -831,6 +831,7 @@ do
 	end
 
 	function events:CHAT_MSG_COMBAT_HOSTILE_DEATH(event, arg1)
+		if not Focus:FocusExists() then return end
 		if focusTargetName == playerName and arg1 == L.YOU_DIE then
 			SetFocusHealth(nil, true)
 		elseif strfind(arg1, focusTargetName) then
@@ -839,6 +840,7 @@ do
 	end
 
 	function events:CHAT_MSG_COMBAT_FRIENDLY_DEATH()
+		if not Focus:FocusExists() then return end
 		if focusTargetName == playerName and arg1 == L.YOU_DIE then
 			SetFocusHealth(nil, true)
 		elseif strfind(arg1, focusTargetName) then
