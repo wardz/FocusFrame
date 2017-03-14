@@ -13,19 +13,10 @@
 	}
 
 	FOCUS_INTERRUPTS_TO_TRACK = {
-		-- MISC
-		-- DRUID
-		-- HUNTER
-		-- MAGE
-		-- PALADIN
-		-- PRIEST
-		-- ROGUE
-		['Kick'] = true,
-		-- SHAMAN
-		['Earth Shock'] = true,
-		-- WARLOCK
-		-- WARRIOR
-		['Pummel'] = true, ['Shield Bash'] = true,
+		["Kick"] = true,
+		["Earth Shock"] = true,
+		["Pummel"] = true,
+		["Shield Bash"] = true,
 	}
 
 	FOCUS_INTERRUPT_BUFFS_TO_TRACK = {

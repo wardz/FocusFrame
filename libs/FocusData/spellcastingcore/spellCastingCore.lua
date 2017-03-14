@@ -13,18 +13,17 @@ buff.__index 		= buff
 buffQueue.__index	= buffQueue
 
 local Focus
-
 local playerName = UnitName'player'
 
 -- Upvalues
 local FOCUS_CHANNELED_SPELLCASTS_TO_TRACK, FOCUS_INSTANT_SPELLCASTS_TO_TRACK =
 	  FOCUS_CHANNELED_SPELLCASTS_TO_TRACK, FOCUS_INSTANT_SPELLCASTS_TO_TRACK
 
-local FOCUS_SPELLCASTS_TO_TRACK = FOCUS_SPELLCASTS_TO_TRACK
+local FOCUS_SPELLCASTS_TO_TRACK, FOCUS_TRADECASTS_TO_TRACK =
+	  FOCUS_SPELLCASTS_TO_TRACK, FOCUS_TRADECASTS_TO_TRACK
 
-local FOCUS_TRADECASTS_TO_TRACK = FOCUS_TRADECASTS_TO_TRACK
-
-local FOCUS_BUFFS_TO_TRACK, FOCUS_BORDER_DEBUFFS_COLOR = FOCUS_BUFFS_TO_TRACK, FOCUS_BORDER_DEBUFFS_COLOR
+local FOCUS_BUFFS_TO_TRACK, FOCUS_BORDER_DEBUFFS_COLOR =
+	  FOCUS_BUFFS_TO_TRACK, FOCUS_BORDER_DEBUFFS_COLOR
 
 local tinsert, tremove, strfind, gsub, ipairs, pairs, GetTime, GetNetStats, setmetatable, tgetn =
 	  table.insert, table.remove, string.find, string.gsub, ipairs, pairs, GetTime, GetNetStats, setmetatable, table.getn
@@ -49,13 +48,14 @@ end
 
 InstaBuff.create = function(c, b, list, time)
    local acnt = {
-	   caster = c,
-	   spell = b,
-	   timeMod = list.mod,
-	   spellList = list.list,
-	   timeStart = time,
-	   timeEnd = time + 10
+	   caster		= c,
+	   spell		= b,
+	   timeMod		= list.mod,
+	   spellList	= list.list,
+	   timeStart	= time,
+	   timeEnd		= time + 10
    }
+
    setmetatable(acnt, InstaBuff)
 
    return acnt
@@ -63,21 +63,21 @@ end
 
 buff.create = function(tar, t, s, buffType, factor, time, texture, debuff, magictype, debuffStack)
 	buffType = buffType or {}
-	buffType.type = magictype and strlower(magictype) or buffType.type or "none"
+	buffType.type = magictype and strlower(magictype) or strlower(buffType.type or "none")
 
 	local acnt = {
-		target = tar,
-		caster = tar,
-		spell = t,
-		stacks = debuffStack or s or 0,
-		icon = texture or buffType.icon,
-		timeStart = time,
-		timeEnd = 0,
-		prio = buffType.prio or 0,
-		border =  buffType.type and FOCUS_BORDER_DEBUFFS_COLOR[strlower(buffType.type)],
-		display = buffType.display == nil and true or buffType.display,
-		btype = debuff,
-		debuffType = buffType.type,
+		target		= tar,
+		caster		= tar,
+		spell		= t,
+		stacks		= debuffStack or s or 0,
+		icon		= texture or buffType.icon,
+		timeStart	= time,
+		timeEnd		= 0, -- TODO remove
+		prio		= buffType.prio or 0,
+		border		= FOCUS_BORDER_DEBUFFS_COLOR[buffType.type],
+		display		= true,	-- TODO remove
+		btype		= debuff,
+		debuffType	= buffType.type,
 	}
 
 	setmetatable(acnt, buff)
@@ -85,14 +85,16 @@ buff.create = function(tar, t, s, buffType, factor, time, texture, debuff, magic
 	return acnt
 end
 
+-- TODO why is this needed?
 buffQueue.create = function(tar, spell, buffType, d, time)
 	local acnt = {
-		target = tar,
-		buffName = spell,
-		buffData = buffType,
-		timeStart = time,
-		timeEnd = time + 1
+		target		= tar,
+		buffName	= spell,
+		buffData	= buffType,
+		timeStart	= time,
+		timeEnd		= time + 1
 	}
+
 	setmetatable(acnt, buffQueue)
 
 	return acnt
@@ -104,7 +106,7 @@ local getAvgLatency = function()
 end
 
 local getTimeMinusPing = function()
-	return GetTime() - 0.1 -- getAvgLatency() --- standby for now
+	return GetTime() - 0.1 -- getAvgLatency() -- standby for now
 end
 
 local removeExpiredTableEntries = function(time, tab)
@@ -119,30 +121,26 @@ end
 
 local forceHideTableItem = function(tab, caster, spell, debuffsOnly)
 	local i = 1
-	local hasChanged = false
 
 	for k, v in pairs(tab) do
 		if v.caster == caster then
 			if not spell then
+				-- Remove all debuffs only
 				if debuffsOnly then
 					if v.btype then
 						tremove(tab, i)
-						hasChanged = true
 					end
 				else
 					tremove(tab, i)
-					hasChanged = true
 				end
 			else
 				if v.spell == spell then
 					if debuffsOnly then
 						if v.btype then
 							tremove(tab, i)
-							hasChanged = true
 						end
 					else
 						tremove(tab, i)
-						hasChanged = true
 					end
 				end
 			end
@@ -151,7 +149,8 @@ local forceHideTableItem = function(tab, caster, spell, debuffsOnly)
 		i = i + 1
 	end
 
-	if Focus:UnitIsFocus(caster, true) then
+	if tab == buffList and Focus:UnitIsFocus(caster, true) then
+		-- triggers UNIT_AURA for focus
 		Focus:SetData("auraUpdate", 1)
 	end
 end
@@ -161,31 +160,28 @@ local tableMaintenance = function(reset)
 		casts = {}
 		iBuffs = {}
 		buffList = {}
-		if Focus:FocusExists() then
-			Focus:ClearFocus()
-		end
-	else
-		-- CASTS -- casts have a different removal parameter
-		local time = GetTime()
-		local latency = getAvgLatency()
-		local i = 1
-		for k, v in pairs(casts) do
-			if time > v.timeEnd or time > v.nextTick + latency then	-- channeling cast verification
-				tremove(casts, i)
-			end
-			i = i + 1
-		end
+		return
+	end
 
-		if CURR_FOCUS_TARGET and Focus:IsDead() then
-			-- need to call this in OnUpdate aswell to avoid any possible data
-			-- race conditions from events
-			forceHideTableItem(buffList, CURR_FOCUS_TARGET)
+	-- CASTS -- casts have a different removal parameter
+	local getTime = GetTime()
+	local latency = getAvgLatency()
+	local i = 1
+	for k, v in pairs(casts) do
+		if getTime > v.timeEnd or getTime > v.nextTick + latency then -- channeling cast verification
+			tremove(casts, i)
 		end
+		i = i + 1
+	end
 
-		--  CASTING SPEED BUFFS
-		removeExpiredTableEntries(time, iBuffs)
-		-- BUFFQUEUE
-		removeExpiredTableEntries(time, buffQueueList)
+	removeExpiredTableEntries(getTime, iBuffs) -- casting speed buffs
+	removeExpiredTableEntries(getTime, buffQueueList)
+
+	-- Remove focus auras if focus is dead
+	if CURR_FOCUS_TARGET and Focus:IsDead() then
+		-- need to call this in OnUpdate aswell to avoid buffs not being removed due to data
+		-- race conditions from events
+		forceHideTableItem(buffList, CURR_FOCUS_TARGET)
 	end
 end
 
@@ -213,11 +209,11 @@ local checkforCastTimeModBuffs = function(caster, spell)
 	local k = 1
 	for i, j in iBuffs do
 		if j.caster == caster then
-			if j.spellList[1] ~= 'all' then
+			if j.spellList[1] ~= "all" then
 				local a, lastT = 1, 1
 				for b, c in j.spellList do
 					if c == spell then
-						if lastT ~= 0 then			-- priority to buffs that proc instant cast
+						if lastT ~= 0 then -- priority to buffs that proc instant cast
 							lastT = j.timeMod
 						end
 					end
@@ -226,44 +222,45 @@ local checkforCastTimeModBuffs = function(caster, spell)
 			else
 				return j.timeMod
 			end
-			--return false
 		end
 		k = k + 1
 	end
+
 	return 1
 end
 
 local newCast = function(caster, spell, channel)
-	local time = getTimeMinusPing()--GetTime() -- getAvgLatency()
-	local info = nil
+	local getTime = getTimeMinusPing()
+	local info
 
 	if channel then
-		if FOCUS_CHANNELED_SPELLCASTS_TO_TRACK[spell] ~= nil then info = FOCUS_CHANNELED_SPELLCASTS_TO_TRACK[spell] end
+		if FOCUS_CHANNELED_SPELLCASTS_TO_TRACK[spell] then
+			info = FOCUS_CHANNELED_SPELLCASTS_TO_TRACK[spell]
+		end
 	else
 		removeDoubleCast(caster)
-		if FOCUS_SPELLCASTS_TO_TRACK[spell] ~= nil then info = FOCUS_SPELLCASTS_TO_TRACK[spell] end
+		if FOCUS_SPELLCASTS_TO_TRACK[spell] then
+			info = FOCUS_SPELLCASTS_TO_TRACK[spell]
+		else
+			info = FOCUS_TRADECASTS_TO_TRACK[spell]
+		end
 	end
 
-	if FOCUS_TRADECASTS_TO_TRACK[spell] ~= nil then info = FOCUS_TRADECASTS_TO_TRACK[spell] end
-
-	if info ~= nil then
+	if info then
 		if not checkForChannels(caster, spell) then
 			removeDoubleCast(caster)
 			local tMod = checkforCastTimeModBuffs(caster, spell)
 			if tMod > 0 then
-				local n = Cast.create(caster, spell, info, tMod, time, channel)
+				local n = Cast.create(caster, spell, info, tMod, getTime, channel)
 				tinsert(casts, n)
 			end
 		end
-	--else
-	--	print(arg1)
 	end
-
 end
 
 local newIBuff = function(caster, buff)
-	local time = getTimeMinusPing()--GetTime()
-	local b = InstaBuff.create(caster, buff, FOCUS_TIME_MODIFIER_BUFFS_TO_TRACK[buff], time)
+	local getTime = getTimeMinusPing()
+	local b = InstaBuff.create(caster, buff, FOCUS_TIME_MODIFIER_BUFFS_TO_TRACK[buff], getTime)
 	tinsert(iBuffs, b)
 end
 
@@ -273,12 +270,12 @@ local function checkQueueBuff(tar, b)
 			return true
 		end
 	end
+
 	return false
 end
 
 local function newbuff(tar, b, s, castOn, texture, debuff, magictype, debuffStack, noEvent)
-	local time = getTimeMinusPing()--GetTime()
-	--if not magictype then magictype = "none" end
+	local getTime = getTimeMinusPing()
 
 	-- check buff queue
 	if checkQueueBuff(tar, b) then return end
@@ -287,17 +284,20 @@ local function newbuff(tar, b, s, castOn, texture, debuff, magictype, debuffStac
 	local i = 1
 	for k, v in pairs(buffList) do
 		if v.caster == tar and v.spell == b then
+			-- return?
+			-- breaks when diff buffs have same name i.e noggenfogger
 			tremove(buffList, i)
 			break
 		end
 		i = i + 1
 	end
 
-	local n = buff.create(tar, b, s, FOCUS_BUFFS_TO_TRACK[b], 1, time, texture, debuff, magictype, debuffStack)
+	local n = buff.create(tar, b, s, FOCUS_BUFFS_TO_TRACK[b], 1, getTime, texture, debuff, magictype, debuffStack)
 	tinsert(buffList, n)
 
 	if not noEvent then
 		if Focus:UnitIsFocus(tar, true) then
+			-- triggers UNIT_AURA for focus
 			Focus:SetData("auraUpdate", 1)
 		end
 	end
@@ -338,23 +338,33 @@ local function processQueuedBuff(tar, b)
 end
 
 local CastCraftPerform = function()
-	local pcast 	= 'You cast (.+).'							local fpcast = strfind(arg1, pcast)	-- standby for now
-	local cast		= '(.+) casts (.+).'						local fcast = strfind(arg1, cast)
-	local bcast 	= '(.+) begins to cast (.+).' 				local fbcast = strfind(arg1, bcast)
-	local craft 	= '(.+) -> (.+).' 							local fcraft = strfind(arg1, craft)
-	local perform 	= '(.+) performs (.+).' 					local fperform = strfind(arg1, perform)
-	local bperform 	= '(.+) begins to perform (.+).' 			local fbperform = strfind(arg1, bperform)
-	local performOn = '(.+) performs (.+) on (.+).' 			local fperformOn = strfind(arg1, performOn)
+	-- TODO add localization & put into loop
+	local pcast 	= 'You cast (.+).'
+	local cast		= '(.+) casts (.+).'
+	local bcast 	= '(.+) begins to cast (.+).'
+	local craft 	= '(.+) -> (.+).'
+	local perform 	= '(.+) performs (.+).'
+	local bperform 	= '(.+) begins to perform (.+).'
+	local performOn = '(.+) performs (.+) on (.+).'
+	local pcastFin 	= 'You cast (.+) on (.+).'
+	local castFin 	= '(.+) casts (.+) on (.+).'
 
-	local pcastFin 	= 'You cast (.+) on (.+).'					local fpcastFin = strfind(arg1, pcastFin)
-	local castFin 	= '(.+) casts (.+) on (.+).'				local fcastFin = strfind(arg1, castFin)
+	local fpcast = strfind(arg1, pcast)
+	local fcast = strfind(arg1, cast)
+	local fbcast = strfind(arg1, bcast)
+	local fcraft = strfind(arg1, craft)
+	local fperform = strfind(arg1, perform)
+	local fbperform = strfind(arg1, bperform)
+	local fperformOn = strfind(arg1, performOn)
+
+	local fpcastFin = strfind(arg1, pcastFin)
+	local fcastFin = strfind(arg1, castFin)
 
 	if fbcast or fcraft then
 		local m = fbcast and bcast or fcraft and craft or fperform and perform
 		local c = gsub(arg1, m, '%1')
 		local s = gsub(arg1, m, '%2')
 		newCast(c, s, false)
-		--print(arg1)
 
 	elseif fperform or fbperform or fperformOn then
 		local m = fperform and perform or fbperform and bperform or fperformOn and performOn
@@ -367,33 +377,24 @@ local CastCraftPerform = function()
 		local m = cast
 		local c = gsub(arg1, m, '%1')
 		local s = gsub(arg1, m, '%2')
+
 		if FOCUS_SPELLCASTS_TO_TRACK[s] then
 			newCast(c, s, false)
 		else
 			forceHideTableItem(casts, c, nil)
 		end
-		--on standby
-		--[[ finished casts CC(?)
-	elseif fpcastFin or fcastFin then
-		local m = fpcastFin and pcastFin or fcastFin and castFin
-		local t = fpcastFin and gsub(arg1, m, '%2') or gsub(arg1, m, '%3')
-		local s = fpcastFin and gsub(arg1, m, '%1') or gsub(arg1, m, '%2')
-
-		if FOCUS_BUFFS_TO_TRACK[s] then
-			newbuff(t, s, true)
-		end]]--
 	end
 
 	return fcast or fbcast or fpcast or fperform or fbperform or fpcastFin or fcastFin or fperformOn
 end
 
 local processUniqueSpell = function()
-	local vanish = '(.+) performs Vanish'		local fvanish = strfind(arg1, vanish)
+	local vanish = '(.+) performs Vanish'
+	local fvanish = strfind(arg1, vanish)
 
 	if fvanish then
-		local m = vanish
-		local c = gsub(arg1, m, '%1')
-		--print(arg1)
+		local c = gsub(arg1, vanish, "%1")
+
 		for k, v in pairs(FOCUS_ROOTS_SNARES) do
 			forceHideTableItem(buffList, c, k)
 		end
@@ -455,10 +456,10 @@ local GainAfflict = function()
 		-- rank & stacks
 		local auxS, st = s, 1
 		if not FOCUS_BUFFS_TO_TRACK[s] then
-			--local buffRank = '(.+) (.+)'
-			--if strfind(s, buffRank) then print(gsub(s, buffRank, '%1'))	print(gsub(s, buffRank, '%2'))	end
 			local spellstacks = '(.+) %((.+)%)'
-			if strfind(s, spellstacks) then s = gsub(s, spellstacks, '%1')	st = tonumber(gsub(auxS, spellstacks, '%2'), 10)	--print(s) print(st)	
+			if strfind(s, spellstacks) then
+				s = gsub(s, spellstacks, '%1')
+				st = tonumber(gsub(auxS, spellstacks, '%2'), 10)
 			end
 		end
 		-- debuffs to be displayed
@@ -532,6 +533,20 @@ local FadeRem = function()
 	return ffade or frem or fprem
 end
 
+local function DelayCastTimer(caster, spell)
+	if not caster or not spell then return end
+	local pushbackDelay = 0.3
+	local getTime = GetTime()
+
+	for k, v in pairs(casts) do
+		if v.caster == caster and v.spell == spell then
+			v.timeEnd = v.timeEnd + pushbackDelay
+
+			--v.nextTick = 
+		end
+	end
+end
+
 local HitsCrits = function()
 	local hits = '(.+)\'s (.+) hits (.+) for (.+)' 					local fhits = strfind(arg1, hits)
 	local crits = '(.+)\'s (.+) crits (.+) for (.+)' 				local fcrits = strfind(arg1, crits)
@@ -556,11 +571,13 @@ local HitsCrits = function()
 		-- instant spells that cancel casted ones
 		if FOCUS_INSTANT_SPELLCASTS_TO_TRACK[s] then
 			forceHideTableItem(casts, c, nil)
+		elseif not fabsb then
+			DelayCastTimer(t, s)
 		end
 
-		if FOCUS_CHANNELED_SPELLCASTS_TO_TRACK[s] then
-			newCast(c, s, true)
-		end
+		--if FOCUS_CHANNELED_SPELLCASTS_TO_TRACK[s] then
+			--newCast(c, s, true)
+		--end
 
 		-- interrupt dmg spell
 		if FOCUS_INTERRUPTS_TO_TRACK[s] then
@@ -568,9 +585,9 @@ local HitsCrits = function()
 		end
 
 		-- spells that refresh debuffs
-		if FOCUS_DEBUFF_REFRESHING_SPELLS[s] then
+		--[[if FOCUS_DEBUFF_REFRESHING_SPELLS[s] then
 			refreshBuff(t, s)
-		end
+		end]]
 	end
 
 	-- self hits/crits
@@ -582,26 +599,26 @@ local HitsCrits = function()
 		-- interrupt dmg spell
 		if FOCUS_INTERRUPTS_TO_TRACK[s] then
 			forceHideTableItem(casts, t, nil)
+		elseif not fpabsb then
+			DelayCastTimer(t, s)
 		end
 
 		-- spells that refresh debuffs
-		if FOCUS_DEBUFF_REFRESHING_SPELLS[s] then
+		--[[if FOCUS_DEBUFF_REFRESHING_SPELLS[s] then
 			refreshBuff(t, s)
-		end
-	end
-
-	-- resisted channeling dmg spells (arcane missiles ITS A VERY SPECIAL AND UNIQUE SNOWFLAKE SPELL)
-	if fchannelDotRes or fpchannelDotRes then
-		local m = fchannelDotRes and channelDotRes or fpchannelDotRes and pchannelDotRes
-		local c = gsub(arg1, m, '%1')
-		local s = gsub(arg1, m, '%2')
-
-		if FOCUS_CHANNELED_SPELLCASTS_TO_TRACK[s] then
-			newCast(c, s, true)
-		end
+		end]]
 	end
 
 	return fhits or fcrits or fphits or fpcrits or fabsb or fpabsb --or ffails
+end
+
+local function IsArcaneMissiles(spell)
+	local name = FOCUS_CHANNELED_SPELLCASTS_TO_TRACK[spell]
+	if name == "Arcane Missile" or name == "Arcane Missiles" then
+		return true
+	end
+
+	return false
 end
 
 local channelDot = function()
@@ -619,7 +636,13 @@ local channelDot = function()
 		local t = gsub(arg1, m, '%1')
 
 		if FOCUS_CHANNELED_SPELLCASTS_TO_TRACK[s] then
+			-- caster
 			newCast(c, s, true)
+		end
+
+		-- target
+		if IsArcaneMissiles(s) then
+			DelayCastTimer(t, s)
 		end
 	end
 
@@ -631,6 +654,10 @@ local channelDot = function()
 
 		if FOCUS_CHANNELED_SPELLCASTS_TO_TRACK[s] then
 			newCast(c, s, true)
+		end
+
+		if IsArcaneMissiles(s) then
+			DelayCastTimer(t, s)
 		end
 	end
 
@@ -665,14 +692,6 @@ local playerDeath = function()
 			if Focus:GetName() ~= c then -- buffList is cleared in OnUpdate for focus
 				forceHideTableItem(buffList, c, nil)
 			end
-		end
-
-		if Focus:UnitIsFocus(c, true) then
-			Focus:SetData("health", 0)
-			Focus:SetData("maxHealth", 0)
-			Focus:SetData("power", 0)
-			Focus:SetData("maxPower", 0)
-			--Focus:SetData("auraUpdate", 1)
 		end
 	end
 
@@ -739,7 +758,7 @@ function FSPELLCASTINGCOREClearBuffs(caster, debuffsOnly)
 	forceHideTableItem(buffList, caster, nil, debuffsOnly)
 end
 
-function FSPELLCASTINGCOREGetLastBuffInfo(caster)
+--[[function FSPELLCASTINGCOREGetLastBuffInfo(caster)
 	local texture
 	local i = 0
 
@@ -751,7 +770,7 @@ function FSPELLCASTINGCOREGetLastBuffInfo(caster)
 	end
 
 	return i, texture
-end
+end]]
 
 FSPELLCASTINGCOREgetCast = function(caster)
 	if caster then
@@ -768,9 +787,9 @@ end
 do
 	local list = { buffs = {}, debuffs = {} }
 
-	FSPELLCASTINGCOREgetBuffs = function(caster)
+	FSPELLCASTINGCOREgetBuffs = function(caster) -- ran frequent
 		if not caster then return end
-		list.buffs = {}
+		list.buffs = {} -- memory inefficient but much faster than wiping table
 		list.debuffs = {}
 
 		for k, v in ipairs(buffList) do
@@ -816,7 +835,7 @@ do
 		end
 	end)
 
-	f:RegisterEvent'CHAT_MSG_MONSTER_EMOTE'--[[
+	f:RegisterEvent'CHAT_MSG_MONSTER_EMOTE'
 	f:RegisterEvent'CHAT_MSG_COMBAT_SELF_HITS'
 	f:RegisterEvent'CHAT_MSG_COMBAT_SELF_MISSES'
 	f:RegisterEvent'CHAT_MSG_COMBAT_PARTY_HITS'
@@ -825,7 +844,7 @@ do
 	f:RegisterEvent'CHAT_MSG_COMBAT_FRIENDLYPLAYER_MISSES'
 	f:RegisterEvent'CHAT_MSG_COMBAT_HOSTILEPLAYER_HITS'
 	f:RegisterEvent'CHAT_MSG_COMBAT_HOSTILEPLAYER_MISSES'
-	f:RegisterEvent'CHAT_MSG_COMBAT_CREATURE_VS_PARTY_HITS']]
+	f:RegisterEvent'CHAT_MSG_COMBAT_CREATURE_VS_PARTY_HITS'
 	f:RegisterEvent'CHAT_MSG_SPELL_SELF_BUFF'
 	f:RegisterEvent'CHAT_MSG_SPELL_SELF_DAMAGE'
 	f:RegisterEvent'CHAT_MSG_SPELL_FRIENDLYPLAYER_DAMAGE'
