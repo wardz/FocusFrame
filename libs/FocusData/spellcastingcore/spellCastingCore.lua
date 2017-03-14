@@ -155,6 +155,7 @@ local forceHideTableItem = function(tab, caster, spell, debuffsOnly)
 	end
 end
 
+local lastCleared = GetTime()
 local tableMaintenance = function(reset)
 	if reset then
 		casts = {}
@@ -182,6 +183,19 @@ local tableMaintenance = function(reset)
 		-- need to call this in OnUpdate aswell to avoid buffs not being removed due to data
 		-- race conditions from events
 		forceHideTableItem(buffList, CURR_FOCUS_TARGET)
+	end
+
+	if not CURR_FOCUS_TARGET then
+		-- Delete ALL buffs every X sec when there is no focus target
+		-- This is needed to remove buffs that fail to expire due to no combat event found
+		if getTime - lastCleared > 30 then
+			if tgetn(buffList) >= 1 then
+				if not UnitAffectingCombat("player") then
+					buffList = {}
+				end
+			end
+			lastCleared = getTime
+		end
 	end
 end
 
