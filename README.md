@@ -91,7 +91,7 @@ When using this addon there are some limitations or caveats you should know abou
 - Power for a non-party member focus is updated when you or your party members targets the focus target. (Also every time you use /fcast)
 - Health is updated same way as power, but will also update when the focus target's nameplate is in range.
 - Casts & buffs for focus are only tracked if the focus is within 40 yards range of your character.
-- For Rogues: You will lose all your combo points when switching between target and focus!!
+- For Rogues/druids: You will lose all your combo points when switching between target and focus!!
 
 ## Installation
 1. Download latest [version here.](https://github.com/wardz/FocusFrame/releases)
