@@ -10,6 +10,7 @@ if _G.FocusData then return end
 print = print or function(msg) DEFAULT_CHAT_FRAME:AddMessage(msg or "nil") end
 
 -- Vars
+local L = _G.FocusData_Locale
 local Focus = {}
 local focusTargetName
 local partyUnit
@@ -19,8 +20,6 @@ local data
 -- Upvalues
 local GetTime, next, strfind, UnitName, TargetLastTarget, TargetByName, strlower, type, pcall, tgetn =
 	  GetTime, next, strfind, UnitName, TargetLastTarget, TargetByName, strlower, type, pcall, table.getn
-
-local FSPELLCASTINGCOREgetBuffs, FRGB_BORDER_DEBUFFS_COLOR = FSPELLCASTINGCOREgetBuffs, FRGB_BORDER_DEBUFFS_COLOR
 
 -- Functions
 local NameplateScanner
@@ -125,9 +124,9 @@ do
 	local scantipTextLeft1 = _G["FocusDataScantipTextLeft1"]
 	local scantipTextRight1 = _G["FocusDataScantipTextRight1"]
 
-	local prevTexture = ""
+	--[[local prevTexture = ""
 	local prevAmount = 0
-	local prevRan = false
+	local prevRan = false]]
 
 	local function SyncBuff(unit, i, texture, stack, debuffType, isDebuff)
 		scantip:ClearLines()
@@ -151,7 +150,7 @@ do
 		end
 	end
 
-	local function HasAurasChanged()
+	--[[local function HasAurasChanged()
 		local len, texture = GetLastAura(focusTargetName)
 
 		if len == prevAmount then
@@ -161,7 +160,7 @@ do
 		end
 
 		return true
-	end
+	end]]
 
 	function SetFocusAuras(unit) --local
 		--if not HasAurasChanged() then return end
@@ -344,7 +343,7 @@ end
 --- Display focus UI error
 -- @tparam[opt="You have no focus"] string msg
 function Focus:ShowError(msg)
-	UIErrorsFrame:AddMessage("|cffFF003F " .. (msg or "You have no focus.") .. "|r")
+	UIErrorsFrame:AddMessage("|cffFF003F " .. (msg or L.NO_FOCUS) .. "|r")
 end
 
 --- Unit
@@ -456,8 +455,6 @@ function Focus:TargetPrevious()
 	end
 end
 
-local ToUpper = function(a, b) return strupper(a) .. b end
-
 --- Set current target as focus, or name if given.
 -- @tparam[opt=nil] string name
 function Focus:SetFocus(name)
@@ -496,6 +493,7 @@ end
 
 --- Remove focus & all data.
 function Focus:ClearFocus()
+	--if not Focus:FocusExists() then return end
 	focusTargetName = nil
 	CURR_FOCUS_TARGET = nil
 	partyUnit = nil
@@ -535,12 +533,15 @@ function Focus:GetPowerColor()
 	return ManaBarColor[rawData.powerType] or { r = 0, g = 0, b = 0 }
 end
 
+local FSPELLCASTINGCOREgetBuffs, FOCUS_BORDER_DEBUFFS_COLOR =
+	  FSPELLCASTINGCOREgetBuffs, FOCUS_BORDER_DEBUFFS_COLOR
+
 --- Get border color for debuffs.
 -- Uses numeric indexes.
 -- @tparam string debuffType e.g "magic" or "physical"
 -- @return table
 function Focus:GetDebuffColor(debuffType)
-	return debuffType and FRGB_BORDER_DEBUFFS_COLOR[strlower(debuffType)] or { 0, 0, 0, 0 }
+	return debuffType and FOCUS_BORDER_DEBUFFS_COLOR[strlower(debuffType)] or { 0, 0, 0, 0 }
 end
 
 --- Get table containing all buff+debuff data for focus.
@@ -743,9 +744,11 @@ do
 				if not SetFocusInfo("target") then
 					if not SetFocusInfo("mouseover") then
 						if not SetFocusInfo("targettarget") then
-							rawData.unit = nil
-							NameplateScanner()
-							PartyScanner()
+							if not SetFocusInfo("pettarget") then
+								rawData.unit = nil
+								NameplateScanner()
+								PartyScanner()
+							end
 						end
 					end
 				end
@@ -828,7 +831,7 @@ do
 	end
 
 	function events:CHAT_MSG_COMBAT_HOSTILE_DEATH(event, arg1)
-		if arg1 == "You die." and focusTargetName == playerName then
+		if focusTargetName == playerName and arg1 == L.YOU_DIE then
 			SetFocusHealth(nil, true)
 		elseif strfind(arg1, focusTargetName) then
 			SetFocusHealth(nil, true)
@@ -836,15 +839,29 @@ do
 	end
 
 	function events:CHAT_MSG_COMBAT_FRIENDLY_DEATH()
-		if arg1 == "You die." and focusTargetName == playerName then
+		if focusTargetName == playerName and arg1 == L.YOU_DIE then
 			SetFocusHealth(nil, true)
 		elseif strfind(arg1, focusTargetName) then
 			SetFocusHealth(nil, true)
 		end
 	end
 
+	function events:PLAYER_ENTERING_WORLD()
+		if Focus:FocusExists() then
+			Focus:ClearFocus()
+		end
+	end
+
+	function events:PLAYER_ALIVE()
+		if Focus:FocusExists() then
+			Focus:ClearFocus()
+		end
+	end
+
 	events:SetScript("OnEvent", EventHandler)
 	events:SetScript("OnUpdate", OnUpdateHandler)
+	events:RegisterEvent("PLAYER_ENTERING_WORLD")
+	events:RegisterEvent("PLAYER_ALIVE")
 	events:RegisterEvent("PLAYER_FLAGS_CHANGED")
 	events:RegisterEvent("PLAYER_AURAS_CHANGED")
 	events:RegisterEvent("PARTY_LEADER_CHANGED")
@@ -858,8 +875,8 @@ do
 	events:RegisterEvent("UNIT_RAGE")
 	events:RegisterEvent("UNIT_FOCUS")
 	events:RegisterEvent("UNIT_ENERGY")
-	--events:RegisterEvent("CHAT_MSG_COMBAT_HOSTILE_DEATH")
-	--events:RegisterEvent("CHAT_MSG_COMBAT_FRIENDLY_DEATH")
+	events:RegisterEvent("CHAT_MSG_COMBAT_HOSTILE_DEATH")
+	events:RegisterEvent("CHAT_MSG_COMBAT_FRIENDLY_DEATH")
 end
 
 -- Add to global namespace
