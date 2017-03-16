@@ -269,8 +269,34 @@ local function SetFocusHealth(unit, isDead)
 	end
 end
 
+local function IsHunterWithSamePetName(unit)
+	if rawData.unitClass ~= "HUNTER" then return end
+
+	if not rawData.unitCreatureType then
+		rawData.unitCreatureType = UnitCreatureType(unit)
+		return
+	end
+
+	local creatureType = rawData.unitCreatureType
+	if creatureType == L.HUMANOID then
+		if creatureType ~= UnitCreatureType(unit) then
+			if rawData.unitName == UnitName(unit) then
+				return true
+			end
+		end
+	end
+
+	return false
+end
+
 local function SetFocusInfo(unit, resetRefresh)
 	if not Focus:UnitIsFocus(unit) then return false end
+
+	if rawData.unitClass then
+		if IsHunterWithSamePetName(unit) then
+			return
+		end
+	end
 
 	local getTime = GetTime()
 
@@ -305,7 +331,8 @@ local function SetFocusInfo(unit, resetRefresh)
 	rawData.unitIsFriend = UnitIsFriend(unit, "player")
 	rawData.unitIsConnected = UnitIsConnected(unit)
 	rawData.unitFactionGroup = UnitFactionGroup(unit)
-	rawData.unitClass = UnitClass(unit)
+	local _, class = UnitClass(unit)
+	rawData.unitClass = class
 	rawData.unitName = GetUnitName(unit)
 	rawData.unitIsPlayer = UnitIsPlayer(unit)
 	rawData.unitIsCivilian = UnitIsCivilian(unit)

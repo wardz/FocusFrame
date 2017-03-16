@@ -10,6 +10,7 @@ else]]
     -- FocusData
     L.YOU_DIE = "You die." -- CHAT_MSG_COMBAT_HOSTILE_DEATH
     L.NO_FOCUS = "You have no focus."
+    L.HUMANOID = "Humanoid" -- needed?
 
     -- spellcastingcore
 
