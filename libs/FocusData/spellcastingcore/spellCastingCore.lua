@@ -626,14 +626,14 @@ local HitsCrits = function()
 	return fhits or fcrits or fphits or fpcrits or fabsb or fpabsb --or ffails
 end
 
-local function IsArcaneMissiles(spell)
+--[[local function IsArcaneMissiles(spell)
 	local name = FOCUS_CHANNELED_SPELLCASTS_TO_TRACK[spell]
 	if name == "Arcane Missile" or name == "Arcane Missiles" then
 		return true
 	end
 
 	return false
-end
+end]]
 
 local channelDot = function()
 	local channelDot 	= "(.+) suffers (.+) from (.+)'s (.+)."		local fchannelDot = strfind(arg1, channelDot)
@@ -851,7 +851,7 @@ do
 	end)
 
 	f:RegisterEvent'CHAT_MSG_MONSTER_EMOTE'
-	f:RegisterEvent'CHAT_MSG_COMBAT_SELF_HITS'
+	--[[f:RegisterEvent'CHAT_MSG_COMBAT_SELF_HITS'
 	f:RegisterEvent'CHAT_MSG_COMBAT_SELF_MISSES'
 	f:RegisterEvent'CHAT_MSG_COMBAT_PARTY_HITS'
 	f:RegisterEvent'CHAT_MSG_COMBAT_PARTY_MISSES'
@@ -859,7 +859,7 @@ do
 	f:RegisterEvent'CHAT_MSG_COMBAT_FRIENDLYPLAYER_MISSES'
 	f:RegisterEvent'CHAT_MSG_COMBAT_HOSTILEPLAYER_HITS'
 	f:RegisterEvent'CHAT_MSG_COMBAT_HOSTILEPLAYER_MISSES'
-	f:RegisterEvent'CHAT_MSG_COMBAT_CREATURE_VS_PARTY_HITS'
+	f:RegisterEvent'CHAT_MSG_COMBAT_CREATURE_VS_PARTY_HITS']]
 	f:RegisterEvent'CHAT_MSG_SPELL_SELF_BUFF'
 	f:RegisterEvent'CHAT_MSG_SPELL_SELF_DAMAGE'
 	f:RegisterEvent'CHAT_MSG_SPELL_FRIENDLYPLAYER_DAMAGE'

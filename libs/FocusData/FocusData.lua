@@ -488,9 +488,9 @@ function Focus:TargetFocus(name, setFocusName)
 					-- Attempt to target with facing requirement
 					TargetNearestEnemy()
 
-					--[[if UnitName("target") ~= rawData.unitName then
+					if UnitName("target") ~= rawData.unitName then
 						ClearTarget()
-					end]]
+					end
 				end
 			else
 				TargetByName(name or focusTargetName, true)
