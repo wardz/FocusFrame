@@ -26,10 +26,23 @@ local NameplateScanner
 local PartyScanner
 local SetFocusAuras
 local CallHooks
+local debug
 
 --------------------------------------
 -- Core
 --------------------------------------
+
+do
+	local showDebug = true
+	local showDebugEvents = false
+
+	function debug(str, arg1, arg2, arg3)
+		if showDebug then
+			if not showDebugEvents and strfind(str, "CallHooks") or strfind(str, "event callback") then return end
+			print(string.format(str, arg1, arg2, arg3))
+		end
+	end
+end
 
 -- Event handling for data struct
 do
@@ -77,26 +90,36 @@ do
 	data = setmetatable({}, {
 		__index = function(self, key)
 			local value = rawData[key]
-			if value == nil then error("unknown key: " .. key) end
+			if value == nil then
+				debug("unknown data key %s", key)
+			end
 			return value
 		end,
 
 		-- This function is called everytime a property in data has been changed
 		__newindex = function(self, key, value)
 			if not focusTargetName then
-				return --error("can't set data when focus is not sat")
+				-- may happen on focus cleared while event is being triggered
+				return debug("attempt to set data (%s) while focus doesn't exist.")
 			end
 
+			-- insert to 'rawData' instead of 'data'
+			-- This will make sure __index is always called in 'data
 			local oldValue = rawData[key]
 			rawset(rawData, key, value)
 
 			-- Call event listeners if property has event
 			if not rawData.init and events[key] then
 				if key ~= "auraUpdate" then
+					-- Only call event if value has actually changed
 					if oldValue == value then return end
 				end
+
+				-- special case for data.unit
 				if key == "unit" and not value then return end
 
+				-- Throttle events to run only every 0.1s+
+				-- (Health/aura events can sometimes be triggered quite frequently)
 				local getTime = GetTime()
 				local last = rawData.eventsThrottle[key]
 				if last then
@@ -104,6 +127,7 @@ do
 				end
 				rawData.eventsThrottle[key] = getTime
 
+				-- Trigger all event listeners
 				CallHooks(events[key], rawData.unit)
 			end
 		end
@@ -115,20 +139,17 @@ do
 	local ClearBuffs = FSPELLCASTINGCOREClearBuffs
 	local NewBuff = FSPELLCASTINGCORENewBuff
 	local GetLastAura = FSPELLCASTINGCOREGetLastBuffInfo
+
 	local UnitBuff, UnitDebuff = UnitBuff, UnitDebuff
 
-	local FocusDataScantip = CreateFrame("GameTooltip", "FocusDataScantip", nil, "GameTooltipTemplate")
-	FocusDataScantip:SetOwner(UIParent, "ANCHOR_NONE")
-	FocusDataScantip:SetFrameStrata("TOOLTIP")
+	local scantip = CreateFrame("GameTooltip", "FocusDataScantip", nil, "GameTooltipTemplate")
+	scantip:SetOwner(UIParent, "ANCHOR_NONE")
+	scantip:SetFrameStrata("TOOLTIP")
 
-	local scantip = _G["FocusDataScantip"]
 	local scantipTextLeft1 = _G["FocusDataScantipTextLeft1"]
 	local scantipTextRight1 = _G["FocusDataScantipTextRight1"]
 
-	--[[local prevTexture = ""
-	local prevAmount = 0
-	local prevRan = false]]
-
+	-- Store buff into spellcastingcore db
 	local function SyncBuff(unit, i, texture, stack, debuffType, isDebuff)
 		scantip:ClearLines()
 		scantipTextRight1:SetText(nil) -- ClearLines hides right text instead of clearing it
@@ -147,7 +168,6 @@ do
 			end
 
 			NewBuff(focusTargetName, name, texture, isDebuff, debuffType, stack)
-			--prevTexture = texture
 		end
 	end
 
@@ -163,6 +183,7 @@ do
 		return true
 	end]]
 
+	-- scan focus unitID for any auras
 	function SetFocusAuras(unit) --local
 		--if not HasAurasChanged() then return end
 
@@ -187,7 +208,6 @@ do
 			SyncBuff(unit, i, texture, stack, debuffType, true)
 		end
 
-		--prevAmount = GetLastAura(focusTargetName)
 		CallHooks("UNIT_AURA")
 	end
 end
@@ -269,6 +289,7 @@ local function SetFocusInfo(unit, resetRefresh)
 		rawData.refreshed = nil
 	end
 
+	-- Run all code below only every ~4s
 	if rawData.refreshed then
 		if (getTime - rawData.refreshed) < 4 then
 			return true
@@ -278,7 +299,6 @@ local function SetFocusInfo(unit, resetRefresh)
 	data.unitIsPartyLeader = UnitIsPartyLeader(unit)
 	data.unitClassification = UnitClassification(unit)
 
-	-- Ran every ~4s while unit is targeted
 	rawData.playerCanAttack = UnitCanAttack("player", unit)
 	rawData.unitCanAttack = UnitCanAttack(unit, "player")
 	rawData.unitIsEnemy = rawData.playerCanAttack == 1 and rawData.unitCanAttack == 1 and 1 -- UnitIsEnemy() does not count neutral targets
@@ -306,6 +326,9 @@ do
 
 	local raidMemberIndex = 1
 
+	-- Scan every party/raid member found and check if unitid "partyX"
+	-- or "partyXtarget" == focus. We can then use this unitid to update focus data
+	-- in "real time"
 	function PartyScanner() --local
 		local groupType = UnitInRaid("player") and "raid" or "party"
 		local members = groupType == "raid" and GetNumRaidMembers() or GetNumPartyMembers()
@@ -318,9 +341,11 @@ do
 			if SetFocusInfo(unit, true) then
 				raidMemberIndex = 1
 				partyUnit = unit -- cache unit id
+				debug("partyUnit = %s", unit)
 			elseif SetFocusInfo(unitPet, true) then
 				raidMemberIndex = 1
 				partyUnit = unitPet
+				debug("partyUnit = %s", unitPet)
 			else
 				partyUnit = nil
 				-- Scan 1 unitID every frame instead of all at once
@@ -607,7 +632,7 @@ end
 -- @treturn number g
 -- @treturn number b
 function Focus:GetReactionColors()
-	if not self:FocusExists() then return error("no focus sat.") end
+	if not self:FocusExists() then return end
 	local r, g, b = 0, 0, 1
 
 	if rawData.unitCanAttack == 1 then
@@ -698,7 +723,7 @@ do
 
 		local callbacks = hookEvents[event]
 		if callbacks then
-			--if not recursive then print(event) end
+			debug("CallHooks(%s)", event)
 			for i = 1, tgetn(callbacks) do
 				callbacks[i](event, arg1, arg2, arg3, arg4)
 			end
@@ -715,17 +740,17 @@ do
 	end
 
 	local EventHandler = function()
+		-- Run only events for focus
 		if strfind(event, "UNIT_") or event == "PLAYER_FLAGS_CHANGED"
-		or event == "PLAYER_AURAS_CHANGED" or strfind(event, "PARTY_") then
-			-- Run only events for focus
-			if not Focus:UnitIsFocus(arg1 or "player") then return end
+			or event == "PLAYER_AURAS_CHANGED" or strfind(event, "PARTY_") then
+				if not Focus:UnitIsFocus(arg1 or "player") then return end
 		end
 
+		-- Combine into 1 single event
 		if event == "UNIT_DISPLAYPOWER" or event == "UNIT_HEALTH" or event == "UNIT_MANA"
-		or event == "UNIT_RAGE" or event == "UNIT_FOCUS" or event == "UNIT_ENERGY" then
-			-- Combine into 1 single event
-			--return events:UNIT_HEALTH_OR_POWER(event, arg1)
-			return SetFocusHealth(arg1)
+			or event == "UNIT_RAGE" or event == "UNIT_FOCUS" or event == "UNIT_ENERGY" then
+				--return events:UNIT_HEALTH_OR_POWER(event, arg1)
+				return SetFocusHealth(arg1)
 		end
 
 		if events[event] then
@@ -783,6 +808,7 @@ do
 
 		local i = tgetn(hookEvents[eventName]) + 1
 		hookEvents[eventName][i] = callback
+		debug("registered event callback for %s (%d)", eventName, i)
 		return i
 	end
 
@@ -796,6 +822,7 @@ do
 
 		if hookEvents[eventName] and hookEvents[eventName][eventID] then
 			table.remove(hookEvents[eventName], eventID)
+			debug("removed event callback for %s (%d)", eventName, eventID)
 		else
 			error("Invalid event name or id.")
 		end
