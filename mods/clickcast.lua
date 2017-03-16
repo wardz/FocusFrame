@@ -15,8 +15,7 @@ Loader:Register("LunaUnitFrames", function(Focus)
     end
 end)
 
--- pfUI clickcast
-Loader:Register("pfUI", function(Focus)
+--[[Loader:Register("pfUI", function(Focus)
     local orig_pfcast = SlashCmdList.PFCAST
 
     SlashCmdList.PFCAST = function(arg1, arg2)
@@ -25,7 +24,7 @@ Loader:Register("pfUI", function(Focus)
         if arg1 and strfind(frame:GetName() or "", "FocusFrame") then
             Focus:Call(CastSpellByName, arg1)
         else
-            orig_pfcast(arg1, arg2)
+            orig_PFCAST(arg1, arg2)
         end
     end
-end)
+end)]]
