@@ -33,7 +33,7 @@ local debug
 --------------------------------------
 
 do
-	local showDebug = true
+	local showDebug = false
 	local showDebugEvents = false
 
 	function debug(str, arg1, arg2, arg3)
