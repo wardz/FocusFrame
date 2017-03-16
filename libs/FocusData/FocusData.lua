@@ -18,8 +18,8 @@ local rawData
 local data
 
 -- Upvalues
-local GetTime, next, strfind, UnitName, TargetLastTarget, TargetByName, strlower, type, pcall, tgetn =
-	  GetTime, next, strfind, UnitName, TargetLastTarget, TargetByName, strlower, type, pcall, table.getn
+local GetTime, next, strfind, UnitName, TargetLastTarget, TargetByName, UnitIsUnit, strlower, type, pcall, tgetn =
+	  GetTime, next, strfind, UnitName, TargetLastTarget, TargetByName, UnitIsUnit, strlower, type, pcall, table.getn
 
 -- Functions
 local NameplateScanner
@@ -464,6 +464,11 @@ function Focus:TargetFocus(name, setFocusName)
 
 			if UnitIsDead("target") == 1 or UnitIsUnit("target", "player") then
 				TargetByName(name or focusTargetName, true)
+			end
+
+			if UnitIsUnit("target", "player") then
+				self.needRetarget = true
+				self:TargetPrevious()
 			end
 		else
 			TargetByName(name or focusTargetName, true)
