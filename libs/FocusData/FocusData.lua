@@ -64,6 +64,7 @@ do
 		unit                = "FOCUS_UNITID_EXISTS",
 		unitIsPVP           = "UNIT_FACTION",
 		unitIsTapped        = "UNIT_FACTION",
+		unitReaction		= "UNIT_FACTION",
 		unitIsTappedByPlayer = "UNIT_FACTION",
 	}
 
@@ -277,13 +278,11 @@ local function SetFocusInfo(unit, resetRefresh)
 	data.unitIsPartyLeader = UnitIsPartyLeader(unit)
 	data.unitClassification = UnitClassification(unit)
 
-	-- Data without event triggers.
 	-- Ran every ~4s while unit is targeted
 	rawData.playerCanAttack = UnitCanAttack("player", unit)
 	rawData.unitCanAttack = UnitCanAttack(unit, "player")
 	rawData.unitIsEnemy = rawData.playerCanAttack == 1 and rawData.unitCanAttack == 1 and 1 -- UnitIsEnemy() does not count neutral targets
 	rawData.unitIsFriend = UnitIsFriend(unit, "player")
-	rawData.unitReaction = UnitReaction(unit, "player")
 	rawData.unitIsConnected = UnitIsConnected(unit)
 	rawData.unitFactionGroup = UnitFactionGroup(unit)
 	rawData.unitClass = UnitClass(unit)
@@ -293,6 +292,7 @@ local function SetFocusInfo(unit, resetRefresh)
 	rawData.unitIsCorpse = UnitIsCorpse(unit)
 	rawData.unitIsPVPFreeForAll = UnitIsPVPFreeForAll(unit)
 	rawData.unitPlayerControlled = UnitPlayerControlled(unit)
+	data.unitReaction = UnitReaction(unit, "player")
 	rawData.refreshed = getTime
 	-- More data can be sat using Focus:SetData() in FOCUS_SET event
 
@@ -831,6 +831,15 @@ do
 		CallHooks("UNIT_PORTRAIT_UPDATE", unit)
 	end
 
+	function events:UNIT_FACTION(event, unit)
+		-- Mindcontrolled, etc
+		rawData.playerCanAttack = UnitCanAttack("player", unit)
+		rawData.unitCanAttack = UnitCanAttack(unit, "player")
+		rawData.unitReaction = UnitReaction(unit, "player")
+		rawData.unitPlayerControlled = UnitPlayerControlled(unit)
+		CallHooks("UNIT_FACTION", unit)
+	end
+
 	function events:CHAT_MSG_COMBAT_HOSTILE_DEATH(event, arg1)
 		if not Focus:FocusExists() then return end
 
@@ -873,6 +882,7 @@ do
 --	events:RegisterEvent("RAID_TARGET_UPDATE")
 	events:RegisterEvent("UNIT_PORTRAIT_UPDATE")
 	events:RegisterEvent("UNIT_CLASSIFICATION_CHANGED")
+	events:RegisterEvent("UNIT_FACTION")
 	events:RegisterEvent("UNIT_HEALTH")
 	events:RegisterEvent("UNIT_LEVEL")
 	events:RegisterEvent("UNIT_AURA")
