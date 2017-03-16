@@ -6,6 +6,7 @@ local Focus = _G.FocusData
 local scantip = _G.FocusDataScantip
 local scantipTextLeft1 = _G.FocusDataScantipTextLeft1
 local strfind, strlower, gsub = strfind, strlower, gsub
+local SpellIsTargeting, SpellStopTargeting, GetCVar = SpellIsTargeting, SpellStopTargeting, GetCVar
 
 SLASH_FOCUS1 = "/focus"
 SLASH_MFOCUS1 = "/mfocus"
@@ -63,6 +64,10 @@ SlashCmdList.FCAST = function(spell)
 			SetCVar("AutoSelfCast", "0")
 			Focus:Call(CastSpellByName, spell)
 			SetCVar("AutoSelfCast", sc)
+
+			if SpellIsTargeting() then
+				SpellStopTargeting()
+			end
 		end
 	end
 end
