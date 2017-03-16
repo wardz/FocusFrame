@@ -258,6 +258,20 @@ do
 	end
 end
 
+local function IsHunterWithSamePetName(unit)
+	if rawData.unitClass == "HUNTER" or rawData.unitClass == "WARRIOR" then
+		if rawData.unitName == UnitName(unit) then
+			if rawData.unitIsPlayer ~= UnitIsPlayer(unit) then
+				rawData.isHunterWithSamePetName = true
+				return true
+			end
+		end
+	end
+
+	--rawData.isHunterWithSamePetName = false
+	return false
+end
+
 local function SetFocusHealth(unit, isDead)
 	data.health = isDead and 0 or UnitHealth(unit)
 	data.maxHealth = isDead and 0 or UnitHealthMax(unit)
@@ -265,20 +279,10 @@ local function SetFocusHealth(unit, isDead)
 	data.maxPower = isDead and 0 or UnitManaMax(unit)
 
 	if not isDead then
-		data.powerType = UnitPowerType(unit)
-	end
-end
-
-local function IsHunterWithSamePetName(unit)
-	if rawData.unitClass == "HUNTER" or rawData.unitClass == "WARRIOR" then
-		if rawData.unitName == UnitName(unit) then
-			if rawData.unitIsPlayer ~= UnitIsPlayer(unit) then
-				return true
-			end
+		if not rawData.isHunterWithSamePetName then
+			data.powerType = UnitPowerType(unit)
 		end
 	end
-
-	return false
 end
 
 local function SetFocusInfo(unit, resetRefresh)
@@ -446,6 +450,23 @@ function Focus:Call(func, arg1, arg2, arg3, arg4) -- no vararg in this lua versi
 	end
 end
 
+-- @private
+function Focus:TargetWithFixes(name)
+	local _name = strsub(name or focusTargetName, 1, -2)
+	TargetByName(_name, false)
+	-- Case insensitive name will make the game target nearest enemy
+	-- instead of random
+
+	if UnitIsDead("target") == 1 or UnitIsUnit("target", "player") then
+		TargetByName(name or focusTargetName, true)
+	end
+
+	if UnitIsUnit("target", "player") then
+		self.needRetarget = true
+		self:TargetPrevious()
+	end
+end
+
 --- Target the focus.
 -- @tparam[opt=nil] string name
 -- @tparam[opt=false] bool setFocusName if true, sets focus name to UnitName("target")
@@ -457,21 +478,23 @@ function Focus:TargetFocus(name, setFocusName)
 	self.oldTarget = UnitName("target")
 	if not self.oldTarget or self.oldTarget ~= focusTargetName then
 		if rawData.unitIsPlayer ~= 1 then
-			local _name = strsub(name or focusTargetName, 1, -2)
-			TargetByName(_name, false)
-			-- Case insensitive name will make the game target nearest enemy
-			-- instead of random
+			self:TargetWithFixes(name)
+		else
+			if rawData.isHunterWithSamePetName then
+				-- Target nearest
+				self:TargetWithFixes(name)
 
-			if UnitIsDead("target") == 1 or UnitIsUnit("target", "player") then
+				if rawData.playerCanAttack and rawData.unitIsPlayer and not UnitIsPlayer("target") then
+					-- Attempt to target with facing requirement
+					TargetNearestEnemy()
+
+					--[[if UnitName("target") ~= rawData.unitName then
+						ClearTarget()
+					end]]
+				end
+			else
 				TargetByName(name or focusTargetName, true)
 			end
-
-			if UnitIsUnit("target", "player") then
-				self.needRetarget = true
-				self:TargetPrevious()
-			end
-		else
-			TargetByName(name or focusTargetName, true)
 		end
 
 		self.needRetarget = true
