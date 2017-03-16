@@ -378,6 +378,7 @@ local CastCraftPerform = function()
 		local m = fbcast and bcast or fcraft and craft or fperform and perform
 		local c = gsub(arg1, m, '%1')
 		local s = gsub(arg1, m, '%2')
+
 		newCast(c, s, false)
 
 	elseif fperform or fbperform or fperformOn then
@@ -547,19 +548,17 @@ local FadeRem = function()
 	return ffade or frem or fprem
 end
 
-local function DelayCastTimer(caster, spell)
+--[[local function DelayCastTimer(caster, spell)
 	if not caster or not spell then return end
-	local pushbackDelay = 0.3
+	local pushbackDelay = 0.5
 	local getTime = GetTime()
 
 	for k, v in pairs(casts) do
 		if v.caster == caster and v.spell == spell then
 			v.timeEnd = v.timeEnd + pushbackDelay
-
-			--v.nextTick = 
 		end
 	end
-end
+end]]
 
 local HitsCrits = function()
 	local hits = '(.+)\'s (.+) hits (.+) for (.+)' 					local fhits = strfind(arg1, hits)
@@ -569,6 +568,7 @@ local HitsCrits = function()
 	local phits = 'Your (.+) hits (.+) for (.+)' 					local fphits = strfind(arg1, phits)
 	local pcrits = 'Your (.+) crits (.+) for (.+)' 					local fpcrits = strfind(arg1, pcrits)
 	local pabsb = 'Your (.+) is absorbed by (.+).'					local fpabsb = strfind(arg1, pabsb)
+	--local yphits = 'You hit (.+) for (.+).'							local fyphits = strfind(arg1, yphits)
 
 	local channelDotRes = "(.+)'s (.+) was resisted by (.+)."		local fchannelDotRes = strfind(arg1, channelDotRes)
 	local pchannelDotRes = "(.+)'s (.+) was resisted."				local fpchannelDotRes = strfind(arg1, pchannelDotRes)
@@ -585,8 +585,8 @@ local HitsCrits = function()
 		-- instant spells that cancel casted ones
 		if FOCUS_INSTANT_SPELLCASTS_TO_TRACK[s] then
 			forceHideTableItem(casts, c, nil)
-		elseif not fabsb then
-			DelayCastTimer(t, s)
+		--elseif not fabsb then
+			--DelayCastTimer(t, s)
 		end
 
 		--if FOCUS_CHANNELED_SPELLCASTS_TO_TRACK[s] then
@@ -613,8 +613,8 @@ local HitsCrits = function()
 		-- interrupt dmg spell
 		if FOCUS_INTERRUPTS_TO_TRACK[s] then
 			forceHideTableItem(casts, t, nil)
-		elseif not fpabsb then
-			DelayCastTimer(t, s)
+		--elseif not fpabsb then
+		--	DelayCastTimer(t, s)
 		end
 
 		-- spells that refresh debuffs
@@ -655,9 +655,9 @@ local channelDot = function()
 		end
 
 		-- target
-		if IsArcaneMissiles(s) then
+		--[[if IsArcaneMissiles(s) then
 			DelayCastTimer(t, s)
-		end
+		end]]
 	end
 
 	-- channeling dmg spells on self (mind flay, life drain(?))
@@ -670,9 +670,9 @@ local channelDot = function()
 			newCast(c, s, true)
 		end
 
-		if IsArcaneMissiles(s) then
+		--[[if IsArcaneMissiles(s) then
 			DelayCastTimer(t, s)
-		end
+		end]]
 	end
 
 	-- drain mana
@@ -740,6 +740,7 @@ local combatlogParser = function()
 	local dSpell 	= 'CHAT_MSG_SPELL_(.+)'					local fdSpell 		= strfind(event, dSpell)
 	local death		= 'CHAT_MSG_COMBAT_(.+)_DEATH'			local fdeath 		= strfind(event, death)
 	local mEmote	= 'CHAT_MSG_MONSTER_EMOTE'				local fmEmote		= strfind(event, mEmote)
+	--print(event)
 
 	-- periodic damage/buff spells
 	if fpSpell then
