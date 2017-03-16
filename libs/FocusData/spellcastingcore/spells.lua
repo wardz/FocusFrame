@@ -234,7 +234,7 @@ FOCUS_SPELLCASTS_TO_TRACK = {
 	['Greater Heal']            = {['icon'] = [[Interface\Icons\Spell_holy_greaterheal]], 			['casttime'] = 2.5},
 	['Heal']                    = {['icon'] = [[Interface\Icons\Spell_holy_heal]], 					['casttime'] = 2.5},
 	['Holy Fire']               = {['icon'] = [[Interface\Icons\Spell_holy_searinglight]], 			['casttime'] = 3.5, ['type'] = 'dmg', ['school'] = 'holy', 	 ['class'] = 'PRIEST'},
-	['Lesser Heal']				= {['icon'] = [[Interface\Icons\Spell_holy_lesserheal]], 			['casttime'] = 1.5},
+	['Lesser Heal']				= {['icon'] = [[Interface\Icons\Spell_holy_lesserheal]], 			['casttime'] = 2.5},
 	['Mana Burn']               = {['icon'] = [[Interface\Icons\Spell_shadow_manaburn]], 			['casttime'] = 3, 	['type'] = 'dmg', ['school'] = 'shadow', ['class'] = 'PRIEST'},
 	['Mind Blast']              = {['icon'] = [[Interface\Icons\Spell_shadow_unholyfrenzy]], 		['casttime'] = 1.5, ['type'] = 'dmg', ['school'] = 'shadow', ['class'] = 'PRIEST'},
 	['Mind Control']            = {['icon'] = [[Interface\Icons\Spell_shadow_shadowworddominate]], 	['casttime'] = 3, 	['type'] = 'dmg', ['school'] = 'shadow', ['class'] = 'PRIEST'},
