@@ -270,7 +270,7 @@ local function SetFocusHealth(unit, isDead)
 end
 
 local function IsHunterWithSamePetName(unit)
-	if rawData.unitClass == "HUNTER" then
+	if rawData.unitClass == "HUNTER" or rawData.unitClass == "WARRIOR" then
 		if rawData.unitName == UnitName(unit) then
 			if rawData.unitIsPlayer ~= UnitIsPlayer(unit) then
 				return true
@@ -508,8 +508,9 @@ function Focus:SetFocus(name)
 
 	local isFocusChanged = Focus:FocusExists()
 	if isFocusChanged then
-		--self:ClearFocus()
-		rawData.unitIsPlayer = nil -- requierd for IsHunterWithSamePetName()
+		rawData.init = true -- prevent calling FOCUS_CLEAR here
+		self:ClearFocus()
+		rawData.init = nil
 	end
 	focusTargetName = name
 
