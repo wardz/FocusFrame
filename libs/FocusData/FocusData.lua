@@ -270,17 +270,9 @@ local function SetFocusHealth(unit, isDead)
 end
 
 local function IsHunterWithSamePetName(unit)
-	if rawData.unitClass ~= "HUNTER" then return end
-
-	if not rawData.unitCreatureType then
-		rawData.unitCreatureType = UnitCreatureType(unit)
-		return
-	end
-
-	local creatureType = rawData.unitCreatureType
-	if creatureType == L.HUMANOID then
-		if creatureType ~= UnitCreatureType(unit) then
-			if rawData.unitName == UnitName(unit) then
+	if rawData.unitClass == "HUNTER" then
+		if rawData.unitName == UnitName(unit) then
+			if rawData.unitIsPlayer ~= UnitIsPlayer(unit) then
 				return true
 			end
 		end
@@ -294,7 +286,7 @@ local function SetFocusInfo(unit, resetRefresh)
 
 	if rawData.unitClass then
 		if IsHunterWithSamePetName(unit) then
-			return
+			return false
 		end
 	end
 
@@ -470,7 +462,7 @@ function Focus:TargetFocus(name, setFocusName)
 			-- Case insensitive name will make the game target nearest enemy
 			-- instead of random
 
-			if UnitIsDead("target") == 1 then
+			if UnitIsDead("target") == 1 or UnitIsUnit("target", "player") then
 				TargetByName(name or focusTargetName, true)
 			end
 		else
@@ -515,6 +507,10 @@ function Focus:SetFocus(name)
 	end
 
 	local isFocusChanged = Focus:FocusExists()
+	if isFocusChanged then
+		--self:ClearFocus()
+		rawData.unitIsPlayer = nil -- requierd for IsHunterWithSamePetName()
+	end
 	focusTargetName = name
 
 	if focusTargetName then
