@@ -13,6 +13,7 @@ buff.__index 		= buff
 buffQueue.__index	= buffQueue
 
 local Focus
+local L = getfenv(0).FocusData_Locale
 local playerName = UnitName'player'
 
 -- Upvalues
@@ -149,6 +150,11 @@ local forceHideTableItem = function(tab, caster, spell, debuffsOnly)
 		i = i + 1
 	end
 
+	--[[if spell == L["Feign Death"] then
+		print("clear")
+		Focus:ClearData("feignDeath")
+	end]]
+
 	if tab == buffList and Focus:UnitIsFocus(caster, true) then
 		-- triggers UNIT_AURA for focus
 		Focus:SetData("auraUpdate", 1)
@@ -188,7 +194,7 @@ local tableMaintenance = function(reset)
 	if not CURR_FOCUS_TARGET then
 		-- Delete ALL buffs every X sec when there is no focus target
 		-- This is needed to remove buffs that fail to expire due to no combat event found
-		if getTime - lastCleared > 30 then
+		if getTime - lastCleared > 60 then
 			if tgetn(buffList) >= 1 then
 				if not UnitAffectingCombat("player") then
 					buffList = {}
@@ -311,6 +317,10 @@ local function newbuff(tar, b, s, castOn, texture, debuff, magictype, debuffStac
 
 	if not noEvent then
 		if Focus:UnitIsFocus(tar, true) then
+			--[[if texture == "Interface\Icons\Ability_Rogue_FeignDeath" then
+				print("set")
+				Focus:SetData("feignDeath", 1)
+			end]]
 			-- triggers UNIT_AURA for focus
 			Focus:SetData("auraUpdate", 1)
 		end
@@ -352,16 +362,16 @@ local function processQueuedBuff(tar, b)
 end
 
 local CastCraftPerform = function()
-	-- TODO add localization & put into loop
-	local pcast 	= 'You cast (.+).'
-	local cast		= '(.+) casts (.+).'
-	local bcast 	= '(.+) begins to cast (.+).'
-	local craft 	= '(.+) -> (.+).'
-	local perform 	= '(.+) performs (.+).'
-	local bperform 	= '(.+) begins to perform (.+).'
-	local performOn = '(.+) performs (.+) on (.+).'
-	local pcastFin 	= 'You cast (.+) on (.+).'
-	local castFin 	= '(.+) casts (.+) on (.+).'
+	-- TODO loop
+	local pcast 	= L['You cast (.+).']
+	local cast		= L['(.+) casts (.+).']
+	local bcast 	= L['(.+) begins to cast (.+).']
+	local craft 	= L['(.+) -> (.+).']
+	local perform 	= L['(.+) performs (.+).']
+	local bperform 	= L['(.+) begins to perform (.+).']
+	local performOn = L['(.+) performs (.+) on (.+).']
+	local pcastFin 	= L['You cast (.+) on (.+).']
+	local castFin 	= L['(.+) casts (.+) on (.+).']
 
 	local fpcast = strfind(arg1, pcast)
 	local fcast = strfind(arg1, cast)
@@ -404,7 +414,7 @@ local CastCraftPerform = function()
 end
 
 local processUniqueSpell = function()
-	local vanish = '(.+) performs Vanish'
+	local vanish = L['(.+) performs Vanish']
 	local fvanish = strfind(arg1, vanish)
 
 	if fvanish then
@@ -419,8 +429,8 @@ local processUniqueSpell = function()
 end
 
 local DirectInterrupt = function()
-	local pintrr 	= 'You interrupt (.+)\'s (.+).'			local fpintrr  	= strfind(arg1, pintrr)
-	local intrr 	= '(.+) interrupts (.+)\'s (.+).'		local fintrr  	= strfind(arg1, pintrr)
+	local pintrr 	= L['You interrupt (.+)\'s (.+).']			local fpintrr  	= strfind(arg1, pintrr)
+	local intrr 	= L['(.+) interrupts (.+)\'s (.+).']		local fintrr  	= strfind(arg1, pintrr)
 
 	if fpintrr  or fintrr then
 		local m = fpintrr and pintrr or intrr
@@ -434,10 +444,10 @@ local DirectInterrupt = function()
 end
 
 local GainAfflict = function()
-	local gain 		= '(.+) gains (.+).' 								local fgain = strfind(arg1, gain)
-	local pgain 	= 'You gain (.+).'									local fpgain = strfind(arg1, pgain)
-	local afflict 	= '(.+) is afflicted by (.+).' 						local fafflict = strfind(arg1, afflict)
-	local pafflict 	= 'You are afflicted by (.+).' 						local fpafflict = strfind(arg1, pafflict)
+	local gain 		= L['(.+) gains (.+).']								local fgain = strfind(arg1, gain)
+	local pgain 	= L['You gain (.+).']								local fpgain = strfind(arg1, pgain)
+	local afflict 	= L['(.+) is afflicted by (.+).'] 					local fafflict = strfind(arg1, afflict)
+	local pafflict 	= L['You are afflicted by (.+).'] 					local fpafflict = strfind(arg1, pafflict)
 
 	-- start channeling based on buffs (evocation, first aid, ..)
 	if fgain or fpgain then
@@ -506,9 +516,9 @@ local GainAfflict = function()
 end
 
 local FadeRem = function()
-	local fade 		= '(.+) fades from (.+).'							local ffade = strfind(arg1, fade)
-	local rem 		= '(.+)\'s (.+) is removed'							local frem = strfind(arg1, rem)
-	local prem 		= 'Your (.+) is removed'							local fprem = strfind(arg1, prem)
+	local fade 		= L['(.+) fades from (.+).']						local ffade = strfind(arg1, fade)
+	local rem 		= L['(.+)\'s (.+) is removed']						local frem = strfind(arg1, rem)
+	local prem 		= L['Your (.+) is removed']							local fprem = strfind(arg1, prem)
 
 	-- end channeling based on buffs (evocation ..)
 	if ffade then
@@ -516,7 +526,7 @@ local FadeRem = function()
 		local c = gsub(arg1, m, '%2')
 		local s = gsub(arg1, m, '%1')
 
-		c = c == 'you' and playerName or c
+		c = c == L['you'] and playerName or c
 
 		-- buffs/debuffs to be displayed
 		--if FOCUS_BUFFS_TO_TRACK[s] then
@@ -561,17 +571,17 @@ end
 end]]
 
 local HitsCrits = function()
-	local hits = '(.+)\'s (.+) hits (.+) for (.+)' 					local fhits = strfind(arg1, hits)
-	local crits = '(.+)\'s (.+) crits (.+) for (.+)' 				local fcrits = strfind(arg1, crits)
-	local absb = '(.+)\'s (.+) is absorbed by (.+).'				local fabsb = strfind(arg1, absb)
+	local hits = L['(.+)\'s (.+) hits (.+) for (.+)'] 					local fhits = strfind(arg1, hits)
+	local crits = L['(.+)\'s (.+) crits (.+) for (.+)'] 				local fcrits = strfind(arg1, crits)
+	local absb = L['(.+)\'s (.+) is absorbed by (.+).']					local fabsb = strfind(arg1, absb)
 
-	local phits = 'Your (.+) hits (.+) for (.+)' 					local fphits = strfind(arg1, phits)
-	local pcrits = 'Your (.+) crits (.+) for (.+)' 					local fpcrits = strfind(arg1, pcrits)
-	local pabsb = 'Your (.+) is absorbed by (.+).'					local fpabsb = strfind(arg1, pabsb)
+	local phits = L['Your (.+) hits (.+) for (.+)'] 					local fphits = strfind(arg1, phits)
+	local pcrits = L['Your (.+) crits (.+) for (.+)'] 					local fpcrits = strfind(arg1, pcrits)
+	local pabsb = L['Your (.+) is absorbed by (.+).']					local fpabsb = strfind(arg1, pabsb)
 	--local yphits = 'You hit (.+) for (.+).'							local fyphits = strfind(arg1, yphits)
 
-	local channelDotRes = "(.+)'s (.+) was resisted by (.+)."		local fchannelDotRes = strfind(arg1, channelDotRes)
-	local pchannelDotRes = "(.+)'s (.+) was resisted."				local fpchannelDotRes = strfind(arg1, pchannelDotRes)
+	local channelDotRes = L["(.+)'s (.+) was resisted by (.+)."]		local fchannelDotRes = strfind(arg1, channelDotRes)
+	local pchannelDotRes = L["(.+)'s (.+) was resisted."]				local fpchannelDotRes = strfind(arg1, pchannelDotRes)
 
 	-- other hits/crits
 	if fhits or fcrits or fabsb then
@@ -580,7 +590,7 @@ local HitsCrits = function()
 		local s = gsub(arg1, m, '%2')
 		local t = gsub(arg1, m, '%3')
 
-		t = t == 'you' and playerName or t
+		t = t == L['you'] and playerName or t
 
 		-- instant spells that cancel casted ones
 		if FOCUS_INSTANT_SPELLCASTS_TO_TRACK[s] then
@@ -636,11 +646,11 @@ end
 end]]
 
 local channelDot = function()
-	local channelDot 	= "(.+) suffers (.+) from (.+)'s (.+)."		local fchannelDot = strfind(arg1, channelDot)
-	local channelpDot 	= '(.+) suffers (.+) from your (.+).'		local fchannelpDot	= strfind(arg1, channelpDot)
-	local pchannelDot 	= "You suffer (.+) from (.+)'s (.+)."		local fpchannelDot = strfind(arg1, pchannelDot)
+	local channelDot 	= L["(.+) suffers (.+) from (.+)'s (.+)."]		local fchannelDot = strfind(arg1, channelDot)
+	local channelpDot 	= L['(.+) suffers (.+) from your (.+).']		local fchannelpDot	= strfind(arg1, channelpDot)
+	local pchannelDot 	= L["You suffer (.+) from (.+)'s (.+)."]		local fpchannelDot = strfind(arg1, pchannelDot)
 
-	local MDrain = '(.+)\'s (.+) drains (.+) Mana from' 			local fMDrain = strfind(arg1, MDrain)
+	local MDrain = L['(.+)\'s (.+) drains (.+) Mana from'] 			local fMDrain = strfind(arg1, MDrain)
 
 	-- channeling dmg spells on other (mind flay, life drain(?))
 	if fchannelDot then
@@ -690,10 +700,10 @@ local channelDot = function()
 end
 
 local playerDeath = function()
-	local pdie 		= 'You die.'					local fpdie		= strfind(arg1, pdie)
-	local dies		= '(.+) dies.'					local fdies		= strfind(arg1, dies)
-	local slain 	= '(.+) is slain by (.+).'		local fslain 	= strfind(arg1, slain)
-	local pslain 	= 'You have slain (.+).'		local fpslain 	= strfind(arg1, pslain)
+	local pdie 		= L['You die.']					local fpdie		= strfind(arg1, pdie)
+	local dies		= L['(.+) dies.']				local fdies		= strfind(arg1, dies)
+	local slain 	= L['(.+) is slain by (.+).']	local fslain 	= strfind(arg1, slain)
+	local pslain 	= L['You have slain (.+).']		local fpslain 	= strfind(arg1, pslain)
 
 	if fpdie or fdies or fslain or fpslain then
 		local m = fdies and dies or fslain and slain or fpslain and pslain
@@ -713,7 +723,7 @@ local playerDeath = function()
 end
 
 local fear = function()
-	local fear = strfind(arg1, "(.+) attempts to run away in fear!")
+	local fear = strfind(arg1, L["(.+) attempts to run away in fear!"])
 
 	if fear then
 		local target = arg2

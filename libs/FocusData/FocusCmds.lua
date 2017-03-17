@@ -115,6 +115,8 @@ SlashCmdList.FITEM = function(msg)
 				end
 			end
 		end
+	else
+		Focus:ShowError()
 	end
 end
 

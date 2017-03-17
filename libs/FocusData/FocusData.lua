@@ -19,30 +19,27 @@ local data
 local focusPlate
 
 -- Upvalues
-local GetTime, next, strfind, UnitName, TargetLastTarget, TargetByName, UnitIsUnit, strlower, type, pcall, tgetn =
-	  GetTime, next, strfind, UnitName, TargetLastTarget, TargetByName, UnitIsUnit, strlower, type, pcall, table.getn
+local GetTime, next, strfind, UnitName, UnitIsPlayer, TargetLastTarget, TargetByName, UnitIsUnit, strlower, type, pcall, tgetn =
+	  GetTime, next, strfind, UnitName, UnitIsPlayer, TargetLastTarget, TargetByName, UnitIsUnit, strlower, type, pcall, table.getn
 
 -- Functions
-local NameplateScanner
+local FocusPlateScanner
 local PartyScanner
 local SetFocusAuras
 local CallHooks
 local SetNameplateFocusID
-local debug
 
 --------------------------------------
 -- Core
 --------------------------------------
 
-do
-	local showDebug = false
-	local showDebugEvents = false
+local showDebug = true
+local showDebugEvents = false
 
-	function debug(str, arg1, arg2, arg3) --local
-		if showDebug then
-			if not showDebugEvents and strfind(str, "CallHooks") or strfind(str, "event callback") then return end
-			print(string.format(str, arg1, arg2, arg3))
-		end
+local function debug(str, arg1, arg2, arg3) --local
+	if showDebug then
+		if not showDebugEvents and strfind(str, "CallHooks") or strfind(str, "event callback") then return end
+		print(string.format(str, arg1, arg2, arg3))
 	end
 end
 
@@ -111,7 +108,7 @@ do
 			rawset(rawData, key, value)	
 
 			-- Call event listeners if property has event
-			if not rawData.init and events[key] then
+			if not rawData.pauseEvents and events[key] then
 				if key ~= "auraUpdate" then
 					-- Only call event if value has actually changed
 					if oldValue == value then return end
@@ -236,12 +233,12 @@ do
 	function SetNameplateFocusID() -- local
 		if not UnitExists("target") then
 			-- fkin hunters...
-			if rawData.isHunterWithSamePetName then
-				if focusPlate.isFocusPlate and not focusPlate:IsVisible() then
-					focusPlate:GetRegions():SetVertexColor(1,1,1)
+			--if rawData.isHunterWithSamePetName then
+				if focusPlate and focusPlate.isFocusPlate and not focusPlate:IsVisible() then
+					if showDebug then focusPlate:GetRegions():SetVertexColor(1, 1, 1) end
 					focusPlate.isFocusPlate = false
 					return
-				end
+				--end
 			end
 	
 			--return focusPlate
@@ -251,21 +248,23 @@ do
 
 		for k, plate in ipairs(childs) do
 			local overlay, _, name = plate:GetRegions()
+				if IsPlate(overlay) then
 
-			if plate.isFocusPlate and not plate:IsVisible() then
-				overlay:SetVertexColor(1,1,1)
-				plate.isFocusPlate = false
-				return
-			end
+				if plate.isFocusPlate and not plate:IsVisible() or name:GetText() ~= focusTargetName then
+					if showDebug then overlay:SetVertexColor(1, 1, 1) end
+					plate.isFocusPlate = false
+					return
+				end
 
-			if plate:GetAlpha() == 1 and IsPlate(overlay) then
-				if name:GetText() == focusTargetName then
-					if UnitIsPlayer("target") == rawData.unitIsPlayer then
-						overlay:SetVertexColor(0,1,1)
-						plate.isFocusPlate = true
-						focusPlate = childs[k]
+				if plate:GetAlpha() == 1 then
+					if name:GetText() == focusTargetName then
+						if UnitIsPlayer("target") == rawData.unitIsPlayer then
+							if showDebug then overlay:SetVertexColor(0, 1, 1) end
+							plate.isFocusPlate = true
+							focusPlate = childs[k]
+						end
+						--return focusPlate
 					end
-					--return focusPlate
 				end
 			end
 		end
@@ -319,6 +318,10 @@ local function SetFocusHealth(unit, isDead, hasHunterPetFixRan)
 			if IsHunterWithSamePetName(unit) then return end
 		end
 	end
+
+	--[[if isDead and rawData.feignDeath then
+		return
+	end]]
 	
 	data.health = isDead and 0 or UnitHealth(unit)
 	data.maxHealth = isDead and 0 or UnitHealthMax(unit)
@@ -498,6 +501,7 @@ end
 function Focus:TargetWithFixes(name)
 	local unit = rawData.unit
 	if unit and rawData.unitIsPlayer then
+		-- target using unitID if available
 		if UnitExists(unit) and rawData.unitIsPlayer == UnitIsPlayer(unit) --[[pet with same name?]] then
 			if self:UnitIsFocus(unit) then
 				TargetUnit(unit)
@@ -590,17 +594,17 @@ function Focus:SetFocus(name)
 
 	local isFocusChanged = Focus:FocusExists()
 	if isFocusChanged then
-		rawData.init = true -- prevent calling FOCUS_CLEAR here
+		rawData.pauseEvents = true -- prevent calling FOCUS_CLEAR here
 		--self:PauseEvents():ClearFocus():StartEvents()
 		self:ClearFocus()
-		rawData.init = nil
+		rawData.pauseEvents = nil
 	end
 	focusTargetName = name
 
 	if focusTargetName then
-		rawData.init = true -- prevent calling events, FOCUS_SET will handle that here
+		rawData.pauseEvents = true -- prevent calling events, FOCUS_SET will handle that here
 		self:TargetFocus(name, true)
-		rawData.init = nil
+		rawData.pauseEvents = nil
 
 		if self:FocusExists() then
 			CallHooks("FOCUS_SET", "target")
@@ -827,11 +831,11 @@ do
 
 	-- Call all eventlisteners for given event.
 	function CallHooks(event, arg1, arg2, arg3, arg4, recursive) --local
-		if rawData.init then return end
+		if rawData.pauseEvents then return end
 
 		local callbacks = hookEvents[event]
 		if callbacks then
-			debug("CallHooks(%s)", event)
+			debug("CallHooks(%s, %s)", event, arg1 or "")
 			for i = 1, tgetn(callbacks) do
 				callbacks[i](event, arg1, arg2, arg3, arg4)
 			end
