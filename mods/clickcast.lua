@@ -5,6 +5,8 @@ Loader:Register("LunaUnitFrames", function(Focus)
     local orig_lufmo = SlashCmdList.LUFMO
     local L = LunaUF.L
 
+    if not L or not LunaUF.Mouseover then return end
+
     SlashCmdList.LUFMO = function(arg1, arg2)
         local frame = GetMouseFocus()
 
