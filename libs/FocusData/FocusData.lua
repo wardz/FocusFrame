@@ -23,11 +23,10 @@ local GetTime, next, strfind, UnitName, UnitIsPlayer, TargetLastTarget, TargetBy
 	  GetTime, next, strfind, UnitName, UnitIsPlayer, TargetLastTarget, TargetByName, UnitIsUnit, strlower, type, pcall, table.getn
 
 -- Functions
-local FocusPlateScanner
+local NameplateScanner
 local PartyScanner
 local SetFocusAuras
 local CallHooks
-local SetNameplateFocusID
 
 --------------------------------------
 -- Core
@@ -230,69 +229,28 @@ do
 		return true
 	end
 
-	function SetNameplateFocusID() -- local
-		if not UnitExists("target") then
-			-- fkin hunters...
-			--if rawData.isHunterWithSamePetName then
-				if focusPlate and focusPlate.isFocusPlate and not focusPlate:IsVisible() then
-					if showDebug then focusPlate:GetRegions():SetVertexColor(1, 1, 1) end
-					focusPlate.isFocusPlate = false
-					return
-				--end
-			end
-	
-			--return focusPlate
-		end
-
-		local childs = { WorldFrame:GetChildren() }
-
-		for k, plate in ipairs(childs) do
-			local overlay, _, name = plate:GetRegions()
-				if IsPlate(overlay) then
-
-				if plate.isFocusPlate and not plate:IsVisible() or name:GetText() ~= focusTargetName then
-					if showDebug then overlay:SetVertexColor(1, 1, 1) end
-					plate.isFocusPlate = false
-					return
-				end
-
-				if plate:GetAlpha() == 1 then
-					if name:GetText() == focusTargetName then
-						if UnitIsPlayer("target") == rawData.unitIsPlayer then
-							if showDebug then overlay:SetVertexColor(0, 1, 1) end
-							plate.isFocusPlate = true
-							focusPlate = childs[k]
-						end
-						--return focusPlate
-					end
-				end
-			end
-		end
-
-		return focusPlate
-	end
-
-	function FocusPlateScanner(plate) -- local
+	function NameplateScanner() -- local
 		--if rawData.unitIsEnemy and GetCVar("nameplateShowEnemies") == "1" then return end
 		--if rawData.unitIsFriend and GetCVar("nameplateShowFriends") == "1" then return end
-		if not focusTargetName then return end
-		if not plate then return end
 
-		local overlay, _, name, level, _, raidIcon = plate:GetRegions()
+		for _, plate in ipairs({ WorldFrame:GetChildren() }) do
+			local overlay, _, name, level, _, raidIcon = plate:GetRegions()
 
-		if plate:IsVisible() then
-			--if rawData.isHunterWithSamePetName then return end
+			if plate:IsVisible() and IsPlate(overlay) then
+				if name:GetText() == focusTargetName then
+					if raidIcon and raidIcon:IsVisible() then
+						local ux, uy = raidIcon:GetTexCoord()
+						data.raidIcon = RaidIconCoordinate[ux][uy]
+					end
 
-			if raidIcon and raidIcon:IsVisible() then
-				local ux, uy = raidIcon:GetTexCoord()
-				data.raidIcon = RaidIconCoordinate[ux][uy]
-			end
+					data.health = plate:GetChildren():GetValue()
 
-			data.health = plate:GetChildren():GetValue()
-
-			local lvl = level:GetText()
-			if lvl then -- lvl is not shown when unit is skull (too high lvl)
-				data.unitLevel = tonumber(lvl)
+					local lvl = level:GetText()
+					if lvl then -- lvl is not shown when unit is skull (too high lvl)
+						data.unitLevel = tonumber(lvl)
+					end
+					return
+				end
 			end
 		end
 	end
@@ -879,14 +837,14 @@ do
 					return SetFocusInfo(partyUnit)
 				end
 
-				local plate = SetNameplateFocusID()
+				--local plate = SetNameplateFocusID()
 
 				if not SetFocusInfo("target") then
 					if not SetFocusInfo("mouseover") then
 						if not SetFocusInfo("targettarget") then
 							if not SetFocusInfo("pettarget") then
 								rawData.unit = nil
-								FocusPlateScanner(plate)
+								NameplateScanner()
 								PartyScanner()
 							end
 						end
