@@ -16,6 +16,7 @@ local focusTargetName
 local partyUnit
 local rawData
 local data
+local focusPlate
 
 -- Upvalues
 local GetTime, next, strfind, UnitName, TargetLastTarget, TargetByName, UnitIsUnit, strlower, type, pcall, tgetn =
@@ -26,6 +27,7 @@ local NameplateScanner
 local PartyScanner
 local SetFocusAuras
 local CallHooks
+local SetNameplateFocusID
 local debug
 
 --------------------------------------
@@ -36,7 +38,7 @@ do
 	local showDebug = false
 	local showDebugEvents = false
 
-	function debug(str, arg1, arg2, arg3)
+	function debug(str, arg1, arg2, arg3) --local
 		if showDebug then
 			if not showDebugEvents and strfind(str, "CallHooks") or strfind(str, "event callback") then return end
 			print(string.format(str, arg1, arg2, arg3))
@@ -106,7 +108,7 @@ do
 			-- insert to 'rawData' instead of 'data'
 			-- This will make sure __index is always called in 'data
 			local oldValue = rawData[key]
-			rawset(rawData, key, value)
+			rawset(rawData, key, value)	
 
 			-- Call event listeners if property has event
 			if not rawData.init and events[key] then
@@ -231,35 +233,74 @@ do
 		return true
 	end
 
-	function NameplateScanner() -- local
-		--if rawData.unitIsEnemy and GetCVar("nameplateShowEnemies") == "1" then return end
-		--if rawData.unitIsFriend and GetCVar("nameplateShowFriends") == "1" then return end
-
-		for _, plate in ipairs({ WorldFrame:GetChildren() }) do
-			local overlay, _, name, level, _, raidIcon = plate:GetRegions()
-
-			if plate:IsVisible() and IsPlate(overlay) then
-				if name:GetText() == focusTargetName then
-					if raidIcon and raidIcon:IsVisible() then
-						local ux, uy = raidIcon:GetTexCoord()
-						data.raidIcon = RaidIconCoordinate[ux][uy]
-					end
-
-					data.health = plate:GetChildren():GetValue()
-
-					local lvl = level:GetText()
-					if lvl then -- lvl is not shown when unit is skull (too high lvl)
-						data.unitLevel = tonumber(lvl)
-					end
+	function SetNameplateFocusID() -- local
+		if not UnitExists("target") then
+			-- fkin hunters...
+			if rawData.isHunterWithSamePetName then
+				if focusPlate.isFocusPlate and not focusPlate:IsVisible() then
+					focusPlate:GetRegions():SetVertexColor(1,1,1)
+					focusPlate.isFocusPlate = false
 					return
 				end
+			end
+	
+			--return focusPlate
+		end
+
+		local childs = { WorldFrame:GetChildren() }
+
+		for k, plate in ipairs(childs) do
+			local overlay, _, name = plate:GetRegions()
+
+			if plate.isFocusPlate and not plate:IsVisible() then
+				overlay:SetVertexColor(1,1,1)
+				plate.isFocusPlate = false
+				return
+			end
+
+			if plate:GetAlpha() == 1 and IsPlate(overlay) then
+				if name:GetText() == focusTargetName then
+					if UnitIsPlayer("target") == rawData.unitIsPlayer then
+						overlay:SetVertexColor(0,1,1)
+						plate.isFocusPlate = true
+						focusPlate = childs[k]
+					end
+					--return focusPlate
+				end
+			end
+		end
+
+		return focusPlate
+	end
+
+	function FocusPlateScanner(plate) -- local
+		--if rawData.unitIsEnemy and GetCVar("nameplateShowEnemies") == "1" then return end
+		--if rawData.unitIsFriend and GetCVar("nameplateShowFriends") == "1" then return end
+		if not focusTargetName then return end
+		if not plate then return end
+
+		local overlay, _, name, level, _, raidIcon = plate:GetRegions()
+
+		if plate:IsVisible() then
+			--if rawData.isHunterWithSamePetName then return end
+
+			if raidIcon and raidIcon:IsVisible() then
+				local ux, uy = raidIcon:GetTexCoord()
+				data.raidIcon = RaidIconCoordinate[ux][uy]
+			end
+
+			data.health = plate:GetChildren():GetValue()
+
+			local lvl = level:GetText()
+			if lvl then -- lvl is not shown when unit is skull (too high lvl)
+				data.unitLevel = tonumber(lvl)
 			end
 		end
 	end
 end
 
 local function IsHunterWithSamePetName(unit)
-	if rawData.unitClass == "HUNTER" or rawData.unitClass == "WARRIOR" then
+	if rawData.unitClass == "HUNTER" or rawData.unitClass == "WARRIOR" then -- warrior: default for mobs
 		if rawData.unitName == UnitName(unit) then
 			if rawData.unitIsPlayer ~= UnitIsPlayer(unit) then
 				rawData.isHunterWithSamePetName = true
@@ -272,16 +313,20 @@ local function IsHunterWithSamePetName(unit)
 	return false
 end
 
-local function SetFocusHealth(unit, isDead)
+local function SetFocusHealth(unit, isDead, hasHunterPetFixRan)
+	if unit then
+		if not hasHunterPetFixRan then -- prevent calling function twice
+			if IsHunterWithSamePetName(unit) then return end
+		end
+	end
+	
 	data.health = isDead and 0 or UnitHealth(unit)
 	data.maxHealth = isDead and 0 or UnitHealthMax(unit)
 	data.power = isDead and 0 or UnitMana(unit)
 	data.maxPower = isDead and 0 or UnitManaMax(unit)
 
 	if not isDead then
-		if not rawData.isHunterWithSamePetName then
-			data.powerType = UnitPowerType(unit)
-		end
+		data.powerType = UnitPowerType(unit)
 	end
 end
 
@@ -296,10 +341,9 @@ local function SetFocusInfo(unit, resetRefresh)
 
 	local getTime = GetTime()
 
-	-- Changing these will trigger event.
 	-- Ran every 0.2s
 	data.unit = unit
-	SetFocusHealth(unit)
+	SetFocusHealth(unit, false, true)
 	SetFocusAuras(unit)
 	data.raidIcon = GetRaidTargetIndex(unit)
 	data.unitLevel = UnitLevel(unit)
@@ -321,13 +365,13 @@ local function SetFocusInfo(unit, resetRefresh)
 	data.unitIsPartyLeader = UnitIsPartyLeader(unit)
 	data.unitClassification = UnitClassification(unit)
 
+	local _, class = UnitClass(unit) -- localized
 	rawData.playerCanAttack = UnitCanAttack("player", unit)
 	rawData.unitCanAttack = UnitCanAttack(unit, "player")
 	rawData.unitIsEnemy = rawData.playerCanAttack == 1 and rawData.unitCanAttack == 1 and 1 -- UnitIsEnemy() does not count neutral targets
 	rawData.unitIsFriend = UnitIsFriend(unit, "player")
 	rawData.unitIsConnected = UnitIsConnected(unit)
 	rawData.unitFactionGroup = UnitFactionGroup(unit)
-	local _, class = UnitClass(unit)
 	rawData.unitClass = class
 	rawData.unitName = GetUnitName(unit)
 	rawData.unitIsPlayer = UnitIsPlayer(unit)
@@ -452,6 +496,16 @@ end
 
 -- @private
 function Focus:TargetWithFixes(name)
+	local unit = rawData.unit
+	if unit and rawData.unitIsPlayer then
+		if UnitExists(unit) and rawData.unitIsPlayer == UnitIsPlayer(unit) --[[pet with same name?]] then
+			if self:UnitIsFocus(unit) then
+				TargetUnit(unit)
+				return
+			end
+		end
+	end
+
 	local _name = strsub(name or focusTargetName, 1, -2)
 	TargetByName(_name, false)
 	-- Case insensitive name will make the game target nearest enemy
@@ -463,7 +517,7 @@ function Focus:TargetWithFixes(name)
 
 	if UnitIsUnit("target", "player") then
 		self.needRetarget = true
-		self:TargetPrevious()
+		--self:TargetPrevious()
 	end
 end
 
@@ -537,6 +591,7 @@ function Focus:SetFocus(name)
 	local isFocusChanged = Focus:FocusExists()
 	if isFocusChanged then
 		rawData.init = true -- prevent calling FOCUS_CLEAR here
+		--self:PauseEvents():ClearFocus():StartEvents()
 		self:ClearFocus()
 		rawData.init = nil
 	end
@@ -574,6 +629,7 @@ function Focus:ClearFocus()
 	focusTargetName = nil
 	CURR_FOCUS_TARGET = nil
 	partyUnit = nil
+	focusPlate = nil
 	self:ClearData()
 
 	CallHooks("FOCUS_CLEAR")
@@ -819,12 +875,14 @@ do
 					return SetFocusInfo(partyUnit)
 				end
 
+				local plate = SetNameplateFocusID()
+
 				if not SetFocusInfo("target") then
 					if not SetFocusInfo("mouseover") then
 						if not SetFocusInfo("targettarget") then
 							if not SetFocusInfo("pettarget") then
 								rawData.unit = nil
-								NameplateScanner()
+								FocusPlateScanner(plate)
 								PartyScanner()
 							end
 						end
@@ -883,7 +941,9 @@ do
 	--------------------------------------------------------
 
 	function events:UNIT_AURA(event, unit)
-		SetFocusAuras(unit)
+		--if not IsHunterWithSamePetName(unit) then
+			SetFocusAuras(unit)
+		--end
 	end
 
 	function events:PLAYER_AURAS_CHANGED(event)

@@ -740,7 +740,6 @@ local combatlogParser = function()
 	local dSpell 	= 'CHAT_MSG_SPELL_(.+)'					local fdSpell 		= strfind(event, dSpell)
 	local death		= 'CHAT_MSG_COMBAT_(.+)_DEATH'			local fdeath 		= strfind(event, death)
 	local mEmote	= 'CHAT_MSG_MONSTER_EMOTE'				local fmEmote		= strfind(event, mEmote)
-	--print(event)
 
 	-- periodic damage/buff spells
 	if fpSpell then
