@@ -787,7 +787,7 @@ end
 do
 	local hookEvents = {}
 	local events = CreateFrame("frame")
-	local _, playerName = UnitName("player")
+	local playerName = UnitName("player")
 	local refresh = 0
 
 	-- Call all eventlisteners for given event.
@@ -867,7 +867,7 @@ do
 		local pslain 	= L['You have slain (.+).']		local fpslain 	= strfind(arg1, pslain)
 
 		if fpdie or fdies or fslain or fpslain then
-			local m = fdies and dies or fslain and slain or fpslain and pslain
+			local m = fdies and dies or fslain and slain or fpslain and pslain or ""
 			local c = fpdie and playerName or gsub(arg1, m, "%1")
 
 			if focusTargetName == c then
