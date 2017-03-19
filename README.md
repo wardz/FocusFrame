@@ -21,6 +21,7 @@ Focus current mouseover target:
 ```
 
 Cast spell on focus target:
+If there are multiple mobs nearby with the exact same name, fcast will be used on nearest unit found.
 ```
 /fcast spellname
 ```
@@ -92,6 +93,7 @@ When using this addon there are some limitations or caveats you should know abou
 - Health is updated same way as power, but will also update when the focus target's nameplate is in range.
 - Casts & buffs for focus are only tracked if the focus is within 40 yards range of your character.
 - For Rogues/druids: You will lose all your combo points when switching between target and focus!!
+- For some reason **holy** spell casts/channels are not tracked if the focus is inside your party. Not sure if this is a vanilla bug or Elysium bug.
 
 ## Installation
 1. Download latest [version here.](https://github.com/wardz/FocusFrame/releases)
