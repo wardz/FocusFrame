@@ -48,10 +48,13 @@
 <div id="content">
 
 <h1>Module <code>FocusData</code></h1>
-<p>Documentation: https://wardz.github.io/FocusFrame/.</p>
+<p>(This page is auto generated using ldoc. Please do not commit any changes here.)</p>
 <p>
- Feel free to use or fork this module.
- See FocusFrame.lua for examples.</p>
+ Feel free to use or fork this module.</p>
+<p>
+Most of this API may only be used after certain events, or in an OnUpdate script with focus exist check.<br>
+See FocusFrame.lua for examples.
+</p>
     <h3>Info:</h3>
     <ul>
         <li><strong>License</strong>: MIT</li>
@@ -70,7 +73,7 @@
 <table class="function_list">
 	<tr>
 	<td class="name" nowrap><a href="#Focus:ShowError">Focus:ShowError ([msg="You have no focus"])</a></td>
-	<td class="summary">Display focus UI error</td>
+	<td class="summary">Display an error in UIErrorsFrame.</td>
 	</tr>
 </table>
 <h2><a href="#Unit">Unit </a></h2>
@@ -81,7 +84,7 @@
 	</tr>
 	<tr>
 	<td class="name" nowrap><a href="#Focus:GetFocusUnit">Focus:GetFocusUnit ()</a></td>
-	<td class="summary">Get unit ID for focus if available</td>
+	<td class="summary">Get unit ID for focus if available.</td>
 	</tr>
 	<tr>
 	<td class="name" nowrap><a href="#Focus:FocusExists">Focus:FocusExists ([showError=false])</a></td>
@@ -89,11 +92,15 @@
 	</tr>
 	<tr>
 	<td class="name" nowrap><a href="#Focus:Call">Focus:Call (func, arg1, arg2, arg3, arg4)</a></td>
-	<td class="summary">Use any unit function on focus target, i.e CastSpellByName.</td>
+	<td class="summary">Call functions on focus.</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#Focus:TargetFocus">Focus:TargetFocus ([name=nil[, setFocusName=false]])</a></td>
+	<td class="name" nowrap><a href="#Focus:TargetFocus">Focus:TargetFocus ([name=nil])</a></td>
 	<td class="summary">Target the focus.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#Focus:TargetPrevious">Focus:TargetPrevious ()</a></td>
+	<td class="summary">Target last target after having targeted focus.</td>
 	</tr>
 	<tr>
 	<td class="name" nowrap><a href="#Focus:SetFocus">Focus:SetFocus ([name=nil])</a></td>
@@ -155,18 +162,18 @@
 	</tr>
 	<tr>
 	<td class="name" nowrap><a href="#Focus:ClearData">Focus:ClearData ([key=nil])</a></td>
-	<td class="summary">Delete specific or all focus data</td>
+	<td class="summary">Delete data by key or all focus data if no key is given.</td>
 	</tr>
 </table>
 <h2><a href="#Events">Events </a></h2>
 <table class="function_list">
 	<tr>
 	<td class="name" nowrap><a href="#Focus:OnEvent">Focus:OnEvent (eventName, callback)</a></td>
-	<td class="summary">Register event listener for a focus event.</td>
+	<td class="summary">Register event handler for a focus event.</td>
 	</tr>
 	<tr>
 	<td class="name" nowrap><a href="#Focus:RemoveEvent">Focus:RemoveEvent (eventName, eventID)</a></td>
-	<td class="summary">Remove existing event listener.</td>
+	<td class="summary">Remove existing event handler.</td>
 	</tr>
 </table>
 
@@ -190,16 +197,19 @@
     <h3>Fields:</h3>
     <ul>
         <li><span class="parameter">UNIT_HEALTH_OR_POWER</span>
-         arg1=event or nil, arg2=unit or nil
+         arg1=event, arg2=unit or nil
         </li>
         <li><span class="parameter">UNIT_LEVEL</span>
-         arg1=event or nil, arg2=unit or nil
+         arg1=event, arg2=unit or nil
         </li>
         <li><span class="parameter">UNIT_AURA</span>
-         arg1=event or nil, arg2=unit or nil
+         arg1=event, arg2=unit or nil
         </li>
         <li><span class="parameter">UNIT_CLASSIFICATION_CHANGED</span>
-
+         arg1=event, arg2=unit or nil
+        </li>
+        <li><span class="parameter">UNIT_FACTION</span>
+         arg1=event, arg2=unit
         </li>
         <li><span class="parameter">PLAYER_FLAGS_CHANGED</span>
 
@@ -218,9 +228,6 @@
         </li>
         <li><span class="parameter">FOCUS_CLEAR</span>
 
-        </li>
-        <li><span class="parameter">UNIT_FACTION</span>
-         arg1=event, arg2=unit
         </li>
     </ul>
 
@@ -242,7 +249,7 @@
     <strong>Focus:ShowError ([msg="You have no focus"])</strong>
     </dt>
     <dd>
-    Display focus UI error
+    Display an error in UIErrorsFrame.
 
 
     <h3>Parameters:</h3>
@@ -269,6 +276,7 @@
     </dt>
     <dd>
     Check if unit ID or unit name matches focus target.
+ If 'checkName' is true, 'unit' needs to be a name and not an unit ID.
 
 
     <h3>Parameters:</h3>
@@ -300,7 +308,8 @@
     <strong>Focus:GetFocusUnit ()</strong>
     </dt>
     <dd>
-    Get unit ID for focus if available
+    Get unit ID for focus if available.
+ If you need to get unitID reliably, checkout FOCUS_UNITID_EXISTS event.
 
 
 
@@ -326,14 +335,14 @@
     <strong>Focus:FocusExists ([showError=false])</strong>
     </dt>
     <dd>
-    Check if focus is sat.  (Not same as UnitExists!)
+    Check if focus is sat.  (not same as UnitExists!)
 
 
     <h3>Parameters:</h3>
     <ul>
         <li><span class="parameter">showError</span>
             <span class="types"><span class="type">bool</span></span>
-         display UI error msg
+         display default UI error msg
          (<em>default</em> false)
         </li>
     </ul>
@@ -354,7 +363,7 @@
     <strong>Focus:Call (func, arg1, arg2, arg3, arg4)</strong>
     </dt>
     <dd>
-    Use any unit function on focus target, i.e CastSpellByName.
+    Call functions on focus.  I.e CastSpellByName.
 
 
     <h3>Parameters:</h3>
@@ -389,7 +398,7 @@
 </dd>
     <dt>
     <a name = "Focus:TargetFocus"></a>
-    <strong>Focus:TargetFocus ([name=nil[, setFocusName=false]])</strong>
+    <strong>Focus:TargetFocus ([name=nil])</strong>
     </dt>
     <dd>
     Target the focus.
@@ -402,12 +411,22 @@
 
          (<em>default</em> nil)
         </li>
-        <li><span class="parameter">setFocusName</span>
-            <span class="types"><span class="type">bool</span></span>
-         if true, sets focus name to UnitName("target")
-         (<em>default</em> false)
-        </li>
     </ul>
+
+
+
+
+
+</dd>
+    <dt>
+    <a name = "Focus:TargetPrevious"></a>
+    <strong>Focus:TargetPrevious ()</strong>
+    </dt>
+    <dd>
+    Target last target after having targeted focus.
+ This can only be used after TargetFocus() has been ran!
+
+
 
 
 
@@ -529,7 +548,7 @@
     <strong>Focus:GetPower ()</strong>
     </dt>
     <dd>
-    Get focus power.
+    Get focus power.  (Mana etc)
 
 
 
@@ -601,7 +620,6 @@
     <dd>
     Get table containing all buff+debuff data for focus.
  Should be ran in an OnUpdate script or OnEvent("UNIT_AURA")
- This list can only be traversed in a for loop. Do not use pairs!
 
 
 
@@ -769,7 +787,8 @@
     <strong>Focus:ClearData ([key=nil])</strong>
     </dt>
     <dd>
-    Delete specific or all focus data
+    Delete data by key or all focus data if no key is given.
+ When deleting all focus data, you probably want to run Focus:ClearFocus() instead.
 
 
     <h3>Parameters:</h3>
@@ -795,7 +814,8 @@
     <strong>Focus:OnEvent (eventName, callback)</strong>
     </dt>
     <dd>
-    Register event listener for a focus event.
+    Register event handler for a focus event.
+ This does not overwrite existing event handlers.
 
 
     <h3>Parameters:</h3>
@@ -826,7 +846,7 @@
     <strong>Focus:RemoveEvent (eventName, eventID)</strong>
     </dt>
     <dd>
-    Remove existing event listener.
+    Remove existing event handler.
 
 
     <h3>Parameters:</h3>
@@ -853,7 +873,7 @@
 </div> <!-- id="main" -->
 <div id="about">
 <i>generated by <a href="http://github.com/stevedonovan/LDoc">LDoc 1.4.6</a></i>
-<i style="float:right;">Last updated 2017-03-01 07:52:06 </i>
+<i style="float:right;">Last updated 2017-03-19 12:28:36 </i>
 </div> <!-- id="about" -->
 </div> <!-- id="container" -->
 </body>
