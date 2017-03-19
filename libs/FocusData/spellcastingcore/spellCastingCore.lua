@@ -700,7 +700,7 @@ local channelDot = function()
 end
 
 local playerDeath = function()
-	local pdie 		= L['You die.']					local fpdie		= strfind(arg1, pdie)
+	local pdie 		= L.YOU_DIE						local fpdie		= strfind(arg1, pdie)
 	local dies		= L['(.+) dies.']				local fdies		= strfind(arg1, dies)
 	local slain 	= L['(.+) is slain by (.+).']	local fslain 	= strfind(arg1, slain)
 	local pslain 	= L['You have slain (.+).']		local fpslain 	= strfind(arg1, pslain)
@@ -710,7 +710,7 @@ local playerDeath = function()
 		local c = fpdie and playerName or gsub(arg1, m, '%1')
 
 		if fpdie then
-			--tableMaintenance(true)
+			--tableMaintenance(true) -- cleared on RELEASE_SPIRIT instead
 		else
 			forceHideTableItem(casts, c, nil)
 			if Focus:GetName() ~= c then -- buffList is cleared in OnUpdate for focus

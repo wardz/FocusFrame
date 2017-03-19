@@ -16,7 +16,6 @@ local focusTargetName
 local partyUnit
 local rawData
 local data
-local focusPlate
 
 -- Upvalues
 local GetTime, next, strfind, UnitName, UnitIsPlayer, TargetLastTarget, TargetByName, UnitIsUnit, strlower, type, pcall, tgetn =
@@ -27,18 +26,28 @@ local NameplateScanner
 local PartyScanner
 local SetFocusAuras
 local CallHooks
+local debug
+
+-- 'Interface'
+local ClearBuffs = FSPELLCASTINGCOREClearBuffs
+local NewBuff = FSPELLCASTINGCORENewBuff
+local GetBuffs = FSPELLCASTINGCOREgetBuffs
+local GetCast = FSPELLCASTINGCOREgetCast
+local BORDER_DEBUFFS_COLOR = FOCUS_BORDER_DEBUFFS_COLOR
 
 --------------------------------------
 -- Core
 --------------------------------------
 
-local showDebug = true
-local showDebugEvents = false
+do
+	local showDebug = false
+	local showDebugEvents = false
 
-local function debug(str, arg1, arg2, arg3) --local
-	if showDebug then
-		if not showDebugEvents and strfind(str, "CallHooks") or strfind(str, "event callback") then return end
-		print(string.format(str, arg1, arg2, arg3))
+	function debug(str, arg1, arg2, arg3) --local
+		if showDebug then
+			if not showDebugEvents and strfind(str, "CallHooks") or strfind(str, "event callback") then return end
+			print(string.format(str, arg1, arg2, arg3))
+		end
 	end
 end
 
@@ -51,17 +60,17 @@ do
 	-- registered multiple times.
 	-- @table Events
 	-- @usage Focus:OnEvent("EVENT_NAME", callbackFunc)
-	-- @field UNIT_HEALTH_OR_POWER arg1=event or nil, arg2=unit or nil
-	-- @field UNIT_LEVEL arg1=event or nil, arg2=unit or nil
-	-- @field UNIT_AURA arg1=event or nil, arg2=unit or nil
-	-- @field UNIT_CLASSIFICATION_CHANGED
+	-- @field UNIT_HEALTH_OR_POWER arg1=event, arg2=unit or nil
+	-- @field UNIT_LEVEL arg1=event, arg2=unit or nil
+	-- @field UNIT_AURA arg1=event, arg2=unit or nil
+	-- @field UNIT_CLASSIFICATION_CHANGED arg1=event, arg2=unit or nil
+	-- @field UNIT_FACTION arg1=event, arg2=unit
 	-- @field PLAYER_FLAGS_CHANGED
 	-- @field RAID_TARGET_UPDATE
 	-- @field FOCUS_UNITID_EXISTS arg1=event, arg2=unit
 	-- @field FOCUS_SET arg1=event, arg2=unit
 	-- @field FOCUS_CHANGED arg1=event, arg2=unit
 	-- @field FOCUS_CLEAR
-	-- @field UNIT_FACTION arg1=event, arg2=unit
 	local events = {
 		health              = "UNIT_HEALTH_OR_POWER",
 		maxHealth           = "UNIT_HEALTH_OR_POWER",
@@ -134,10 +143,6 @@ end
 
 -- Aura unit scanning
 do
-	local ClearBuffs = FSPELLCASTINGCOREClearBuffs
-	local NewBuff = FSPELLCASTINGCORENewBuff
-	local GetLastAura = FSPELLCASTINGCOREGetLastBuffInfo
-
 	local UnitBuff, UnitDebuff = UnitBuff, UnitDebuff
 
 	local scantip = CreateFrame("GameTooltip", "FocusDataScantip", nil, "GameTooltipTemplate")
@@ -280,7 +285,7 @@ local function SetFocusHealth(unit, isDead, hasHunterPetFixRan)
 	--[[if isDead and rawData.feignDeath then
 		return
 	end]]
-	
+
 	data.health = isDead and 0 or UnitHealth(unit)
 	data.maxHealth = isDead and 0 or UnitHealthMax(unit)
 	data.power = isDead and 0 or UnitMana(unit)
@@ -393,7 +398,7 @@ end
 --- Misc
 -- @section misc
 
---- Display focus UI error
+--- Display an error in UIErrorsFrame.
 -- @tparam[opt="You have no focus"] string msg
 function Focus:ShowError(msg)
 	UIErrorsFrame:AddMessage("|cffFF003F " .. (msg or L.NO_FOCUS) .. "|r")
@@ -403,6 +408,7 @@ end
 -- @section unit
 
 --- Check if unit ID or unit name matches focus target.
+-- If 'checkName' is true, 'unit' needs to be a name and not an unit ID.
 -- @tparam string unit
 -- @tparam[opt=false] bool checkName
 -- @treturn bool true if match
@@ -414,7 +420,8 @@ function Focus:UnitIsFocus(unit, checkName)
 	end
 end
 
---- Get unit ID for focus if available
+--- Get unit ID for focus if available.
+-- If you need to get unitID reliably, checkout FOCUS_UNITID_EXISTS event.
 -- @treturn[1] string unitID
 -- @treturn[2] nil
 function Focus:GetFocusUnit()
@@ -423,8 +430,8 @@ function Focus:GetFocusUnit()
 	end
 end
 
---- Check if focus is sat. (Not same as UnitExists!)
--- @tparam[opt=false] bool showError display UI error msg
+--- Check if focus is sat. (not same as UnitExists!)
+-- @tparam[opt=false] bool showError display default UI error msg
 -- @treturn bool true if exists
 function Focus:FocusExists(showError)
 	if showError and not focusTargetName then
@@ -434,7 +441,7 @@ function Focus:FocusExists(showError)
 	return focusTargetName ~= nil
 end
 
---- Use any unit function on focus target, i.e CastSpellByName.
+--- Call functions on focus. I.e CastSpellByName.
 -- @usage Focus:Call(CastSpellByName, "Fireball") -- Casts Fireball on focus target
 -- @usage Focus:Call(DropItemOnUnit); -- defaults to focus unit if no second arg given
 -- @tparam func func function reference
@@ -442,7 +449,7 @@ end
 -- @param arg2
 -- @param arg3
 -- @param arg4
-function Focus:Call(func, arg1, arg2, arg3, arg4) -- no vararg in this lua version so this'll have to do for now
+function Focus:Call(func, arg1, arg2, arg3, arg4)
 	if self:FocusExists(true) then
 		if type(func) == "function" then
 			arg1 = arg1 or "target" --focus
@@ -471,21 +478,21 @@ function Focus:TargetWithFixes(name)
 	local _name = strsub(name or focusTargetName, 1, -2)
 	TargetByName(_name, false)
 	-- Case insensitive name will make the game target nearest enemy
-	-- instead of random
+	-- instead of first unit rendered on screen
 
 	if UnitIsDead("target") == 1 or UnitIsUnit("target", "player") then
+		-- Try case sensitive search
 		TargetByName(name or focusTargetName, true)
 	end
 
 	if UnitIsUnit("target", "player") then
+		-- Targeting above failed and player targeted himself instead
 		self.needRetarget = true
-		--self:TargetPrevious()
 	end
 end
 
 --- Target the focus.
 -- @tparam[opt=nil] string name
--- @tparam[opt=false] bool setFocusName if true, sets focus name to UnitName("target")
 function Focus:TargetFocus(name, setFocusName)
 	if not setFocusName and not self:FocusExists() then
 		return self:ShowError()
@@ -528,7 +535,8 @@ function Focus:TargetFocus(name, setFocusName)
 	SetFocusInfo("target", true)
 end
 
--- @private
+--- Target last target after having targeted focus.
+-- This can only be used after TargetFocus() has been ran!
 function Focus:TargetPrevious()
 	if self.oldTarget and self.needRetarget then
 		TargetLastTarget()
@@ -591,7 +599,6 @@ function Focus:ClearFocus()
 	focusTargetName = nil
 	CURR_FOCUS_TARGET = nil
 	partyUnit = nil
-	focusPlate = nil
 	self:ClearData()
 
 	CallHooks("FOCUS_CLEAR")
@@ -615,7 +622,7 @@ function Focus:GetHealth()
 	return rawData.health or 0, rawData.maxHealth or 100
 end
 
---- Get focus power.
+--- Get focus power. (Mana etc)
 -- @treturn number min
 -- @treturn number max
 function Focus:GetPower()
@@ -628,28 +635,23 @@ function Focus:GetPowerColor()
 	return ManaBarColor[rawData.powerType] or { r = 0, g = 0, b = 0 }
 end
 
-local FSPELLCASTINGCOREgetBuffs, FOCUS_BORDER_DEBUFFS_COLOR =
-	  FSPELLCASTINGCOREgetBuffs, FOCUS_BORDER_DEBUFFS_COLOR
-
 --- Get border color for debuffs.
 -- Uses numeric indexes.
 -- @tparam string debuffType e.g "magic" or "physical"
 -- @return table
 function Focus:GetDebuffColor(debuffType)
-	return debuffType and FOCUS_BORDER_DEBUFFS_COLOR[strlower(debuffType)] or { 0, 0, 0, 0 }
+	return debuffType and BORDER_DEBUFFS_COLOR[strlower(debuffType)] or { 0, 0, 0, 0 }
 end
 
 --- Get table containing all buff+debuff data for focus.
 -- Should be ran in an OnUpdate script or OnEvent("UNIT_AURA")
--- This list can only be traversed in a for loop. Do not use pairs!
 -- @treturn table data or empty table
 function Focus:GetBuffs()
-	return FSPELLCASTINGCOREgetBuffs(focusTargetName) or {}
+	return GetBuffs(focusTargetName) or {}
 end
 
 do
 	local mod, floor = mod, floor
-	local GetCast = FSPELLCASTINGCOREgetCast
 
 	local function Round(num, idp)
 		local mult = 10^(idp or 0)
@@ -762,7 +764,8 @@ function Focus:SetData(key, value)
 	end
 end
 
---- Delete specific or all focus data
+--- Delete data by key or all focus data if no key is given.
+-- When deleting all focus data, you probably want to run Focus:ClearFocus() instead.
 -- @tparam[opt=nil] string key
 function Focus:ClearData(key)
 	if key then
@@ -856,12 +859,30 @@ do
 		end
 	end
 
+	local function ParseCombatDeath(event, arg1)
+		if not Focus:FocusExists() then return end
+		local pdie 		= L.YOU_DIE						local fpdie		= strfind(arg1, pdie)
+		local dies		= L['(.+) dies.']				local fdies		= strfind(arg1, dies)
+		local slain 	= L['(.+) is slain by (.+).']	local fslain 	= strfind(arg1, slain)
+		local pslain 	= L['You have slain (.+).']		local fpslain 	= strfind(arg1, pslain)
+
+		if fpdie or fdies or fslain or fpslain then
+			local m = fdies and dies or fslain and slain or fpslain and pslain
+			local c = fpdie and playerName or gsub(arg1, m, "%1")
+
+			if focusTargetName == c then
+				SetFocusHealth(nil, true)
+			end
+		end
+	end
+
 	--------------------------------------------------------
 
 	--- Events
 	-- @section events
 
-	--- Register event listener for a focus event.
+	--- Register event handler for a focus event.
+	-- This does not overwrite existing event handlers.
 	-- @tparam string eventName
 	-- @tparam func callback
 	-- @treturn number event ID
@@ -884,7 +905,7 @@ do
 		return i
 	end
 
-	--- Remove existing event listener.
+	--- Remove existing event handler.
 	-- @tparam string eventName
 	-- @tparam number eventID
 	function Focus:RemoveEvent(eventName, eventID)
@@ -942,23 +963,11 @@ do
 	end
 
 	function events:CHAT_MSG_COMBAT_HOSTILE_DEATH(event, arg1)
-		if not Focus:FocusExists() then return end
-
-		if focusTargetName == playerName and arg1 == L.YOU_DIE then
-			SetFocusHealth(nil, true)
-		elseif strfind(arg1, focusTargetName) then
-			SetFocusHealth(nil, true)
-		end
+		ParseCombatDeath(event, arg1)
 	end
 
 	function events:CHAT_MSG_COMBAT_FRIENDLY_DEATH(event, arg1)
-		if not Focus:FocusExists() then return end
-
-		if focusTargetName == playerName and arg1 == L.YOU_DIE then
-			SetFocusHealth(nil, true)
-		elseif strfind(arg1, focusTargetName) then
-			SetFocusHealth(nil, true)
-		end
+		ParseCombatDeath(event, arg1)
 	end
 
 	function events:PLAYER_ENTERING_WORLD()

@@ -10,10 +10,9 @@ else]]
     -- FocusData
     L.YOU_DIE = "You die." -- CHAT_MSG_COMBAT_HOSTILE_DEATH
     L.NO_FOCUS = "You have no focus."
-    L.HUMANOID = "Humanoid"
 
     -- spellcastingcore
---    L["Feign Death"]                    = "Feign Death"
+    --L["Feign Death"]                  = "Feign Death"
     L['You cast (.+).']                 = 'You cast (.+).'
     L['(.+) casts (.+).']               = '(.+) casts (.+).'
     L['(.+) begins to cast (.+).']      = '(.+) begins to cast (.+).'
@@ -51,7 +50,6 @@ else]]
     L["You suffer (.+) from (.+)'s (.+)."]      = "You suffer (.+) from (.+)'s (.+)."
     L['(.+)\'s (.+) drains (.+) Mana from']     = '(.+)\'s (.+) drains (.+) Mana from'
 
-    L['You die.']               = 'You die.'
     L['(.+) dies.']             = '(.+) dies.'
     L['(.+) is slain by (.+).'] = '(.+) is slain by (.+).'
     L['You have slain (.+).']   = 'You have slain (.+).'
