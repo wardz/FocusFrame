@@ -21,6 +21,7 @@ Focus current mouseover target:
 ```
 
 Cast spell on focus target:
+
 If there are multiple mobs nearby with the exact same name, fcast will be used on nearest unit found.
 ```
 /fcast spellname
