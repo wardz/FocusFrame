@@ -100,3 +100,7 @@ When using this addon there are some limitations or caveats you should know abou
 1. Download latest [version here.](https://github.com/wardz/FocusFrame/releases)
 2. Extract the downloaded file into your "WoW/Interface/AddOns" folder.
 3. Remove any suffixes from the addon's folder name. E.g: "FocusFrame-v1.0" to "FocusFrame".
+
+## Plugins
+- [modui-FocusFrame](https://github.com/gashole/modui-FocusFrame) by [Gashole](https://github.com/gashole)
+-
