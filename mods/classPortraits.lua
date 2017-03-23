@@ -35,5 +35,5 @@ local function Init(Focus, addonName)
 	Focus:OnEvent("UNIT_PORTRAIT_UPDATE", UpdatePortrait) -- while focus is targeted
 end
 
-getfenv(0).Focus_Loader:Register("ClassPortraits_Vanilla", Init)
 getfenv(0).Focus_Loader:Register("ClassPortraits", Init)
+getfenv(0).Focus_Loader:Register("ClassPortraits_Vanilla", Init)
