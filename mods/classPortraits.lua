@@ -1,11 +1,11 @@
--- Adds support for ClassPortraits addon.
-getfenv(0).Focus_Loader:Register("ClassPortraits", function(Focus)
-	-- ran when ADDON_LOADED event is fired for "ClassPortraits"
-	-- sent to gc on PLAYER_ENTERING_WORLD.
-
-	-- ^Not needed if you're gonna hook focus frame functions in your own addon.
-
-	local iconPath = "Interface\\Addons\\ClassPortraits\\UI-CLASSES-CIRCLES"
+-- Adds support for ClassPortraits and ClassPortraits_Vanilla.
+local function Init(Focus, addonName)
+	local iconPath
+	if addonName == "ClassPortraits_Vanilla" then
+		iconPath = "Interface\\Addons\\ClassPortraits_Vanilla\\UI-CLASSES-CIRCLES"
+	else
+		iconPath = "Interface\\Addons\\ClassPortraits\\UI-CLASSES-CIRCLES"
+	end
 
 	local CLASS_BUTTONS = {
 		["HUNTER"]	= { 0,			0.25,		0.25,	0.5  },
@@ -19,10 +19,7 @@ getfenv(0).Focus_Loader:Register("ClassPortraits", function(Focus)
 		["PALADIN"]	= { 0,			0.25,		0.5,	0.75 }
 	}
 
-	local UpdatePortrait = function(event, unit) -- ran after focusframe CheckPortrait
-		-- Just a note if you're gonna hook any FocusFrame functions,
-		-- unit id argument is not always guaranteed for certain events, so you need to check 
-		-- if unit is nil before u use it
+	local UpdatePortrait = function(event, unit)
 		if UnitExists(unit) == 1 and UnitIsPlayer(unit) == 1 then
 			local _, class = UnitClass(unit)
 			local coords = CLASS_BUTTONS[class]
@@ -36,4 +33,7 @@ getfenv(0).Focus_Loader:Register("ClassPortraits", function(Focus)
 
 	Focus:OnEvent("FOCUS_UNITID_EXISTS", UpdatePortrait) -- on focus targeted
 	Focus:OnEvent("UNIT_PORTRAIT_UPDATE", UpdatePortrait) -- while focus is targeted
-end)
+end
+
+getfenv(0).Focus_Loader:Register("ClassPortraits_Vanilla", Init)
+getfenv(0).Focus_Loader:Register("ClassPortraits", Init)

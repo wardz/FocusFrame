@@ -54,7 +54,7 @@ end
 
 function Loader:ADDON_LOADED(addonName)
 	if self.addons[addonName] then
-		local success = pcall(self.addons[addonName].init, Focus)
+		local success = pcall(self.addons[addonName].init, Focus, addonName)
 		self.addons[addonName].loaded = success
 		self.addons[addonName].hasRan = true
 
