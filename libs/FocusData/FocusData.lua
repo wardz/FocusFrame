@@ -16,6 +16,8 @@ local focusTargetName
 local partyUnit
 local rawData
 local data
+local focusPlateRan
+local focusPlateRef
 
 -- Upvalues
 local GetTime, next, strfind, UnitName, UnitIsPlayer, TargetLastTarget, TargetByName, UnitIsUnit, strlower, type, pcall, tgetn =
@@ -26,6 +28,7 @@ local NameplateScanner
 local PartyScanner
 local SetFocusAuras
 local CallHooks
+local CheckTargetPlateForFocus
 local debug
 
 -- 'Interface'
@@ -234,51 +237,115 @@ do
 		return true
 	end
 
-	function NameplateScanner() -- local
+	-- Attempt to give an unique ID to the current target's nameplate if
+	-- target = focus.
+	local function SetFocusPlateID(plate)
+		if not focusPlateRan then
+			local handler = plate:GetScript("OnHide")
+			plate.isFocus = true
+
+			plate:SetScript("OnHide", function()
+				if handler then
+					-- post-hook
+					handler(this)
+				end
+
+				if plate.isFocus then
+					plate.isFocus = nil
+					focusPlateRan = nil
+					focusPlateRef = nil
+					plate:GetRegions():SetVertexColor(1,1,1)
+				end
+			end)
+			plate:GetRegions():SetVertexColor(0,1,1)
+
+			focusPlateRan = true
+			return true
+		end
+	end
+
+	local function SavePlateInfo(health, name, level, raidIcon)
+		if raidIcon and raidIcon:IsVisible() then
+			local ux, uy = raidIcon:GetTexCoord()
+			data.raidIcon = RaidIconCoordinate[ux][uy]
+		end
+
+		local health = health:GetValue() or 0
+		if rawData.maxHealth < health then
+			-- need to re update maxHealth after unit with same name dies
+			rawData.maxHealth = 100
+		end
+		data.health = health
+
+		local lvl = level:GetText()
+		if lvl then -- lvl is not shown when unit is skull (too high lvl)
+			data.unitLevel = tonumber(lvl)
+		end
+	end
+
+	function CheckTargetPlateForFocus(childs) -- local
+		if focusPlateRan then return end
+		if not UnitExists("target") then return end
+
+		for k, plate in ipairs(childs) do
+			local overlay, _, name = plate:GetRegions()
+			if plate:IsVisible() and plate:GetAlpha() == 1 and IsPlate(overlay) then
+				if name:GetText() == focusTargetName then
+					if rawData.unitIsPlayer == UnitIsPlayer("target") then -- player vs pet
+						if SetFocusPlateID(plate) then
+							focusPlateRef = childs[k]
+							return childs[k]
+						end
+					end
+				end
+			end
+		end
+	end
+
+	function NameplateScanner(childs, plate) -- local, ran when no unitID found
 		--if rawData.unitIsEnemy and GetCVar("nameplateShowEnemies") == "1" then return end
 		--if rawData.unitIsFriend and GetCVar("nameplateShowFriends") == "1" then return end
 
-		for _, plate in ipairs({ WorldFrame:GetChildren() }) do
+		local plate = plate or focusPlateRef
+		if plate then -- focus plate
+			if plate:GetText() == focusTargetName then -- just incase
+				local _, _, name, level, _, raidIcon = plate:GetRegions()
+				return SavePlateInfo(plate:GetChildren(), name, level, raidIcon)
+			end
+		end
+
+		for _, plate in ipairs(childs) do
 			local overlay, _, name, level, _, raidIcon = plate:GetRegions()
 
 			if plate:IsVisible() and IsPlate(overlay) then
+				if focusPlateRan and not plate.isFocus then return end
+
 				if name:GetText() == focusTargetName then
-					if raidIcon and raidIcon:IsVisible() then
-						local ux, uy = raidIcon:GetTexCoord()
-						data.raidIcon = RaidIconCoordinate[ux][uy]
-					end
-
-					data.health = plate:GetChildren():GetValue()
-
-					local lvl = level:GetText()
-					if lvl then -- lvl is not shown when unit is skull (too high lvl)
-						data.unitLevel = tonumber(lvl)
-					end
-					return
+					SavePlateInfo(plate:GetChildren(), name, level, raidIcon)
 				end
 			end
 		end
 	end
 end
 
-local function IsHunterWithSamePetName(unit)
-	if rawData.unitClass == "HUNTER" or rawData.unitClass == "WARRIOR" then -- warrior: default for mobs
+local function IsPlayerWithSamePetName(unit)
+	--if rawData.unitClass == "HUNTER" or rawData.unitClass == "WARRIOR" then -- warrior: default for mobs
 		if rawData.unitName == UnitName(unit) then
-			if rawData.unitIsPlayer ~= UnitIsPlayer(unit) then
-				rawData.isHunterWithSamePetName = true
+			if rawData.unitIsPlayer and rawData.unitIsPlayer ~= UnitIsPlayer(unit) then
+				rawData.IsPlayerWithSamePetName = true
 				return true
 			end
 		end
-	end
+	--end
 
-	--rawData.isHunterWithSamePetName = false
+	--rawData.IsPlayerWithSamePetName = false
 	return false
 end
 
-local function SetFocusHealth(unit, isDead, hasHunterPetFixRan)
+local function SetFocusHealth(unit, isDead, hasPetFixRan)
 	if unit then
-		if not hasHunterPetFixRan then -- prevent calling function twice
-			if IsHunterWithSamePetName(unit) then return end
+		if not hasPetFixRan then -- prevent calling function twice
+			if IsPlayerWithSamePetName(unit) then return end
 		end
 	end
 
@@ -300,7 +367,7 @@ local function SetFocusInfo(unit, resetRefresh)
 	if not Focus:UnitIsFocus(unit) then return false end
 
 	if rawData.unitClass then
-		if IsHunterWithSamePetName(unit) then
+		if IsPlayerWithSamePetName(unit) then
 			return false
 		end
 	end
@@ -444,17 +511,23 @@ end
 --- Call functions on focus. I.e CastSpellByName.
 -- @usage Focus:Call(CastSpellByName, "Fireball") -- Casts Fireball on focus target
 -- @usage Focus:Call(DropItemOnUnit); -- defaults to focus unit if no second arg given
--- @tparam func func function reference
+-- @tparam[1] func func function reference
+-- @tparam[2] string func string to be parsed in loadstring(). Slower than func reference.
 -- @param arg1
 -- @param arg2
 -- @param arg3
 -- @param arg4
 function Focus:Call(func, arg1, arg2, arg3, arg4)
 	if self:FocusExists(true) then
-		if type(func) == "function" then
+		local argType = type(func)
+		if argType == "function" or argType == "string" then
 			arg1 = arg1 or "target" --focus
 			self:TargetFocus()
-			pcall(func, arg1, arg2, arg3, arg4)
+			if argType == "function" then
+				pcall(func, arg1, arg2, arg3, arg4)
+			else
+				loadstring(func)
+			end
 			self:TargetPrevious()
 		else
 			error("Usage: Focus:Call(function, arg1,arg2,arg3,arg4)")
@@ -493,6 +566,7 @@ end
 
 --- Target the focus.
 -- @tparam[opt=nil] string name
+-- @treturn bool true on success
 function Focus:TargetFocus(name, setFocusName)
 	if not setFocusName and not self:FocusExists() then
 		return self:ShowError()
@@ -503,7 +577,7 @@ function Focus:TargetFocus(name, setFocusName)
 		if rawData.unitIsPlayer ~= 1 then
 			self:TargetWithFixes(name)
 		else
-			if rawData.isHunterWithSamePetName then
+			if rawData.IsPlayerWithSamePetName then
 				-- Target nearest
 				self:TargetWithFixes(name)
 
@@ -532,7 +606,7 @@ function Focus:TargetFocus(name, setFocusName)
 		CURR_FOCUS_TARGET = focusTargetName -- global
 	end
 
-	SetFocusInfo("target", true)
+	return SetFocusInfo("target", true)
 end
 
 --- Target last target after having targeted focus.
@@ -544,6 +618,7 @@ function Focus:TargetPrevious()
 		if UnitName("target") ~= self.oldTarget then
 			-- TargetLastTarget seems to bug out randomly,
 			-- so use this as fallback
+
 			self:TargetFocus(self.oldTarget)
 		end
 	elseif not self.oldTarget then
@@ -599,6 +674,11 @@ function Focus:ClearFocus()
 	focusTargetName = nil
 	CURR_FOCUS_TARGET = nil
 	partyUnit = nil
+	if focusPlateRef then
+		focusPlateRef.isFocus = nil
+		focusPlateRef = nil
+	end
+	focusPlateRan = nil
 	self:ClearData()
 
 	CallHooks("FOCUS_CLEAR")
@@ -840,14 +920,15 @@ do
 					return SetFocusInfo(partyUnit)
 				end
 
-				--local plate = SetNameplateFocusID()
+				local childs = { WorldFrame:GetChildren() } -- add here for reuse in functions
+				local plate = CheckTargetPlateForFocus(childs)
 
 				if not SetFocusInfo("target") then
 					if not SetFocusInfo("mouseover") then
 						if not SetFocusInfo("targettarget") then
 							if not SetFocusInfo("pettarget") then
 								rawData.unit = nil
-								NameplateScanner()
+								NameplateScanner(childs, plate)
 								PartyScanner()
 							end
 						end
@@ -924,7 +1005,7 @@ do
 	--------------------------------------------------------
 
 	function events:UNIT_AURA(event, unit)
-		--if not IsHunterWithSamePetName(unit) then
+		--if not IsPlayerWithSamePetName(unit) then
 			SetFocusAuras(unit)
 		--end
 	end
