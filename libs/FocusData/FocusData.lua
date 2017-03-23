@@ -254,10 +254,10 @@ do
 					plate.isFocus = nil
 					focusPlateRan = nil
 					focusPlateRef = nil
-					plate:GetRegions():SetVertexColor(1,1,1)
+					--plate:GetRegions():SetVertexColor(1,1,1)
 				end
 			end)
-			plate:GetRegions():SetVertexColor(0,1,1)
+			--plate:GetRegions():SetVertexColor(0,1,1)
 
 			focusPlateRan = true
 			return true
