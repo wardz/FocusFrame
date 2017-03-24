@@ -522,11 +522,12 @@ function Focus:Call(func, arg1, arg2, arg3, arg4)
 		local argType = type(func)
 		if argType == "function" or argType == "string" then
 			arg1 = arg1 or "target" --focus
-			self:TargetFocus()
-			if argType == "function" then
-				pcall(func, arg1, arg2, arg3, arg4)
-			else
-				loadstring(func)
+			if self:TargetFocus() then
+				if argType == "function" then
+					pcall(func, arg1, arg2, arg3, arg4)
+				else
+					loadstring(func)
+				end
 			end
 			self:TargetPrevious()
 		else
