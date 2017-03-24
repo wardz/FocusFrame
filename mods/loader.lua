@@ -47,7 +47,7 @@ function Loader:FreeLoadedAddons()
 	for name, addon in pairs(self.addons) do
 		if not addon.onDemand or (addon.hasRan and not addon.loaded) then
 			self.addons[name] = nil
-			debug("free " .. k)
+			debug("free " .. name)
 		end
 	end
 end
