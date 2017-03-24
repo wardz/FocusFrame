@@ -10,6 +10,7 @@ The focus frame works for both friendly and enemy players.
 ## Chat commands
 
 Focus current target or by name:
+
 <sup>Will clear current focus if you have no target.</sup>
 ```
 /focus
