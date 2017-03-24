@@ -7,7 +7,7 @@ local function Init(Focus, addonName)
 		iconPath = "Interface\\Addons\\ClassPortraits\\UI-CLASSES-CIRCLES"
 	end
 
-	local CLASS_BUTTONS = {
+	local CLASS_COORDS = {
 		["HUNTER"]	= { 0,			0.25,		0.25,	0.5  },
 		["WARRIOR"] = { 0,			0.25,		0,		0.25 },
 		["ROGUE"]	= { 0.49609375,	0.7421875,	0,		0.25 },
@@ -19,10 +19,10 @@ local function Init(Focus, addonName)
 		["PALADIN"]	= { 0,			0.25,		0.5,	0.75 }
 	}
 
-	local UpdatePortrait = function(event, unit)
-		if UnitExists(unit) == 1 and UnitIsPlayer(unit) == 1 then
+	local UpdatePortrait = function(event, unit) -- ran after FocusFrame UpdatePortrait
+		if UnitExists(unit) and UnitIsPlayer(unit) then
 			local _, class = UnitClass(unit)
-			local coords = CLASS_BUTTONS[class]
+			local coords = CLASS_COORDS[class]
 
 			FocusPortrait:SetTexture(iconPath, true)
 			FocusPortrait:SetTexCoord(coords[1], coords[2], coords[3], coords[4])
@@ -35,5 +35,5 @@ local function Init(Focus, addonName)
 	Focus:OnEvent("UNIT_PORTRAIT_UPDATE", UpdatePortrait) -- while focus is targeted
 end
 
-getfenv(0).Focus_Loader:Register("ClassPortraits", Init)
-getfenv(0).Focus_Loader:Register("ClassPortraits_Vanilla", Init)
+Focus_Loader:Register("ClassPortraits", Init)
+Focus_Loader:Register("ClassPortraits_Vanilla", Init)

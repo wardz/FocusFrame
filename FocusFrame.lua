@@ -1,9 +1,11 @@
 local _G = getfenv(0)
 local Focus = _G.FocusData
 local AurasUpdate
+
 FocusFrameDB = FocusFrameDB or { unlock = true, scale = 1 }
 
--- Local functions here can be hooked using Focus:OnEvent(). See mods\classPortraits.lua for example.
+-- Local functions here can be post-hooked using Focus:OnEvent().
+-- See inside Init function in mods/classPortraits.lua for example.
 
 local function OnFocusSat(event, unit)
 	FocusName:SetText(UnitName(unit))
@@ -95,7 +97,7 @@ function FocusFrame_OnHide() -- can't be hooked, global due to xml
 end
 
 function FocusFrame_OnClick(button)
-	if SpellIsTargeting() and button == "RightButton" then
+	if button == "RightButton" and SpellIsTargeting() then
 		return SpellStopTargeting()
 	end
 
@@ -199,7 +201,9 @@ local function CheckLeader()
 end
 
 do
-	local GetBuffs = Focus.GetBuffs
+	-- Aura handling
+	-- Works the same as in blizz TargetFrame.lua,
+	-- but without TargetOfTarget wrap
 
 	local function AdjustAuras(numDebuffs, numBuffs)
 		local unitIsFriend = Focus:GetData("unitIsFriend")
@@ -265,12 +269,13 @@ do
 	end
 
 	function AurasUpdate() -- local, ran very frequent
-		local buffData = GetBuffs()
+		local buffData = Focus:GetBuffs()
 		local buffs = buffData.buffs
 		local debuffs = buffData.debuffs
 		local numBuffs = 0
 		local numDebuffs = 0
 
+		-- Set buffs shown
 		for i = 1, 5 do
 			local buff = buffs[i]
 			local button = _G["FocusFrameBuff" .. i]
@@ -285,6 +290,7 @@ do
 			end
 		end
 
+		-- Set debuffs shown
 		for i = 1, 16 do
 			local button = _G["FocusFrameDebuff" .. i]
 			local debuff = debuffs[i]

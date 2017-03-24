@@ -204,7 +204,7 @@ do
 
 		for i = 1, 5 do
 			local texture = UnitBuff(unit, i)
-			if not texture then break end
+			if not texture then break end -- no more buffs
 			SyncBuff(unit, i, texture)
 		end
 
@@ -237,8 +237,6 @@ do
 		return true
 	end
 
-	-- Attempt to give an unique ID to the current target's nameplate if
-	-- target = focus.
 	local function SetFocusPlateID(plate)
 		if not focusPlateRan then
 			local handler = plate:GetScript("OnHide")
@@ -250,6 +248,8 @@ do
 					handler(this)
 				end
 
+				-- reset on OnHide because nameplate will be recycled
+				-- to a random unit when shown again
 				if plate.isFocus then
 					plate.isFocus = nil
 					focusPlateRan = nil
@@ -283,6 +283,8 @@ do
 		end
 	end
 
+	-- Attempt to give target plate for focus an unique ID, so we
+	-- can distuingish between units with same name
 	function CheckTargetPlateForFocus(childs) -- local
 		if focusPlateRan then return end
 		if not UnitExists("target") then return end
@@ -330,8 +332,8 @@ end
 
 local function IsPlayerWithSamePetName(unit)
 	--if rawData.unitClass == "HUNTER" or rawData.unitClass == "WARRIOR" then -- warrior: default for mobs
-		if rawData.unitName == UnitName(unit) then
-			if rawData.unitIsPlayer and rawData.unitIsPlayer ~= UnitIsPlayer(unit) then
+		if rawData.unitName and rawData.unitName == UnitName(unit) then
+			if rawData.unitIsPlayer ~= UnitIsPlayer(unit) then -- If focus is player, but curr target is not (or vice versa)
 				rawData.IsPlayerWithSamePetName = true
 				return true
 			end
@@ -366,10 +368,8 @@ end
 local function SetFocusInfo(unit, resetRefresh)
 	if not Focus:UnitIsFocus(unit) then return false end
 
-	if rawData.unitClass then
-		if IsPlayerWithSamePetName(unit) then
-			return false
-		end
+	if IsPlayerWithSamePetName(unit) then
+		return false
 	end
 
 	local getTime = GetTime()
@@ -946,6 +946,7 @@ do
 
 	local function ParseCombatDeath(event, arg1)
 		if not Focus:FocusExists() then return end
+
 		local pdie 		= L.YOU_DIE						local fpdie		= strfind(arg1, pdie)
 		local dies		= L['(.+) dies.']				local fdies		= strfind(arg1, dies)
 		local slain 	= L['(.+) is slain by (.+).']	local fslain 	= strfind(arg1, slain)

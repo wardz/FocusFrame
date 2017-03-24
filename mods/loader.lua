@@ -10,7 +10,7 @@ local function debug(str)
 end
 
 --- Register callback to be ran when ADDON_LOADED event is fired for addonName
--- @tparam string addonName (case sensitive?)
+-- @tparam string addonName (case sensitive)
 -- @tparam func callback
 -- @tparam[opt=false] bool - True if addon is loaded on demand, and not instantly on login.
 function Loader:Register(addonName, callback, onDemand)
@@ -20,9 +20,9 @@ function Loader:Register(addonName, callback, onDemand)
 
 	self.addons[addonName] = {
 		init = callback,
+		onDemand = onDemand,
 		loaded = false,
-		hasRan = false,
-		onDemand = onDemand
+		hasRan = false
 	}
 
 	debug("registered " .. addonName)
@@ -44,21 +44,22 @@ function Loader:FreeLoadedAddons()
 		return debug("empty addon list")
 	end
 
-	for k, v in pairs(self.addons) do
-		if not v.onDemand or (v.hasRan and not v.loaded) then
-			self.addons[k] = nil
+	for name, addon in pairs(self.addons) do
+		if not addon.onDemand or (addon.hasRan and not addon.loaded) then
+			self.addons[name] = nil
 			debug("free " .. k)
 		end
 	end
 end
 
 function Loader:ADDON_LOADED(addonName)
-	if self.addons[addonName] then
-		local success = pcall(self.addons[addonName].init, Focus, addonName)
-		self.addons[addonName].loaded = success
-		self.addons[addonName].hasRan = true
+	local addon = self.addons[addonName]
+	if addon then
+		local success = pcall(addon.init, Focus, addonName)
+		addon.loaded = success
+		addon.hasRan = true
 
-		debug(addonName .. " = " .. (success and "1" or "0"))
+		debug(addonName .. (success and "=1" or "=0"))
 	end
 end
 

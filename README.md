@@ -10,6 +10,7 @@ The focus frame works for both friendly and enemy players.
 ## Chat commands
 
 Focus current target or by name:
+<sup>Will clear current focus if you have no target.</sup>
 ```
 /focus
 /focus playername
@@ -22,7 +23,7 @@ Focus current mouseover target:
 
 Cast spell on focus target:
 
-If there are multiple mobs nearby with the exact same name, fcast will be used on nearest unit found.
+<sup>fcast will be used on nearest unit found when there are multiple mobs with same name.</sup>
 ```
 /fcast spellname
 ```
@@ -61,7 +62,7 @@ Clear current focus:
 
 If you need more advanced macros, you'll need to create your own script. "/fcast spell" can be accessed in scripts using 'SlashCmdList.FCAST("spell")'
 
-Example: This macro will cast polymorph on focus if SHIFT modifier is held down, or else it'll cast it on current target.
+Example: This macro will cast Polymorph on focus if SHIFT modifier is held down, or else it'll cast it on current target.
 ```
 /run if IsShiftKeyDown() then SlashCmdList.FCAST("Polymorph") else CastSpellByName("Polymorph") end
 ```
@@ -93,8 +94,8 @@ When using this addon there are some limitations or caveats you should know abou
 - Power for a non-party member focus is updated when you or your party members targets the focus target. (Also every time you use /fcast)
 - Health is updated same way as power, but will also update when the focus target's nameplate is in range.
 - Casts & buffs for focus are only tracked if the focus is within 40 yards range of your character.
-- For Rogues/druids: You will lose all your combo points when switching between target and focus!!
-- For some reason **heal** spell casts/channels are not tracked if the focus is inside your party. Not sure if this is a vanilla thing or Elysium bug.
+- For rogues/druids: You will lose all your combo points when switching between target and focus!!
+- For some reason **healing** spell casts are not tracked if the focus is inside your party. Not sure if this is a vanilla thing or Elysium bug.
 
 ## Installation
 1. Download latest [version here.](https://github.com/wardz/FocusFrame/releases)

@@ -1,7 +1,5 @@
-local Loader = getfenv(0).Focus_Loader
-
 -- luna clickcasting
-Loader:Register("LunaUnitFrames", function(Focus)
+Focus_Loader:Register("LunaUnitFrames", function(Focus)
     local orig_lufmo = SlashCmdList.LUFMO
     local L = LunaUF.L
 
