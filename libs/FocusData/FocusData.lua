@@ -116,7 +116,7 @@ do
 			-- insert to 'rawData' instead of 'data'
 			-- This will make sure __index is always called in 'data
 			local oldValue = rawData[key]
-			rawset(rawData, key, value)	
+			rawset(rawData, key, value)
 
 			-- Call event listeners if property has event
 			if not rawData.pauseEvents and events[key] then
@@ -270,12 +270,12 @@ do
 			data.raidIcon = RaidIconCoordinate[ux][uy]
 		end
 
-		local health = health:GetValue() or 0
-		if rawData.maxHealth < health then
+		local hp = health:GetValue() or 0
+		if rawData.maxHealth < hp then
 			-- need to re update maxHealth after unit with same name dies
 			rawData.maxHealth = 100
 		end
-		data.health = health
+		data.health = hp
 
 		local lvl = level:GetText()
 		if lvl then -- lvl is not shown when unit is skull (too high lvl)
@@ -308,7 +308,7 @@ do
 		--if rawData.unitIsEnemy and GetCVar("nameplateShowEnemies") == "1" then return end
 		--if rawData.unitIsFriend and GetCVar("nameplateShowFriends") == "1" then return end
 
-		local plate = plate or focusPlateRef
+		plate = plate or focusPlateRef
 		if plate then -- focus plate
 			if plate:GetText() == focusTargetName then -- just incase
 				local _, _, name, level, _, raidIcon = plate:GetRegions()
