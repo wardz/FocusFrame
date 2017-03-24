@@ -5,6 +5,7 @@ Provides [focus targeting](http://wowwiki.wikia.com/wiki/Focus_target) & frame s
 
 The focus frame works for both friendly and enemy players.
 
+
 ![alt](http://i.imgur.com/OEcWwgU.jpg)
 
 ## Chat commands
@@ -97,6 +98,7 @@ When using this addon there are some limitations or caveats you should know abou
 - Casts & buffs for focus are only tracked if the focus is within 40 yards range of your character.
 - For rogues/druids: You will lose all your combo points when switching between target and focus!!
 - For some reason **healing** spell casts are not tracked if the focus is inside your party. Not sure if this is a vanilla thing or Elysium bug.
+- This addon is only tested on Elysium servers. Other servers might not have all the combat log events required for this addon to function properly.
 
 ## Installation
 1. Download latest [version here.](https://github.com/wardz/FocusFrame/releases)
