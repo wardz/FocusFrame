@@ -517,7 +517,7 @@ end
 -- @usage Focus:Call(CastSpellByName, "Fireball") -- Casts Fireball on focus target
 -- @usage Focus:Call(DropItemOnUnit); -- defaults to focus unit if no second arg given
 -- @tparam[1] func func function reference
--- @tparam[1] string func string to be parsed in loadstring(). Slower than func reference.
+-- @tparam[2] string func string to be parsed in loadstring(). Slower than func reference.
 -- @param arg1
 -- @param arg2
 -- @param arg3
