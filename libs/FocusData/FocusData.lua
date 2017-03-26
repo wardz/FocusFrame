@@ -512,24 +512,29 @@ end
 -- @usage Focus:Call(CastSpellByName, "Fireball") -- Casts Fireball on focus target
 -- @usage Focus:Call(DropItemOnUnit); -- defaults to focus unit if no second arg given
 -- @tparam[1] func func function reference
--- @tparam[2] string func string to be parsed in loadstring(). Slower than func reference.
+-- @tparam[1] string func string to be parsed in loadstring(). Slower than func reference.
 -- @param arg1
 -- @param arg2
 -- @param arg3
 -- @param arg4
+-- @return pcall or loadstring results
 function Focus:Call(func, arg1, arg2, arg3, arg4)
 	if self:FocusExists(true) then
 		local argType = type(func)
 		if argType == "function" or argType == "string" then
 			arg1 = arg1 or "target" --focus
+			local result
+
 			if self:TargetFocus() then
 				if argType == "function" then
-					pcall(func, arg1, arg2, arg3, arg4)
+					result = pcall(func, arg1, arg2, arg3, arg4)
 				else
-					loadstring(func)
+					local f = loadstring(func)
+					if f then result = f() end
 				end
 			end
 			self:TargetPrevious()
+			return result
 		else
 			error("Usage: Focus:Call(function, arg1,arg2,arg3,arg4)")
 		end
