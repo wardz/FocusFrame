@@ -3,10 +3,11 @@ if SlashCmdList.MFOCUS then return end
 local _G = getfenv(0)
 local Focus = _G.FocusData
 
+-- Upvalues
 local scantip = _G.FocusDataScantip
 local scantipTextLeft1 = _G.FocusDataScantipTextLeft1
-local strfind, strlower, gsub = strfind, strlower, gsub
-local SpellIsTargeting, SpellStopTargeting, GetCVar = SpellIsTargeting, SpellStopTargeting, GetCVar
+local strfind, strlower, gsub, SetCVar, GetCVar = strfind, strlower, gsub, SetCVar, GetCVar
+local SpellIsTargeting, SpellStopTargeting = SpellIsTargeting, SpellStopTargeting
 
 SLASH_FOCUS1 = "/focus"
 SLASH_MFOCUS1 = "/mfocus"

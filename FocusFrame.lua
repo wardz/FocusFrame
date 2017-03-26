@@ -299,7 +299,7 @@ do
 				local debuffCount = _G["FocusFrameDebuff" .. i .. "Count"]
 				local debuffBorder = _G["FocusFrameDebuff" .. i .. "Border"]
 
-				local color = Focus:GetDebuffColor(debuff.debuffType)
+				local color = debuff.border
 				local debuffStack = debuff.stacks
 				_G["FocusFrameDebuff" .. i .. "Icon"]:SetTexture(debuff.icon)
 

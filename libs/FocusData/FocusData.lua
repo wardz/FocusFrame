@@ -721,7 +721,7 @@ function Focus:GetPowerColor()
 end
 
 --- Get border color for debuffs.
--- Uses numeric indexes.
+-- [DEPRECATED] Uses numeric indexes.
 -- @tparam string debuffType e.g "magic" or "physical"
 -- @return table
 function Focus:GetDebuffColor(debuffType)

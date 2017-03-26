@@ -1,6 +1,6 @@
 -- work in progress!
 
-local locale = GetLocale()
+--local locale = GetLocale()
 local L = {}
 
 --[[if locale == "" then

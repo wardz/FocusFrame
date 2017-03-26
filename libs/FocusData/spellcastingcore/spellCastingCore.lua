@@ -13,8 +13,8 @@ buff.__index 		= buff
 buffQueue.__index	= buffQueue
 
 local Focus
-local L = getfenv(0).FocusData_Locale
-local playerName = UnitName'player'
+local L = FocusData_Locale
+local playerName = UnitName("player")
 
 -- Upvalues
 local FOCUS_CHANNELED_SPELLCASTS_TO_TRACK, FOCUS_INSTANT_SPELLCASTS_TO_TRACK =
@@ -63,7 +63,9 @@ InstaBuff.create = function(c, b, list, time)
 end
 
 buff.create = function(tar, t, s, buffType, factor, time, texture, debuff, magictype, debuffStack)
-	buffType = buffType or {}
+	if not buffType then
+		buffType = {}
+	end
 	buffType.type = magictype and strlower(magictype) or strlower(buffType.type or "none")
 
 	local acnt = {
@@ -186,7 +188,7 @@ local tableMaintenance = function(reset)
 
 	-- Remove focus auras if focus is dead
 	if CURR_FOCUS_TARGET and Focus:IsDead() then
-		-- need to call this in OnUpdate aswell to avoid buffs not being removed due to data
+		-- need to call this in OnUpdate to avoid buffs not being removed due to data
 		-- race conditions from events
 		forceHideTableItem(buffList, CURR_FOCUS_TARGET)
 	end
