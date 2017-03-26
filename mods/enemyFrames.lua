@@ -1,6 +1,6 @@
 -- Adds support for portrait debuff timers with enemyFrames addon
 Focus_Loader:Register("enemyFrames", function(Focus)
-	if not CreateCooldown or SPELLCASTINGCOREgetPrioBuff then return end
+	if not CreateCooldown or not SPELLCASTINGCOREgetPrioBuff then return end
 
 	local getPrioBuff, floor, GetTime = SPELLCASTINGCOREgetPrioBuff, floor, GetTime
 
