@@ -310,8 +310,8 @@ do
 
 		plate = plate or focusPlateRef
 		if plate then -- focus plate
-			if plate:GetText() == focusTargetName then -- just incase
-				local _, _, name, level, _, raidIcon = plate:GetRegions()
+			local _, _, name, level, _, raidIcon = plate:GetRegions()
+			if name:GetText() == focusTargetName then -- just incase
 				return SavePlateInfo(plate:GetChildren(), name, level, raidIcon)
 			end
 		end
