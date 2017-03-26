@@ -363,6 +363,11 @@ local function SetFocusHealth(unit, isDead, hasPetFixRan)
 	if not isDead then
 		data.powerType = UnitPowerType(unit)
 	end
+
+	if (rawData.maxHealth or 0) < (rawData.health or 0) then
+		-- need to re update maxHealth after unit with same name dies
+		rawData.maxHealth = 100
+	end
 end
 
 local function SetFocusInfo(unit, resetRefresh)
@@ -706,10 +711,6 @@ end
 -- @treturn number min
 -- @treturn number max
 function Focus:GetHealth()
-	if (rawData.maxHealth or 0) < (rawData.health or 0) then
-		-- need to re update maxHealth after unit with same name dies
-		rawData.maxHealth = 100
-	end
 	return rawData.health or 0, rawData.maxHealth or 100
 end
 
