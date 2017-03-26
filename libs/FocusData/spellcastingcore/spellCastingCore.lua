@@ -6,11 +6,9 @@ if FSPELLCASTINGCOREgetDebuffs then return end
 local Cast 			= {} 		local casts 		= {}
 local InstaBuff 	= {} 		local iBuffs 		= {}
 local buff 			= {} 		local buffList 		= {}
-local buffQueue		= {}		local buffQueueList = {}
 Cast.__index   		= Cast
 InstaBuff.__index 	= InstaBuff
 buff.__index 		= buff
-buffQueue.__index	= buffQueue
 
 local Focus
 local L = FocusData_Locale
@@ -84,21 +82,6 @@ buff.create = function(tar, t, s, buffType, factor, time, texture, debuff, magic
 	}
 
 	setmetatable(acnt, buff)
-
-	return acnt
-end
-
--- TODO why is this needed?
-buffQueue.create = function(tar, spell, buffType, d, time)
-	local acnt = {
-		target		= tar,
-		buffName	= spell,
-		buffData	= buffType,
-		timeStart	= time,
-		timeEnd		= time + 1
-	}
-
-	setmetatable(acnt, buffQueue)
 
 	return acnt
 end
@@ -184,7 +167,6 @@ local tableMaintenance = function(reset)
 	end
 
 	removeExpiredTableEntries(getTime, iBuffs) -- casting speed buffs
-	removeExpiredTableEntries(getTime, buffQueueList)
 
 	-- Remove focus auras if focus is dead
 	if CURR_FOCUS_TARGET and Focus:IsDead() then
@@ -286,21 +268,8 @@ local newIBuff = function(caster, buff)
 	tinsert(iBuffs, b)
 end
 
-local function checkQueueBuff(tar, b)
-	for k, v in pairs(buffQueueList) do
-		if v.target == tar and v.buffName == b then
-			return true
-		end
-	end
-
-	return false
-end
-
 local function newbuff(tar, b, s, castOn, texture, debuff, magictype, debuffStack, noEvent)
 	local getTime = getTimeMinusPing()
-
-	-- check buff queue
-	if checkQueueBuff(tar, b) then return end
 
 	-- remove buff if it exists
 	local i = 1
@@ -337,28 +306,6 @@ local function refreshBuff(tar, b, s)
 				newbuff(tar, j, s, false, v.icon, v.btype, v.debuffType)
 				return
 			end
-		end
-	end
-end
-
-local function queueBuff(tar, spell, b, d) -- TODO why is this needed?
-	local time = getTimeMinusPing()--GetTime()
-	local bq = buffQueue.create(tar, spell, b, d, time)
-	tinsert(buffQueueList, bq)
-end
-
-local function processQueuedBuff(tar, b)
-	local time = getTimeMinusPing()--GetTime()
-
-	for k, v in pairs(buffQueueList) do
-		if v.target == tar and v.buffName == b then
-			local n = buff.create(v.target, v.buffName, 1, v.buffData, 1, time, v.icon, v.btype, v.debuffType, v.stacks)
-			tinsert(buffList, n)
-			tremove(buffQueueList, k)
-			if Focus:UnitIsFocus(tar, true) then
-				Focus:SetData("auraUpdate", 1)
-			end
-			return
 		end
 	end
 end
@@ -489,6 +436,7 @@ local GainAfflict = function()
 				st = tonumber(gsub(auxS, spellstacks, '%2'), 10)
 			end
 		end
+
 		-- debuffs to be displayed
 		if FOCUS_BUFFS_TO_TRACK[s] then
 			--if st > 1 then
@@ -509,9 +457,6 @@ local GainAfflict = function()
 		if FOCUS_TIME_MODIFIER_BUFFS_TO_TRACK[s] then
 			newIBuff(c, s)
 		end
-
-		-- process debuffs in queueBuff
-		processQueuedBuff(c, s)
 	end
 
 	return fgain or fpgain or fafflict or fpafflict

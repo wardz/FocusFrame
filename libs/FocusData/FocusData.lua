@@ -539,9 +539,10 @@ end
 -- @private
 function Focus:TargetWithFixes(name)
 	local unit = rawData.unit
-	if unit and rawData.unitIsPlayer then
+	local isPlayer = rawData.unitIsPlayer
+	if unit and isPlayer then
 		-- target using unitID if available
-		if UnitExists(unit) and rawData.unitIsPlayer == UnitIsPlayer(unit) --[[pet with same name?]] then
+		if UnitExists(unit) and isPlayer == UnitIsPlayer(unit) --[[pet with same name?]] then
 			if self:UnitIsFocus(unit) then
 				TargetUnit(unit)
 				return
@@ -554,7 +555,7 @@ function Focus:TargetWithFixes(name)
 	-- Case insensitive name will make the game target nearest enemy
 	-- instead of first unit rendered on screen
 
-	if UnitIsDead("target") == 1 or UnitIsUnit("target", "player") then
+	if UnitIsDead("target") == 1 or (isPlayer and isPlayer ~= UnitIsPlayer("target")) or UnitIsUnit("target", "player") then
 		-- Try case sensitive search
 		TargetByName(name or focusTargetName, true)
 	end
