@@ -62,7 +62,7 @@ SlashCmdList.FCAST = function(spell)
 			CastSpellByName(spell)
 		else
 			local sc = GetCVar("AutoSelfCast")
-			SetCVar("AutoSelfCast", "0")
+			SetCVar("AutoSelfCast", "0") -- prevent casting on self when focus is invalid
 			Focus:Call(CastSpellByName, spell)
 			SetCVar("AutoSelfCast", sc)
 

@@ -118,6 +118,13 @@ do
 			local oldValue = rawData[key]
 			rawset(rawData, key, value)
 
+			local getTime = GetTime()
+			rawData.lastSeen = getTime
+			if rawData.inactive then
+				CallHooks("FOCUS_ACTIVE")
+				rawData.inactive = false
+			end
+
 			-- Call event listeners if property has event
 			if not rawData.pauseEvents and events[key] then
 				if key ~= "auraUpdate" then
@@ -130,7 +137,6 @@ do
 
 				-- Throttle events to run only every 0.1s+
 				-- (Health/aura events can sometimes be triggered quite frequently)
-				local getTime = GetTime()
 				local last = rawData.eventsThrottle[key]
 				if last then
 					if (getTime - last) < 0.1 then return end
@@ -516,8 +522,7 @@ end
 --- Call functions on focus. I.e CastSpellByName.
 -- @usage Focus:Call(CastSpellByName, "Fireball") -- Casts Fireball on focus target
 -- @usage Focus:Call(DropItemOnUnit); -- defaults to focus unit if no second arg given
--- @tparam[1] func func function reference
--- @tparam[2] string func string to be parsed in loadstring(). Slower than func reference.
+-- @tparam[1] func func function reference or string to be parsed in loadstring()
 -- @param arg1
 -- @param arg2
 -- @param arg3
@@ -764,6 +769,7 @@ do
 		if cast then
 			local timeEnd, timeStart = cast.timeEnd, cast.timeStart
 			local getTime = GetTime()
+			rawData.lastSeen = getTime
 
 			if getTime < timeEnd then
 				local t = timeEnd - getTime
@@ -904,6 +910,18 @@ do
 		end
 	end
 
+	local function CheckIdle()
+		local getTime = GetTime()
+
+		if rawData.lastSeen and getTime - rawData.lastSeen > 14 then
+			rawData.lastSeen = getTime
+			if not rawData.inactive then
+				CallHooks("FOCUS_INACTIVE")
+			end
+			rawData.inactive = true
+		end
+	end
+
 	local EventHandler = function()
 		-- Run only events for focus
 		if strfind(event, "UNIT_") or event == "PLAYER_FLAGS_CHANGED"
@@ -942,6 +960,7 @@ do
 								rawData.unit = nil
 								NameplateScanner(childs, plate)
 								PartyScanner()
+								CheckIdle()
 							end
 						end
 					end

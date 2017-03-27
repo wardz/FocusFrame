@@ -15,6 +15,19 @@ local function OnFocusSat(event, unit)
 	FocusFrame:Show()
 end
 
+local function OnFocusIdle()
+	if FocusFrameDB.fadeOnIdle then
+		FocusFrame:SetAlpha(0.6)
+	end
+end
+
+local function OnFocusActive()
+	if FocusFrameDB.fadeOnIdle then
+		FocusFrame:SetAlpha(1)
+	end
+end
+
+
 local function HealthUpdate()
 	local health, maxHealth = Focus:GetHealth()
 	local mana, maxMana = Focus:GetPower()
@@ -388,6 +401,8 @@ Focus:OnEvent("UNIT_CLASSIFICATION_CHANGED", CheckClassification)
 Focus:OnEvent("UNIT_PORTRAIT_UPDATE", CheckPortrait)
 Focus:OnEvent("FOCUS_UNITID_EXISTS", CheckPortrait) -- update on retarget/mouseover aswell
 --Focus:OnEvent("FOCUS_CHANGED", function() print("ran2") end)
+Focus:OnEvent("FOCUS_ACTIVE", OnFocusActive)
+Focus:OnEvent("FOCUS_INACTIVE", OnFocusIdle)
 
 -- Chat options
 SLASH_FOCUSOPTIONS1 = "/foption"
@@ -410,10 +425,14 @@ SlashCmdList.FOCUSOPTIONS = function(msg)
 		FocusFrameDB.alwaysShow = not FocusFrameDB.alwaysShow
 		local s = FocusFrameDB.alwaysShow
 		print("Frame is now %s after loading screens/death.", s and "still shown" or "hidden")
+	elseif cmd == "fade" then
+		FocusFrameDB.fadeOnIdle = not FocusFrameDB.fadeOnIdle
+		print("Fade on inactive %s", FocusFrameDB.fadeOnIdle and "enabled" or "disabled")
 	elseif cmd == "reset" then
 		FocusFrameDB.scale = 1
 		FocusFrameDB.unlock = true
 		FocusFrameDB.alwaysShow = false
+		FocusFrameDB.fadeOnIdle = false
 		FocusFrame:SetScale(1)
 		FocusFrame:SetPoint("TOPLEFT", 250, -300)
 		FocusFrame:StopMovingOrSizing() -- trigger db save
