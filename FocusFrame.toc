@@ -2,7 +2,7 @@
 ## Title: FocusFrame
 ## Notes: Focus frame support for vanilla.
 ## Author: Wardz
-## Version: 1.1.1
+## Version: 1.1.2
 ## SavedVariables: FocusFrameDB
 
 libs\FocusData\Localization.lua
