@@ -1066,12 +1066,16 @@ do
 
 	function events:PLAYER_ENTERING_WORLD()
 		if Focus:FocusExists() then
+			if FocusFrameDB and FocusFrameDB.alwaysShow then return end
+			-- not ideal to put FocusFrameDB stuff here but i really don't wanna
+			-- rewrite Focus:ClearFocus just for this one thing
 			Focus:ClearFocus()
 		end
 	end
 
 	function events:PLAYER_ALIVE() -- releases spirit
 		if Focus:FocusExists() then
+			if FocusFrameDB and FocusFrameDB.alwaysShow then return end
 			Focus:ClearFocus()
 		end
 	end

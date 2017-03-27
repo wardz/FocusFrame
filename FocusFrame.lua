@@ -396,25 +396,33 @@ SlashCmdList.FOCUSOPTIONS = function(msg)
 	local cmd = strsub(msg, 1, space and (space-1))
 	local value = tonumber(strsub(msg, space or -1))
 
-	local print = function(x) DEFAULT_CHAT_FRAME:AddMessage(x) end
+	local print = function(a, b, c) DEFAULT_CHAT_FRAME:AddMessage(string.format(a, b, c)) end
 
 	if cmd == "scale" and value then
 		local x = value > 0.1 and value <= 2 and value or 1
 		FocusFrame:SetScale(x)
 		FocusFrameDB.scale = x
-		print("Scale set to " .. x)
+		print("Scale set to %f", x)
 	elseif cmd == "lock" then
 		FocusFrameDB.unlock = not FocusFrameDB.unlock
-		print("Frame is now " .. (FocusFrameDB.unlock and "un" or "") .. "locked.")
+		print("Frame is now %slocked.", FocusFrameDB.unlock and "un" or "")
+	elseif cmd == "nohide" then
+		FocusFrameDB.alwaysShow = not FocusFrameDB.alwaysShow
+		local s = FocusFrameDB.alwaysShow
+		print("Frame is now %s after loading screens/death.", s and "still shown" or "hidden")
 	elseif cmd == "reset" then
 		FocusFrameDB.scale = 1
 		FocusFrameDB.unlock = true
+		FocusFrameDB.alwaysShow = false
 		FocusFrame:SetScale(1)
 		FocusFrame:SetPoint("TOPLEFT", 250, -300)
 		FocusFrame:StopMovingOrSizing() -- trigger db save
 		print("Frame has been reset.")
 	else
-		print("Valid commands are:\n/foption scale 1 - Change frame size (0.2 - 2)\n/foption lock - Toggle dragging of frame")
+		print("Valid commands are:")
+		print("/foption scale 1 - Change frame size (0.2 - 2)")
+		print("/foption lock - Toggle dragging of frame")
+		print("/foption nohide - Toggle hiding of frame on loading screens/release spirit.")
 		print("/foption reset - Reset to default settings.")
 	end
 end
