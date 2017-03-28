@@ -84,6 +84,16 @@ Toggle frame dragging:
 /foption lock
 ```
 
+Toggle fading of frame when focus hasn't been updated for ~10s:
+```
+/foption fade
+```
+
+Toggle hiding of frame on loading screens/release spirit:
+```
+/foption nohide
+```
+
 Reset to default:
 ```
 /foption reset
