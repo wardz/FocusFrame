@@ -107,4 +107,3 @@ When using this addon there are some limitations or caveats you should know abou
 
 ## Plugins
 - [modui-FocusFrame](https://github.com/gashole/modui-FocusFrame) by [Gashole](https://github.com/gashole)
--
