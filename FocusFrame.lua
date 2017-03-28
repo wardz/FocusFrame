@@ -22,11 +22,8 @@ local function OnFocusIdle()
 end
 
 local function OnFocusActive()
-	if FocusFrameDB.fadeOnIdle then
-		FocusFrame:SetAlpha(1)
-	end
+	FocusFrame:SetAlpha(1)
 end
-
 
 local function HealthUpdate()
 	local health, maxHealth = Focus:GetHealth()
@@ -427,7 +424,7 @@ SlashCmdList.FOCUSOPTIONS = function(msg)
 		print("Frame is now %s after loading screens/death.", s and "still shown" or "hidden")
 	elseif cmd == "fade" then
 		FocusFrameDB.fadeOnIdle = not FocusFrameDB.fadeOnIdle
-		print("Fade on inactive %s", FocusFrameDB.fadeOnIdle and "enabled" or "disabled")
+		print("Fade on inactive %s (requires retarget on focus)", FocusFrameDB.fadeOnIdle and "enabled" or "disabled")
 	elseif cmd == "reset" then
 		FocusFrameDB.scale = 1
 		FocusFrameDB.unlock = true
@@ -442,6 +439,7 @@ SlashCmdList.FOCUSOPTIONS = function(msg)
 		print("/foption scale 1 - Change frame size (0.2 - 2)")
 		print("/foption lock - Toggle dragging of frame")
 		print("/foption nohide - Toggle hiding of frame on loading screens/release spirit.")
+		print("/foption fade - Toggle fading of frame when focus hasn't been updated for ~10s.")
 		print("/foption reset - Reset to default settings.")
 	end
 end

@@ -769,7 +769,7 @@ do
 		if cast then
 			local timeEnd, timeStart = cast.timeEnd, cast.timeStart
 			local getTime = GetTime()
-			rawData.lastSeen = getTime
+			rawData.lastSeen = getTime -- TODO add to spellcastingcore?
 
 			if getTime < timeEnd then
 				local t = timeEnd - getTime
@@ -913,7 +913,7 @@ do
 	local function CheckIdle()
 		local getTime = GetTime()
 
-		if rawData.lastSeen and getTime - rawData.lastSeen > 14 then
+		if rawData.lastSeen and getTime - rawData.lastSeen > 10 then
 			rawData.lastSeen = getTime
 			if not rawData.inactive then
 				CallHooks("FOCUS_INACTIVE")
