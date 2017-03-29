@@ -48,7 +48,7 @@ else]]
     L["(.+) suffers (.+) from (.+)'s (.+)."]    = "(.+) suffers (.+) from (.+)'s (.+)."
     L['(.+) suffers (.+) from your (.+).']      = '(.+) suffers (.+) from your (.+).'
     L["You suffer (.+) from (.+)'s (.+)."]      = "You suffer (.+) from (.+)'s (.+)."
-    L['(.+)\'s (.+) drains (.+) Mana from']     = '(.+)\'s (.+) drains (.+) Mana from'
+    L['(.+)\'s (.+) drains (.+) Mana from (.+)']     = '(.+)\'s (.+) drains (.+) Mana from (.+)'
 
     L['(.+) dies.']             = '(.+) dies.'
     L['(.+) is slain by (.+).'] = '(.+) is slain by (.+).'

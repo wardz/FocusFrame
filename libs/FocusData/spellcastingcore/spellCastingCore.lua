@@ -542,13 +542,19 @@ local HitsCrits = function()
 		-- instant spells that cancel casted ones
 		if FOCUS_INSTANT_SPELLCASTS_TO_TRACK[s] then
 			forceHideTableItem(casts, c, nil)
-		--elseif not fabsb then
-			--DelayCastTimer(t, s)
 		end
 
-		--if FOCUS_CHANNELED_SPELLCASTS_TO_TRACK[s] then
-			--newCast(c, s, true)
-		--end
+		if not fabsb then
+			--DelayCastTimer(t, s)
+			if FOCUS_SPELLCASTS_TO_TRACK[s] then
+				removeDoubleCast(c)
+			end
+		end
+
+		local channelSpell = FOCUS_CHANNELED_SPELLCASTS_TO_TRACK[s]
+		if channelSpell and channelSpell.tick then
+			newCast(c, s, true)
+		end
 
 		-- interrupt dmg spell
 		if FOCUS_INTERRUPTS_TO_TRACK[s] then
@@ -597,7 +603,7 @@ local channelDot = function()
 	local channelpDot 	= L['(.+) suffers (.+) from your (.+).']		local fchannelpDot	= strfind(arg1, channelpDot)
 	local pchannelDot 	= L["You suffer (.+) from (.+)'s (.+)."]		local fpchannelDot = strfind(arg1, pchannelDot)
 
-	local MDrain = L['(.+)\'s (.+) drains (.+) Mana from'] 			local fMDrain = strfind(arg1, MDrain)
+	local MDrain = L['(.+)\'s (.+) drains (.+) Mana from (.+)'] 			local fMDrain = strfind(arg1, MDrain)
 
 	-- channeling dmg spells on other (mind flay, life drain(?))
 	if fchannelDot then
@@ -643,6 +649,7 @@ local channelDot = function()
 			newCast(c, s, true)
 		end
 	end
+
 	return fchannelDot or fpchannelDot or fchannelpDot or fMDrain
 end
 

@@ -318,8 +318,8 @@ FOCUS_CHANNELED_SPELLCASTS_TO_TRACK = {
 	['Eyes of the Beast']       = {['icon'] = [[Interface\Icons\Ability_eyeoftheowl]], 		['casttime'] = 60},
 
 	-- MAGE
-	['Arcane Missile']         	= {['icon'] = [[Interface\Icons\Spell_nature_starfall]], 	['casttime'] = 2.5},
-	['Arcane Missiles']         = {['icon'] = [[Interface\Icons\Spell_nature_starfall]], 	['casttime'] = 4.5},
+	['Arcane Missile']         	= {['icon'] = [[Interface\Icons\Spell_nature_starfall]], 	['casttime'] = 2.5,		['tick'] = 3},
+	['Arcane Missiles']         = {['icon'] = [[Interface\Icons\Spell_nature_starfall]], 	['casttime'] = 4.5, 	['tick'] = 3},
 	['Blizzard']                = {['icon'] = [[Interface\Icons\Spell_frost_icestorm]], 	['casttime'] = 7.5, 	['tick'] = 1},
 	['Evocation']               = {['icon'] = [[Interface\Icons\Spell_nature_purge]], 		['casttime'] = 8},
 

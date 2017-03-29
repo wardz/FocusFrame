@@ -252,6 +252,8 @@
 		['Shadow Trance'] 			= {['icon'] = [[Interface\Icons\Spell_shadow_twilight]], 			['duration'] = 10, 	['type'] = 'magic'},
 		['Shadow Ward']				= {['icon'] = [[Interface\Icons\Spell_shadow_antishadow]],			['duration'] = 30,	['type'] = 'magic'},
 		['Siphon Life']				= {['icon'] = [[Interface\Icons\Spell_shadow_requiem]],				['duration'] = 30,	['display'] = true,},
+		['Demon Skin']				= {['icon'] = [[Interface\Icons\Spell_shadow_ragingscream]],		['duration'] = 60*3,},
+		['Demon Armor']				= {['icon'] = [[Interface\Icons\Spell_shadow_ragingscream]],		['duration'] = 60*3,},
 
 		--[[	WARRRIOR 	]]--
 		['Berserker Rage']			= {['icon'] = [[Interface\Icons\Spell_nature_ancestralguardian]],	['duration'] = 10,										},
