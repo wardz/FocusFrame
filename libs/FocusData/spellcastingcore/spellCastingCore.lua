@@ -544,11 +544,11 @@ local HitsCrits = function()
 			forceHideTableItem(casts, c, nil)
 		end
 
-		if not fabsb then
-			--DelayCastTimer(t, s)
-			if FOCUS_SPELLCASTS_TO_TRACK[s] then
-				removeDoubleCast(c)
-			end
+		--[[if not fabsb then
+			DelayCastTimer(t, s)
+		end]]
+		if FOCUS_SPELLCASTS_TO_TRACK[s] then
+			removeDoubleCast(c)
 		end
 
 		local channelSpell = FOCUS_CHANNELED_SPELLCASTS_TO_TRACK[s]
