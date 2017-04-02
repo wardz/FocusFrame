@@ -379,9 +379,9 @@ end
 
 local DirectInterrupt = function()
 	local pintrr 	= L['You interrupt (.+)\'s (.+).']			local fpintrr  	= strfind(arg1, pintrr)
-	local intrr 	= L['(.+) interrupts (.+)\'s (.+).']		local fintrr  	= strfind(arg1, pintrr)
+	local intrr 	= L['(.+) interrupts (.+)\'s (.+).']		local fintrr  	= strfind(arg1, intrr)
 
-	if fpintrr  or fintrr then
+	if fpintrr or fintrr then
 		local m = fpintrr and pintrr or intrr
 		local t = fpintrr and gsub(arg1, m, '%1') or gsub(arg1, m, '%2')
 		local s = fpintrr and gsub(arg1, m, '%2') or gsub(arg1, m, '%3')
