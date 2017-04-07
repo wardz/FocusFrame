@@ -17,7 +17,7 @@ The focus frame works for both friendly and enemy players.
 ## Installation
 1. Download latest [version here.](https://github.com/wardz/FocusFrame/releases)
 2. Extract (unzip) the downloaded file into your "WoW/Interface/AddOns" folder.
-3. Remove any suffixes from the addon's folder name. E.g: "FocusFrame-v1.0" to "FocusFrame".
+3. Remove any suffixes from the addon's folder name. E.g: `FocusFrame-v1.0` to `FocusFrame`.
 
 ## Plugins
 - [modui-FocusFrame](https://github.com/gashole/modui-FocusFrame) by [Gashole](https://github.com/gashole)
