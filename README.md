@@ -11,7 +11,7 @@ The focus frame works for both friendly and enemy **players**.
 ## Usage & Info
 - [Chat commands/macros](https://github.com/wardz/FocusFrame/wiki/Commands)
 - [Options](https://github.com/wardz/FocusFrame/wiki/Options)
-- [Addon limitations](https://github.com/wardz/FocusFrame/wiki/Limitations) You should read this if you're new to the addon API in vanilla.
+- [Addon limitations](https://github.com/wardz/FocusFrame/wiki/Limitations) (Important)
 - [What is focus and why is it useful?](http://wow.gamepedia.com/Focus_target) 
 
 ## Installation
