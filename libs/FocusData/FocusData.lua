@@ -20,8 +20,8 @@ local focusPlateRan
 local focusPlateRef
 
 -- Upvalues
-local GetTime, next, strfind, UnitName, UnitIsPlayer, TargetLastTarget, TargetByName, UnitIsUnit, strlower, type, pcall, tgetn =
-	  GetTime, next, strfind, UnitName, UnitIsPlayer, TargetLastTarget, TargetByName, UnitIsUnit, strlower, type, pcall, table.getn
+local GetTime, UnitName, UnitIsPlayer, strfind, tonumber, type, tgetn =
+	  GetTime, UnitName, UnitIsPlayer, strfind, tonumber, type, table.getn
 
 -- Functions
 local NameplateScanner
@@ -36,7 +36,6 @@ local ClearBuffs = FSPELLCASTINGCOREClearBuffs
 local NewBuff = FSPELLCASTINGCORENewBuff
 local GetBuffs = FSPELLCASTINGCOREgetBuffs
 local GetCast = FSPELLCASTINGCOREgetCast
-local BORDER_DEBUFFS_COLOR = FOCUS_BORDER_DEBUFFS_COLOR
 
 --------------------------------------
 -- Core
@@ -237,7 +236,7 @@ do
 
 	local function IsPlate(overlayRegion)
 		if not overlayRegion or overlayRegion:GetObjectType() ~= "Texture"
-		or overlayRegion:GetTexture() ~= [[Interface\Tooltips\Nameplate-Border]] then
+		or overlayRegion:GetTexture() ~= "Interface\\Tooltips\\Nameplate-Border" then
 			return false
 		end
 		return true
@@ -472,433 +471,431 @@ end
 -- or in an OnUpdate script with focus exist check.
 -- Documentation: https://wardz.github.io/FocusFrame/
 --------------------------------------
+do
+	local SetCVar, GetCVar, pcall = SetCVar, GetCVar, pcall
 
---- Misc
--- @section misc
+	local UnitIsUnit, UnitIsDead, UnitExists, SpellIsTargeting, SpellStopTargeting =
+		  UnitIsUnit, UnitIsDead, UnitExists, SpellIsTargeting, SpellStopTargeting
 
---- Display an error in UIErrorsFrame.
--- @tparam[opt="You have no focus"] string msg
-function Focus:ShowError(msg)
-	UIErrorsFrame:AddMessage("|cffFF003F " .. (msg or L.NO_FOCUS) .. "|r")
-end
+	--- Misc
+	-- @section misc
 
---- Unit
--- @section unit
-
---- Check if unit ID or unit name matches focus target.
--- If 'checkName' is true, 'unit' needs to be a name and not an unit ID.
--- @tparam string unit
--- @tparam[opt=false] bool checkName
--- @treturn bool true if match
-function Focus:UnitIsFocus(unit, checkName)
-	if not checkName then
-		return focusTargetName and UnitName(unit) == focusTargetName
-	else
-		return unit == focusTargetName
-	end
-end
-
---- Get unit ID for focus if available.
--- If you need to get unitID reliably, checkout FOCUS_UNITID_EXISTS event.
--- @treturn[1] string unitID
--- @treturn[2] nil
-function Focus:GetFocusUnit()
-	if rawData.unit and UnitExists(rawData.unit) and self:UnitIsFocus(rawData.unit) then
-		return rawData.unit
-	end
-end
-
---- Check if focus is sat. (not same as UnitExists!)
--- @tparam[opt=false] bool showError display default UI error msg
--- @treturn bool true if exists
-function Focus:FocusExists(showError)
-	if showError and not focusTargetName then
-		self:ShowError()
+	--- Display an error in UIErrorsFrame.
+	-- @tparam[opt="You have no focus"] string msg
+	function Focus:ShowError(msg)
+		UIErrorsFrame:AddMessage("|cffFF003F " .. (msg or L.NO_FOCUS) .. "|r")
 	end
 
-	return focusTargetName ~= nil
-end
+	--- Unit
+	-- @section unit
 
---- Call functions on focus. I.e CastSpellByName.
--- @usage Focus:Call(CastSpellByName, "Fireball") -- Casts Fireball on focus target
--- @usage Focus:Call(DropItemOnUnit); -- defaults to focus unit if no second arg given
--- @tparam[1] func func function reference or string to be parsed in loadstring()
--- @param arg1
--- @param arg2
--- @param arg3
--- @param arg4
--- @return pcall or loadstring results
-function Focus:Call(func, arg1, arg2, arg3, arg4)
-	if self:FocusExists(true) then
-		local argType = type(func)
-		if argType == "function" or argType == "string" then
-			arg1 = arg1 or "target" --focus
-			local result
+	--- Check if unit ID or unit name matches focus target.
+	-- If 'checkName' is true, 'unit' needs to be a name and not an unit ID.
+	-- @tparam string unit
+	-- @tparam[opt=false] bool checkName
+	-- @treturn bool true if match
+	function Focus:UnitIsFocus(unit, checkName)
+		if not checkName then
+			return focusTargetName and UnitName(unit) == focusTargetName
+		else
+			return unit == focusTargetName
+		end
+	end
 
-			if self:TargetFocus() then
-				if argType == "function" then
-					result = pcall(func, arg1, arg2, arg3, arg4)
-				else
-					local fn = loadstring(func)
-					if fn then
-						result = true
-						fn()
+	--- Get unit ID for focus if available.
+	-- If you need to get unitID reliably, checkout FOCUS_UNITID_EXISTS event.
+	-- @treturn[1] string unitID
+	-- @treturn[2] nil
+	function Focus:GetFocusUnit()
+		if rawData.unit and UnitExists(rawData.unit) and self:UnitIsFocus(rawData.unit) then
+			return rawData.unit
+		end
+	end
+
+	--- Check if focus is sat. (not same as UnitExists!)
+	-- @tparam[opt=false] bool showError display default UI error msg
+	-- @treturn bool true if exists
+	function Focus:FocusExists(showError)
+		if showError and not focusTargetName then
+			self:ShowError()
+		end
+
+		return focusTargetName ~= nil
+	end
+
+	--- Call functions on focus. I.e CastSpellByName.
+	-- @usage Focus:Call(CastSpellByName, "Fireball") -- Casts Fireball on focus target
+	-- @usage Focus:Call(DropItemOnUnit); -- defaults to focus unit if no second arg given
+	-- @tparam[1] func func function reference or string to be parsed in loadstring()
+	-- @param arg1
+	-- @param arg2
+	-- @param arg3
+	-- @param arg4
+	-- @return pcall or loadstring results
+	function Focus:Call(func, arg1, arg2, arg3, arg4)
+		if self:FocusExists(true) then
+			local argType = type(func)
+			if argType == "function" or argType == "string" then
+				arg1 = arg1 or "target" --focus
+				local result
+
+				if self:TargetFocus() then
+					if argType == "function" then
+						result = pcall(func, arg1, arg2, arg3, arg4)
+					else
+						local fn = loadstring(func)
+						if fn then
+							result = true
+							fn()
+						end
 					end
+				end
+
+				self:TargetPrevious()
+				return result
+			else
+				error("Usage: Focus:Call(function, arg1,arg2,arg3,arg4)")
+			end
+		end
+	end
+
+	--- Trigger CastSpellByName on focus target.
+	-- @usage Focus:CastSpellByName("Fireball") -- Casts Fireball on focus target
+	-- @tparam string name name of spell to cast
+	function Focus:CastSpellByName(name)
+		if self:FocusExists(true) then
+			if self:TargetFocus() then
+				local sc = GetCVar("AutoSelfCast")
+				SetCVar("AutoSelfCast", "0") -- prevent casting on self when focus is invalid
+				pcall(CastSpellByName, name)
+				SetCVar("AutoSelfCast", sc)
+
+				if SpellIsTargeting() then
+					SpellStopTargeting()
 				end
 			end
 
 			self:TargetPrevious()
-			return result
-		else
-			error("Usage: Focus:Call(function, arg1,arg2,arg3,arg4)")
 		end
 	end
-end
+	_G.FDCAST = Focus.CastSpellByName -- alias for macros
 
---- Trigger CastSpellByName on focus target.
--- @usage Focus:CastSpellByName("Fireball") -- Casts Fireball on focus target
--- @tparam string name name of spell to cast
-function Focus:CastSpellByName(name)
-	if self:FocusExists(true) then
-		if self:TargetFocus() then
-			local sc = GetCVar("AutoSelfCast")
-			SetCVar("AutoSelfCast", "0") -- prevent casting on self when focus is invalid
-			pcall(CastSpellByName, name)
-			SetCVar("AutoSelfCast", sc)
-
-			if SpellIsTargeting() then
-				SpellStopTargeting()
+	-- @private
+	function Focus:TargetWithFixes(name)
+		local unit = rawData.unit
+		local isPlayer = rawData.unitIsPlayer
+		if unit and isPlayer then
+			-- target using unitID if available
+			if UnitExists(unit) and isPlayer == UnitIsPlayer(unit) --[[pet with same name?]] then
+				if self:UnitIsFocus(unit) then
+					TargetUnit(unit)
+					return
+				end
 			end
 		end
 
-		self:TargetPrevious()
-	end
-end
-_G.FDCAST = Focus.CastSpellByName -- alias for macros
+		local _name = strsub(name or focusTargetName, 1, -2)
+		TargetByName(_name, false)
+		-- Case insensitive name will make the game target nearest enemy
+		-- instead of first unit rendered on screen
 
--- @private
-function Focus:TargetWithFixes(name)
-	local unit = rawData.unit
-	local isPlayer = rawData.unitIsPlayer
-	if unit and isPlayer then
-		-- target using unitID if available
-		if UnitExists(unit) and isPlayer == UnitIsPlayer(unit) --[[pet with same name?]] then
-			if self:UnitIsFocus(unit) then
-				TargetUnit(unit)
-				return
-			end
+		if UnitIsDead("target") == 1 or (isPlayer and isPlayer ~= UnitIsPlayer("target")) or UnitIsUnit("target", "player") then
+			-- Try case sensitive search
+			TargetByName(name or focusTargetName, true)
+		end
+
+		if UnitIsUnit("target", "player") then
+			-- Targeting above failed and player targeted himself instead
+			self.needRetarget = true
 		end
 	end
 
-	local _name = strsub(name or focusTargetName, 1, -2)
-	TargetByName(_name, false)
-	-- Case insensitive name will make the game target nearest enemy
-	-- instead of first unit rendered on screen
+	--- Target the focus.
+	-- @tparam[opt=nil] string name
+	-- @treturn bool true on success
+	function Focus:TargetFocus(name, setFocusName)
+		if not setFocusName and not self:FocusExists() then
+			return self:ShowError()
+		end
 
-	if UnitIsDead("target") == 1 or (isPlayer and isPlayer ~= UnitIsPlayer("target")) or UnitIsUnit("target", "player") then
-		-- Try case sensitive search
-		TargetByName(name or focusTargetName, true)
-	end
-
-	if UnitIsUnit("target", "player") then
-		-- Targeting above failed and player targeted himself instead
-		self.needRetarget = true
-	end
-end
-
---- Target the focus.
--- @tparam[opt=nil] string name
--- @treturn bool true on success
-function Focus:TargetFocus(name, setFocusName)
-	if not setFocusName and not self:FocusExists() then
-		return self:ShowError()
-	end
-
-	self.oldTarget = UnitName("target")
-	if not self.oldTarget or self.oldTarget ~= focusTargetName then
-		if rawData.unitIsPlayer ~= 1 then
-			self:TargetWithFixes(name)
-		else
-			if rawData.IsPlayerWithSamePetName then
-				-- Target nearest
+		self.oldTarget = UnitName("target")
+		if not self.oldTarget or self.oldTarget ~= focusTargetName then
+			if rawData.unitIsPlayer ~= 1 then
 				self:TargetWithFixes(name)
+			else
+				if rawData.IsPlayerWithSamePetName then
+					-- Target nearest
+					self:TargetWithFixes(name)
 
-				if rawData.playerCanAttack and rawData.unitIsPlayer and not UnitIsPlayer("target") then
-					-- Attempt to target with facing requirement
-					TargetNearestEnemy()
+					if rawData.playerCanAttack and rawData.unitIsPlayer and not UnitIsPlayer("target") then
+						-- Attempt to target with facing requirement
+						TargetNearestEnemy()
 
-					if UnitName("target") ~= rawData.unitName then
-						ClearTarget()
+						if UnitName("target") ~= rawData.unitName then
+							ClearTarget()
+						end
 					end
+				else
+					TargetByName(name or focusTargetName, true)
+				end
+			end
+
+			self.needRetarget = true
+		else
+			self.needRetarget = false
+		end
+
+		if setFocusName then
+			-- name is case sensitive, so we'll just let UnitName handle the parsing for
+			-- /focus <name>
+			focusTargetName = UnitName("target")
+			CURR_FOCUS_TARGET = focusTargetName -- global
+		end
+
+		return SetFocusInfo("target", true)
+	end
+
+	--- Target last target after having targeted focus.
+	-- This can only be used after TargetFocus() has been ran!
+	function Focus:TargetPrevious()
+		if self.oldTarget and self.needRetarget then
+			TargetLastTarget()
+
+			if UnitName("target") ~= self.oldTarget then
+				-- TargetLastTarget seems to bug out randomly,
+				-- so use this as fallback
+
+				self:TargetFocus(self.oldTarget)
+			end
+		elseif not self.oldTarget then
+			ClearTarget()
+		end
+	end
+
+	--- Set current target as focus, or name if given.
+	-- @tparam[opt=nil] string name
+	function Focus:SetFocus(name)
+		if not name or name == "" then
+			name = UnitName("target")
+		end
+
+		local isFocusChanged = Focus:FocusExists()
+		if isFocusChanged then
+			rawData.pauseEvents = true -- prevent calling FOCUS_CLEAR here
+			--self:PauseEvents():ClearFocus():StartEvents()
+			self:ClearFocus()
+			rawData.pauseEvents = nil
+		end
+		focusTargetName = name
+
+		if focusTargetName then
+			rawData.pauseEvents = true -- prevent calling events, FOCUS_SET will handle that here
+			self:TargetFocus(name, true)
+			rawData.pauseEvents = nil
+
+			if self:FocusExists() then
+				CallHooks("FOCUS_SET", "target")
+				if isFocusChanged then
+					CallHooks("FOCUS_CHANGED", "target")
 				end
 			else
-				TargetByName(name or focusTargetName, true)
+				self:ClearFocus()
 			end
-		end
 
-		self.needRetarget = true
-	else
-		self.needRetarget = false
-	end
-
-	if setFocusName then
-		-- name is case sensitive, so we'll just let UnitName handle the parsing for
-		-- /focus <name>
-		focusTargetName = UnitName("target")
-		CURR_FOCUS_TARGET = focusTargetName -- global
-	end
-
-	return SetFocusInfo("target", true)
-end
-
---- Target last target after having targeted focus.
--- This can only be used after TargetFocus() has been ran!
-function Focus:TargetPrevious()
-	if self.oldTarget and self.needRetarget then
-		TargetLastTarget()
-
-		if UnitName("target") ~= self.oldTarget then
-			-- TargetLastTarget seems to bug out randomly,
-			-- so use this as fallback
-
-			self:TargetFocus(self.oldTarget)
-		end
-	elseif not self.oldTarget then
-		ClearTarget()
-	end
-end
-
---- Set current target as focus, or name if given.
--- @tparam[opt=nil] string name
-function Focus:SetFocus(name)
-	if not name or name == "" then
-		name = UnitName("target")
-	end
-
-	local isFocusChanged = Focus:FocusExists()
-	if isFocusChanged then
-		rawData.pauseEvents = true -- prevent calling FOCUS_CLEAR here
-		--self:PauseEvents():ClearFocus():StartEvents()
-		self:ClearFocus()
-		rawData.pauseEvents = nil
-	end
-	focusTargetName = name
-
-	if focusTargetName then
-		rawData.pauseEvents = true -- prevent calling events, FOCUS_SET will handle that here
-		self:TargetFocus(name, true)
-		rawData.pauseEvents = nil
-
-		if self:FocusExists() then
-			CallHooks("FOCUS_SET", "target")
-			if isFocusChanged then
-				CallHooks("FOCUS_CHANGED", "target")
-			end
+			self:TargetPrevious()
 		else
 			self:ClearFocus()
 		end
-
-		self:TargetPrevious()
-	else
-		self:ClearFocus()
-	end
-end
-
---- Check if focus is dead.
--- @treturn bool true if dead
-function Focus:IsDead()
-	return rawData.health and rawData.health <= 0 --and data.unitIsConnected
-end
-
---- Remove focus & all data.
-function Focus:ClearFocus()
-	--if not Focus:FocusExists() then return end
-	focusTargetName = nil
-	CURR_FOCUS_TARGET = nil
-	partyUnit = nil
-	if focusPlateRef then
-		focusPlateRef.isFocus = nil
-		focusPlateRef = nil
-	end
-	focusPlateRan = nil
-	self:ClearData()
-
-	CallHooks("FOCUS_CLEAR")
-end
-
---- Getters
--- @section getters
-
---- Get focus unit name.
--- Global var CURR_FOCUS_TARGET may also be used.
--- @treturn[1] string unit name
--- @treturn[2] nil
-function Focus:GetName()
-	return focusTargetName
-end
-
---- Get focus health.
--- @treturn number min
--- @treturn number max
-function Focus:GetHealth()
-	return rawData.health or 0, rawData.maxHealth or 100
-end
-
---- Get focus power. (Mana etc)
--- @treturn number min
--- @treturn number max
-function Focus:GetPower()
-	return rawData.power or 0, rawData.maxPower or 100
-end
-
---- Get statusbar color for power.
--- @treturn table {r=number,g=number,b=number}
-function Focus:GetPowerColor()
-	return ManaBarColor[rawData.powerType] or { r = 0, g = 0, b = 0 }
-end
-
---- Get border color for debuffs.
--- [DEPRECATED] Uses numeric indexes.
--- @tparam string debuffType e.g "magic" or "physical"
--- @return table
-function Focus:GetDebuffColor(debuffType)
-	return debuffType and BORDER_DEBUFFS_COLOR[strlower(debuffType)] or { 0, 0, 0, 0 }
-end
-
---- Get table containing all buff+debuff data for focus.
--- Should be ran in an OnUpdate script or OnEvent("UNIT_AURA")
--- @treturn table data or empty table
-function Focus:GetBuffs()
-	return GetBuffs(focusTargetName) or {}
-end
-
-do
-	local mod, floor = mod, floor
-
-	local function Round(num, idp)
-		local mult = 10^(idp or 0)
-
-		return floor(num * mult + 0.5) / mult
 	end
 
-	--- Get cast data for focus.
-	-- Should be ran in an OnUpdate script.
-	-- @treturn[1] table FSPELLCASTINGCORE cast data
-	-- @treturn[1] number Current cast time
-	-- @treturn[1] number Max cast time
-	-- @treturn[1] number Spark position
-	-- @treturn[1] number Time left formatted
+	--- Check if focus is dead.
+	-- @treturn bool true if dead
+	function Focus:IsDead()
+		return rawData.health and rawData.health <= 0 --and data.unitIsConnected
+	end
+
+	--- Remove focus & all data.
+	function Focus:ClearFocus()
+		--if not Focus:FocusExists() then return end
+		focusTargetName = nil
+		CURR_FOCUS_TARGET = nil
+		partyUnit = nil
+		if focusPlateRef then
+			focusPlateRef.isFocus = nil
+			focusPlateRef = nil
+		end
+		focusPlateRan = nil
+		self:ClearData()
+
+		CallHooks("FOCUS_CLEAR")
+	end
+
+	--- Getters
+	-- @section getters
+
+	--- Get focus unit name.
+	-- Global var CURR_FOCUS_TARGET may also be used.
+	-- @treturn[1] string unit name
 	-- @treturn[2] nil
-	function Focus:GetCast()
-		local cast = GetCast(focusTargetName)
-		if cast then
-			local timeEnd, timeStart = cast.timeEnd, cast.timeStart
-			local getTime = GetTime()
-			rawData.lastSeen = getTime -- TODO add to spellcastingcore?
+	function Focus:GetName()
+		return focusTargetName
+	end
 
-			if getTime < timeEnd then
-				local t = timeEnd - getTime
-				local timer = Round(t, t > 3 and 0 or 1)
-				local maxValue = timeEnd - timeStart
-				local value, sparkPosition
+	--- Get focus health.
+	-- @treturn number min
+	-- @treturn number max
+	function Focus:GetHealth()
+		return rawData.health or 0, rawData.maxHealth or 100
+	end
 
-				if cast.inverse then
-					value = mod(t, timeEnd - timeStart)
-					sparkPosition = t / (timeEnd - timeStart)
-				else
-					value = mod((getTime - timeStart), timeEnd - timeStart)
-					sparkPosition = (getTime - timeStart) / (timeEnd - timeStart)
+	--- Get focus power. (Mana etc)
+	-- @treturn number min
+	-- @treturn number max
+	function Focus:GetPower()
+		return rawData.power or 0, rawData.maxPower or 100
+	end
+
+	--- Get statusbar color for power.
+	-- @treturn table {r=number,g=number,b=number}
+	function Focus:GetPowerColor()
+		return ManaBarColor[rawData.powerType] or { r = 0, g = 0, b = 0 }
+	end
+
+	--- Get table containing all buff+debuff data for focus.
+	-- Should be ran in an OnUpdate script or OnEvent("UNIT_AURA")
+	-- @treturn table data or empty table
+	function Focus:GetBuffs()
+		return GetBuffs(focusTargetName) or {}
+	end
+
+	do
+		local mod, floor = mod, floor
+
+		local function Round(num, idp)
+			local mult = 10^(idp or 0)
+
+			return floor(num * mult + 0.5) / mult
+		end
+
+		--- Get cast data for focus.
+		-- Should be ran in an OnUpdate script.
+		-- @treturn[1] table FSPELLCASTINGCORE cast data
+		-- @treturn[1] number Current cast time
+		-- @treturn[1] number Max cast time
+		-- @treturn[1] number Spark position
+		-- @treturn[1] number Time left formatted
+		-- @treturn[2] nil
+		function Focus:GetCast()
+			local cast = GetCast(focusTargetName)
+			if cast then
+				local timeEnd, timeStart = cast.timeEnd, cast.timeStart
+				local getTime = GetTime()
+				rawData.lastSeen = getTime -- TODO add to spellcastingcore?
+
+				if getTime < timeEnd then
+					local t = timeEnd - getTime
+					local timer = Round(t, t > 3 and 0 or 1)
+					local maxValue = timeEnd - timeStart
+					local value, sparkPosition
+
+					if cast.inverse then
+						value = mod(t, timeEnd - timeStart)
+						sparkPosition = t / (timeEnd - timeStart)
+					else
+						value = mod((getTime - timeStart), timeEnd - timeStart)
+						sparkPosition = (getTime - timeStart) / (timeEnd - timeStart)
+					end
+
+					if sparkPosition < 0 then
+						sparkPosition = 0
+					end
+
+					return cast, value, maxValue, sparkPosition, timer
 				end
-
-				if sparkPosition < 0 then
-					sparkPosition = 0
-				end
-
-				return cast, value, maxValue, sparkPosition, timer
 			end
+
+			return nil
+		end
+	end
+
+	--- Get UnitReactionColor for focus. (player only, not npc)
+	-- @treturn number r
+	-- @treturn number g
+	-- @treturn number b
+	function Focus:GetReactionColors()
+		if not self:FocusExists() then return end
+		local r, g, b = 0, 0, 1
+
+		if rawData.unitCanAttack == 1 then
+			-- Hostile players are red
+			if rawData.playerCanAttack == 1 then
+				r = UnitReactionColor[2].r
+				g = UnitReactionColor[2].g
+				b = UnitReactionColor[2].b
+			end
+		elseif rawData.playerCanAttack == 1 then
+			-- Players we can attack but which are not hostile are yellow
+			r = UnitReactionColor[4].r
+			g = UnitReactionColor[4].g
+			b = UnitReactionColor[4].b
+		elseif rawData.unitIsPVP == 1 then
+			-- Players we can assist but are PvP flagged are green
+			r = UnitReactionColor[6].r
+			g = UnitReactionColor[6].g
+			b = UnitReactionColor[6].b
 		end
 
-		return nil
+		return r, g, b
 	end
-end
 
---- Get UnitReactionColor for focus. (player only, not npc)
--- @treturn number r
--- @treturn number g
--- @treturn number b
-function Focus:GetReactionColors()
-	if not self:FocusExists() then return end
-	local r, g, b = 0, 0, 1
+	--- Data
+	-- @section data
 
-	if rawData.unitCanAttack == 1 then
-		-- Hostile players are red
-		if rawData.playerCanAttack == 1 then
-			r = UnitReactionColor[2].r
-			g = UnitReactionColor[2].g
-			b = UnitReactionColor[2].b
+	--- Get specific focus data.
+	-- If no key is specified, returns all the data.
+	-- See SetFocusInfo() for list of data available.
+	-- @tparam[opt=nil] string key1
+	-- @tparam[opt=nil] string key2
+	-- @tparam[opt=nil] string key3
+	-- @tparam[opt=nil] string key4
+	-- @usage local lvl = Focus:GetData("unitLevel")
+	-- @usage local lvl, class, name = Focus:GetData("unitLevel", "unitClass", "unitName")
+	-- @usage local data = Focus:GetData()
+	-- @return[1] data or empty table
+	-- @return[2] nil
+	function Focus:GetData(key1, key2, key3, key4, key5)
+		if key1 then
+			if key5 then error("max 4 keys") end
+			return rawData[key1], key2 and rawData[key2], key3 and rawData[key3], key4 and rawData[key4]
+		else
+			return rawData or {}
 		end
-	elseif rawData.playerCanAttack == 1 then
-		-- Players we can attack but which are not hostile are yellow
-		r = UnitReactionColor[4].r
-		g = UnitReactionColor[4].g
-		b = UnitReactionColor[4].b
-	elseif rawData.unitIsPVP == 1 then
-		-- Players we can assist but are PvP flagged are green
-		r = UnitReactionColor[6].r
-		g = UnitReactionColor[6].g
-		b = UnitReactionColor[6].b
 	end
 
-	return r, g, b
-end
-
---- Data
--- @section data
-
---- Get specific focus data.
--- If no key is specified, returns all the data.
--- See SetFocusInfo() for list of data available.
--- @tparam[opt=nil] string key1
--- @tparam[opt=nil] string key2
--- @tparam[opt=nil] string key3
--- @tparam[opt=nil] string key4
--- @usage local lvl = Focus:GetData("unitLevel")
--- @usage local lvl, class, name = Focus:GetData("unitLevel", "unitClass", "unitName")
--- @usage local data = Focus:GetData()
--- @return[1] data or empty table
--- @return[2] nil
-function Focus:GetData(key1, key2, key3, key4, key5)
-	if key1 then
-		if key5 then error("max 4 keys") end
-		return rawData[key1], key2 and rawData[key2], key3 and rawData[key3], key4 and rawData[key4]
-	else
-		return rawData or {}
+	--- Insert/replace any focus data
+	-- @tparam string key
+	-- @param value
+	function Focus:SetData(key, value)
+		if key and value then
+			data[key] = value
+		else
+			error('Usage: SetData("key", value)')
+		end
 	end
-end
 
---- Insert/replace any focus data
--- @tparam string key
--- @param value
-function Focus:SetData(key, value)
-	if key and value then
-		data[key] = value
-	else
-		error('Usage: SetData("key", value)')
-	end
-end
-
---- Delete data by key or all focus data if no key is given.
--- When deleting all focus data, you probably want to run Focus:ClearFocus() instead.
--- @tparam[opt=nil] string key
-function Focus:ClearData(key)
-	if key then
-		data[key] = nil
-	else
-		for k, v in pairs(rawData) do
-			if k == "eventsThrottle" then
-				rawData[k] = {}
-			else
-				rawData[k] = nil
+	--- Delete data by key or all focus data if no key is given.
+	-- When deleting all focus data, you probably want to run Focus:ClearFocus() instead.
+	-- @tparam[opt=nil] string key
+	function Focus:ClearData(key)
+		if key then
+			data[key] = nil
+		else
+			for k, v in pairs(rawData) do
+				if k == "eventsThrottle" then
+					rawData[k] = {}
+				else
+					rawData[k] = nil
+				end
 			end
 		end
 	end
@@ -912,6 +909,7 @@ do
 	local events = CreateFrame("frame")
 	local playerName = UnitName("player")
 	local refresh = 0
+	local next = next
 
 	-- Call all eventlisteners for given event.
 	function CallHooks(event, arg1, arg2, arg3, arg4, recursive) --local
@@ -966,6 +964,7 @@ do
 		end
 	end
 
+	local WorldFrame = WorldFrame
 	local OnUpdateHandler = function()
 		refresh = refresh - arg1
 		if refresh < 0 then
