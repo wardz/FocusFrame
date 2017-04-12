@@ -1,5 +1,5 @@
 -- Adds support for ClassPortraits and ClassPortraits_Vanilla.
-local function Init(Focus, addonName)
+local OnLoad = function(Focus, addonName)
 	local iconPath
 	if addonName == "ClassPortraits_Vanilla" then
 		iconPath = "Interface\\Addons\\ClassPortraits_Vanilla\\UI-CLASSES-CIRCLES"
@@ -35,5 +35,5 @@ local function Init(Focus, addonName)
 	Focus:OnEvent("UNIT_PORTRAIT_UPDATE", UpdatePortrait) -- while focus is targeted
 end
 
-Focus_Loader:Register("ClassPortraits", Init)
-Focus_Loader:Register("ClassPortraits_Vanilla", Init)
+Focus_Loader:Register("ClassPortraits", OnLoad)
+Focus_Loader:Register("ClassPortraits_Vanilla", OnLoad)
