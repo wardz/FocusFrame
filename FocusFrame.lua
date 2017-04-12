@@ -5,7 +5,8 @@ local AurasUpdate
 FocusFrameDB = FocusFrameDB or { unlock = true, scale = 1 }
 
 -- Local functions here can be post-hooked using Focus:OnEvent().
--- See inside Init function in mods/classPortraits.lua for example.
+-- @see Focus:RemoveEvent() for completly overwriting functions
+-- @see UpdatePortrait() in mods/classPortraits.lua for example.
 
 local function OnFocusSat(event, unit)
 	FocusName:SetText(UnitName(unit))
@@ -63,7 +64,7 @@ function FocusFrame_CastingBarOnUpdate() -- ran every fps
 	local cast, value, maxValue, sparkPosition, timer = Focus:GetCast()
 
 	if cast then
-		local castbar = FocusFrameCastingBar
+		local castbar = FocusCastingBar
 		castbar:SetMinMaxValues(0, maxValue)
 		castbar:SetValue(value)
 		castbar.spark:SetPoint("CENTER", castbar, "LEFT", sparkPosition * castbar:GetWidth(), 0)
@@ -82,7 +83,7 @@ function FocusFrame_CastingBarOnUpdate() -- ran every fps
 			castbar:Show()
 		end
 	else
-		FocusFrameCastingBar:Hide()
+		FocusCastingBar:Hide()
 	end
 end
 
@@ -272,9 +273,9 @@ do
 		-- Move castbar based on amount of auras shown
 		local y = (numBuffs + numDebuffs) > 7 and -70 or -35
 		if unitIsFriend ~= 1 and numBuffs >= 1 then
-			FocusFrameCastingBar:SetPoint("BOTTOMLEFT", _G["FocusFrameBuff1"], 0, -35)
+			FocusCastingBar:SetPoint("BOTTOMLEFT", _G["FocusFrameBuff1"], 0, -35)
 		else
-			FocusFrameCastingBar:SetPoint("BOTTOMLEFT", FocusFrame, 20, y)
+			FocusCastingBar:SetPoint("BOTTOMLEFT", FocusFrame, 20, y)
 		end
 	end
 
@@ -336,7 +337,8 @@ end
 
 -- Create castbar
 -- TODO add to xml
-FocusFrame.cast = CreateFrame("StatusBar", "FocusFrameCastingBar", FocusFrame)
+-- lua table names are deprecated. Please use global frame names if you're gonna modify these
+FocusFrame.cast = CreateFrame("StatusBar", "FocusCastingBar", FocusFrame)
 FocusFrame.cast:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar")
 FocusFrame.cast:SetStatusBarColor(0.4, 1, 0)
 FocusFrame.cast:SetHeight(13)
@@ -345,39 +347,39 @@ FocusFrame.cast:SetPoint("BOTTOMLEFT", FocusFrame, 15, -35)
 FocusFrame.cast:SetValue(0)
 FocusFrame.cast:Hide()
 
-FocusFrame.cast.spark = FocusFrame.cast:CreateTexture(nil, "OVERLAY")
-FocusFrame.cast.spark:SetTexture([[Interface\CastingBar\UI-CastingBar-Spark]])
+FocusFrame.cast.spark = FocusFrame.cast:CreateTexture("FocusCastingBarSpark", "OVERLAY")
+FocusFrame.cast.spark:SetTexture("Interface\\CastingBar\\UI-CastingBar-Spark")
 FocusFrame.cast.spark:SetHeight(26)	
 FocusFrame.cast.spark:SetWidth(26)
 FocusFrame.cast.spark:SetBlendMode("ADD")
 
-FocusFrame.cast.border = FocusFrame.cast:CreateTexture(nil, "OVERLAY")
+FocusFrame.cast.border = FocusFrame.cast:CreateTexture("FocusCastingBarBorder", "OVERLAY")
 FocusFrame.cast.border:SetPoint("TOPLEFT", -23, 20)
 FocusFrame.cast.border:SetPoint("TOPRIGHT", 23, 20)
 FocusFrame.cast.border:SetHeight(50)
 FocusFrame.cast.border:SetTexture("Interface\\AddOns\\FocusFrame\\media\\UI-CastingBar-Border-Small.blp")
 
-FocusFrame.cast.text = FocusFrame.cast:CreateFontString(nil, "OVERLAY")
+FocusFrame.cast.text = FocusFrame.cast:CreateFontString("FocusCastingBarText", "OVERLAY")
 FocusFrame.cast.text:SetTextColor(1, 1, 1)
 FocusFrame.cast.text:SetFont(STANDARD_TEXT_FONT, 10)
 FocusFrame.cast.text:SetShadowColor(0, 0, 0)
 FocusFrame.cast.text:SetPoint("CENTER", FocusFrame.cast, 0, 2)
 FocusFrame.cast.text:SetText("Drain Life")
 
-FocusFrame.cast.timer = FocusFrame.cast:CreateFontString(nil, "OVERLAY")
+FocusFrame.cast.timer = FocusFrame.cast:CreateFontString("FocusCastingBarTimer", "OVERLAY")
 FocusFrame.cast.timer:SetTextColor(1, 1, 1)
 FocusFrame.cast.timer:SetFont(STANDARD_TEXT_FONT, 9)
 FocusFrame.cast.timer:SetShadowColor(0, 0, 0)
 FocusFrame.cast.timer:SetPoint("RIGHT", FocusFrame.cast, 28, 2)
 FocusFrame.cast.timer:SetText("2.0")
 
-FocusFrame.cast.icon = FocusFrame.cast:CreateTexture(nil, "OVERLAY", nil, 7)
+FocusFrame.cast.icon = FocusFrame.cast:CreateTexture("FocusCastingBarIcon", "OVERLAY", nil, 7)
 FocusFrame.cast.icon:SetWidth(20)
 FocusFrame.cast.icon:SetHeight(20)
 FocusFrame.cast.icon:SetPoint("LEFT", FocusFrame.cast, -23, 1)
 FocusFrame.cast.icon:SetTexture("Interface\\Icons\\Spell_shadow_lifedrain02")
 
-FocusFrame.cast.shield = FocusFrame.cast:CreateTexture(nil, "OVERLAY")
+FocusFrame.cast.shield = FocusFrame.cast:CreateTexture("FocusCastingBarShield", "OVERLAY")
 FocusFrame.cast.shield:SetPoint("TOPLEFT", -28, 20)
 FocusFrame.cast.shield:SetPoint("TOPRIGHT", 18, 20)
 FocusFrame.cast.shield:SetHeight(50)
@@ -439,7 +441,7 @@ SlashCmdList.FOCUSOPTIONS = function(msg)
 		print("/foption scale 1 - Change frame size (0.2 - 2)")
 		print("/foption lock - Toggle dragging of frame")
 		print("/foption nohide - Toggle hiding of frame on loading screens/release spirit.")
-		print("/foption fade - Toggle fading of frame when focus hasn't been updated for ~10s.")
+		print("/foption fade - Toggle fading of frame when focus hasn't been updated/seen for ~10s.")
 		print("/foption reset - Reset to default settings.")
 	end
 end
