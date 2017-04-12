@@ -1,17 +1,17 @@
--- luna clickcasting
+-- luna clickcasting support
 Focus_Loader:Register("LunaUnitFrames", function(Focus)
     local orig_lufmo = SlashCmdList.LUFMO
     local L = LunaUF.L
 
     if not L or not LunaUF.Mouseover then return end
 
-    SlashCmdList.LUFMO = function(arg1, arg2)
+    SlashCmdList.LUFMO = function(msg, editbox)
         local frame = GetMouseFocus()
 
-        if arg1 and strfind(frame:GetName() or "", "FocusFrame") then
-            Focus:Call(CastSpellByName, arg1)
+        if msg and strfind(frame:GetName() or "", "FocusFrame") then
+            Focus:CastSpellByName(msg)
         else
-            orig_lufmo(arg1, arg2)
+            orig_lufmo(msg, editbox)
         end
     end
 

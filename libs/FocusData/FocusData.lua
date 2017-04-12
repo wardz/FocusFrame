@@ -539,10 +539,14 @@ function Focus:Call(func, arg1, arg2, arg3, arg4)
 				if argType == "function" then
 					result = pcall(func, arg1, arg2, arg3, arg4)
 				else
-					local f = loadstring(func)
-					if f then result = f() end
+					local fn = loadstring(func)
+					if fn then
+						result = true
+						fn()
+					end
 				end
 			end
+
 			self:TargetPrevious()
 			return result
 		else
@@ -550,6 +554,27 @@ function Focus:Call(func, arg1, arg2, arg3, arg4)
 		end
 	end
 end
+
+--- Trigger CastSpellByName on focus target.
+-- @usage Focus:CastSpellByName("Fireball") -- Casts Fireball on focus target
+-- @tparam string name name of spell to cast
+function Focus:CastSpellByName(name)
+	if self:FocusExists(true) then
+		if self:TargetFocus() then
+			local sc = GetCVar("AutoSelfCast")
+			SetCVar("AutoSelfCast", "0") -- prevent casting on self when focus is invalid
+			pcall(CastSpellByName, name)
+			SetCVar("AutoSelfCast", sc)
+
+			if SpellIsTargeting() then
+				SpellStopTargeting()
+			end
+		end
+
+		self:TargetPrevious()
+	end
+end
+_G.FDCAST = Focus.CastSpellByName -- alias for macros
 
 -- @private
 function Focus:TargetWithFixes(name)
