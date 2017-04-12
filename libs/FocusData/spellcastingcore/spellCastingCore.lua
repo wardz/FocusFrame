@@ -235,6 +235,10 @@ local checkforCastTimeModBuffs = function(caster, spell)
 end
 
 local newCast = function(caster, spell, channel)
+	if FSPELLCASTINGCOREstrictAuras then
+		if caster ~= CURR_FOCUS_TARGET then return end
+	end
+
 	local getTime = getTimeMinusPing()
 	local info
 
@@ -264,12 +268,20 @@ local newCast = function(caster, spell, channel)
 end
 
 local newIBuff = function(caster, buff)
+	if FSPELLCASTINGCOREstrictAuras then
+		if caster ~= CURR_FOCUS_TARGET then return end
+	end
+
 	local getTime = getTimeMinusPing()
 	local b = InstaBuff.create(caster, buff, FOCUS_TIME_MODIFIER_BUFFS_TO_TRACK[buff], getTime)
 	tinsert(iBuffs, b)
 end
 
 local function newbuff(tar, b, s, castOn, texture, debuff, magictype, debuffStack, noEvent)
+	if FSPELLCASTINGCOREstrictAuras then
+		if tar ~= CURR_FOCUS_TARGET then return end
+	end
+
 	local getTime = getTimeMinusPing()
 
 	-- remove buff if it exists
@@ -300,6 +312,10 @@ local function newbuff(tar, b, s, castOn, texture, debuff, magictype, debuffStac
 end
 
 local function refreshBuff(tar, b, s)
+	if FSPELLCASTINGCOREstrictAuras then
+		if tar ~= CURR_FOCUS_TARGET then return end
+	end
+
 	-- refresh if it exists
 	for i, j in pairs(FOCUS_DEBUFF_REFRESHING_SPELLS[b]) do
 		for k, v in pairs(buffList) do
