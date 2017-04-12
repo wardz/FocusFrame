@@ -1,13 +1,10 @@
 if SlashCmdList.MFOCUS then return end
 
+-- Upvalues
 local _G = getfenv(0)
 local Focus = _G.FocusData
-
--- Upvalues
-local scantip = _G.FocusDataScantip
-local scantipTextLeft1 = _G.FocusDataScantipTextLeft1
-local strfind, strlower, gsub, SetCVar, GetCVar = strfind, strlower, gsub, SetCVar, GetCVar
-local SpellIsTargeting, SpellStopTargeting = SpellIsTargeting, SpellStopTargeting
+local strfind, strlower, gsub = string.find, string.lower, string.gsub
+local GetContainerNumSlots = GetContainerNumSlots
 
 SLASH_FOCUS1 = "/focus"
 SLASH_MFOCUS1 = "/mfocus"
@@ -18,14 +15,37 @@ SLASH_FASSIST1 = "/fassist"
 SLASH_TARFOCUS1 = "/tarfocus"
 SLASH_CLEARFOCUS1 = "/clearfocus"
 
--- Focus current target or by name
-SlashCmdList.FOCUS = function(msg) Focus:SetFocus(msg) end
+local function ParseSpell(msg)
+	if not msg or msg == "" then return end
+	msg = strlower(msg)
+
+	local isSuffix = strfind(msg, "-target") ~= nil
+	local useOnTarget = false
+
+	if not Focus:FocusExists() and isSuffix then
+		-- Cast spell on curr target instead when no focus is sat
+		-- (This could be done with a simple ingame macro instead but it'll keep nagging about
+		-- that no focus is sat in UIErrorsFrame)
+		useOnTarget = true
+	end
+
+	if isSuffix then
+		msg = gsub(msg, "-target", "")
+	end
+
+	return msg, useOnTarget
+end
 
 -- Target focus
 SlashCmdList.TARFOCUS = function() Focus:TargetFocus() end
 
 -- Remove focus
 SlashCmdList.CLEARFOCUS = function() Focus:ClearFocus() end
+
+-- Focus current target or by name
+SlashCmdList.FOCUS = function(msg)
+	Focus:SetFocus(msg)
+end
 
 -- Focus current mouseover target
 SlashCmdList.MFOCUS = function()
@@ -35,21 +55,9 @@ SlashCmdList.MFOCUS = function()
 end
 
 -- Cast spell on focus
-SlashCmdList.FCAST = function(spell)
-	spell = strlower(spell or "")
-	local useOnTarget = false
-	local isSuffix = strfind(spell, "-target") ~= nil --hardcoded for now
-
-	if not Focus:FocusExists() and isSuffix then
-		-- Cast spell on curr target instead when no focus is sat
-		-- (This could be done with a simple macro instead but it'll keep nagging about
-		-- that no focus is sat in UIErrorsFrame)
-		useOnTarget = true
-	end
-
-	if isSuffix then
-		spell = gsub(spell, "-target", "")
-	end
+SlashCmdList.FCAST = function(msg)
+	local spell, useOnTarget = ParseSpell(msg)
+	if not spell then return end
 
 	if spell == "petattack" then
 		if useOnTarget then
@@ -61,64 +69,54 @@ SlashCmdList.FCAST = function(spell)
 		if useOnTarget then
 			CastSpellByName(spell)
 		else
-			local sc = GetCVar("AutoSelfCast")
-			SetCVar("AutoSelfCast", "0") -- prevent casting on self when focus is invalid
-			Focus:Call(CastSpellByName, spell)
-			SetCVar("AutoSelfCast", sc)
-
-			if SpellIsTargeting() then
-				SpellStopTargeting()
-			end
+			Focus:CastSpellByName(spell)
 		end
 	end
 end
 
 -- Use item on focus
 SlashCmdList.FITEM = function(msg)
-	msg = strlower(msg or "")
-	local useOnTarget = false
-	local isSuffix = strfind(msg, "-target")
+	local item, useOnTarget = ParseSpell(msg)
+	if not item then return end
 
-	if not Focus:FocusExists() and isSuffix then
-		useOnTarget = true
+	local scantip = _G.FocusDataScantip
+	local scantipTextLeft1 = _G.FocusDataScantipTextLeft1
+
+	if not useOnTarget and not Focus:FocusExists() then
+		return Focus:ShowError()
 	end
 
-	if isSuffix then
-		msg = gsub(msg, "-target", "")
+	for i = 0, 19 do
+		scantip:ClearLines()
+		scantip:SetInventoryItem("player", i, true)
+
+		local text = scantipTextLeft1:GetText()
+		if text and strlower(text) == item then
+			if useOnTarget then
+				return UseInventoryItem(i)
+			end
+
+			return Focus:Call(UseInventoryItem, i)
+		end
 	end
 
-	if useOnTarget or Focus:FocusExists() then
-		for i = 0, 19 do
+	for i = 0, 4 do
+		for j = 1, GetContainerNumSlots(i) do
 			scantip:ClearLines()
-			scantip:SetInventoryItem("player", i)
+			scantip:SetBagItem(i, j)
+
 			local text = scantipTextLeft1:GetText()
-			if text and strlower(text) == msg then
+			if text and strlower(text) == item then
 				if useOnTarget then
-					return UseInventoryItem(i)
+					return UseContainerItem(i, j)
 				end
 
-				return Focus:Call(UseInventoryItem, i)
+				return Focus:Call(UseContainerItem, i, j)
 			end
 		end
-
-		for i = 0, 4 do
-			for j = 1, GetContainerNumSlots(i) do
-				scantip:ClearLines()
-				scantip:SetBagItem(i, j)
-
-				local text = scantipTextLeft1:GetText()
-				if text and strlower(text) == msg then
-					if useOnTarget then
-						return UseContainerItem(i, j)
-					end
-
-					return Focus:Call(UseContainerItem, i, j)
-				end
-			end
-		end
-	else
-		Focus:ShowError()
 	end
+
+	Focus:ShowError("Item not found.")
 end
 
 -- Swap focus and target
