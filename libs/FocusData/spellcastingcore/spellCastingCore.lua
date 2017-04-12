@@ -13,6 +13,7 @@ buff.__index 		= buff
 local Focus
 local L = FocusData_Locale
 local playerName = UnitName("player")
+FSPELLCASTINGCOREstrictAuras = FocusFrameDB and FocusFrameDB.strictAuras or false
 
 -- Upvalues
 local FOCUS_CHANNELED_SPELLCASTS_TO_TRACK, FOCUS_INSTANT_SPELLCASTS_TO_TRACK =
@@ -698,6 +699,8 @@ local parsingCheck = function(out, display)
 end
 
 local combatlogParser = function()
+	if FSPELLCASTINGCOREstrictAuras and not Focus:FocusExists() then return end
+
 	local pSpell 	= 'CHAT_MSG_SPELL_PERIODIC_(.+)'		local fpSpell 		= strfind(event, pSpell)
 	local breakAura = 'CHAT_MSG_SPELL_BREAK_AURA'			local fbreakAura 	= strfind(event, breakAura)
 	local auraGone	= 'CHAT_MSG_SPELL_AURA_GONE_(.+)'		local fauraGone 	= strfind(event, auraGone)
@@ -792,6 +795,7 @@ do
 	local function OnUpdate()
 		refresh = refresh - arg1
 		if refresh < 0 then
+			if FSPELLCASTINGCOREstrictAuras and not Focus:FocusExists() then return end
 			tableMaintenance(false)
 			refresh = interval
 		end

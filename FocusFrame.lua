@@ -427,11 +427,16 @@ SlashCmdList.FOCUSOPTIONS = function(msg)
 	elseif cmd == "fade" then
 		FocusFrameDB.fadeOnIdle = not FocusFrameDB.fadeOnIdle
 		print("Fade on inactive %s (requires retarget on focus)", FocusFrameDB.fadeOnIdle and "enabled" or "disabled")
+	elseif cmd == "strictaura" then
+		FocusFrameDB.strictAuras = not FocusFrameDB.strictAuras
+		FSPELLCASTINGCOREstrictAuras = FocusFrameDB.strictAuras
+		print("Strict aura/cast %s", FocusFrameDB.strictAuras and "enabled" or "disabled");
 	elseif cmd == "reset" then
 		FocusFrameDB.scale = 1
 		FocusFrameDB.unlock = true
 		FocusFrameDB.alwaysShow = false
 		FocusFrameDB.fadeOnIdle = false
+		FocusFrameDB.strictAuras = false
 		FocusFrame:SetScale(1)
 		FocusFrame:SetPoint("TOPLEFT", 250, -300)
 		FocusFrame:StopMovingOrSizing() -- trigger db save
@@ -442,6 +447,7 @@ SlashCmdList.FOCUSOPTIONS = function(msg)
 		print("/foption lock - Toggle dragging of frame")
 		print("/foption nohide - Toggle hiding of frame on loading screens/release spirit.")
 		print("/foption fade - Toggle fading of frame when focus hasn't been updated/seen for ~10s.")
+		print("/foption strictaura - Toggle aura/cast optimization. See github page for more info.")
 		print("/foption reset - Reset to default settings.")
 	end
 end
