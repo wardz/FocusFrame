@@ -12,12 +12,10 @@ print = print or function(msg) DEFAULT_CHAT_FRAME:AddMessage(msg or "nil") end
 -- Vars
 local L = _G.FocusData_Locale
 local Focus = {}
+local rawData, data
+local focusPlateRan, focusPlateRef
 local focusTargetName
 local partyUnit
-local rawData
-local data
-local focusPlateRan
-local focusPlateRef
 
 -- Upvalues
 local GetTime, UnitName, UnitIsPlayer, strfind, tonumber, type, tgetn =
