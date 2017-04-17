@@ -204,7 +204,9 @@ do
 		if rawData.health <= 0 then
 			return ClearBuffs(focusTargetName, false)
 		end
-		local isEnemy = rawData.unitIsEnemy == 1 and rawData.unitFactionGroup ~= playersFaction
+
+		local faction = rawData.unitFactionGroup
+		local isEnemy = rawData.unitIsEnemy == 1 or (faction and faction ~= playersFaction)
 		ClearBuffs(focusTargetName, isEnemy)
 
 		for i = 1, 5 do
