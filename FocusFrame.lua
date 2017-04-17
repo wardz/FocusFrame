@@ -151,6 +151,10 @@ do
 		FocusFrame:SetScale(FocusFrameDB.scale)
 	end
 
+	local function ClearFocus()
+		Focus:ClearFocus()
+	end
+
 	function FocusFrameDropDown_Initialize(level)
 		if not level then return end
 		info = {}
@@ -179,7 +183,7 @@ do
 			info.disabled = nil
 
 			info.text = "Clear Focus"
-			info.func = Focus.ClearFocus
+			info.func = ClearFocus
 			UIDropDownMenu_AddButton(info, level)
 
 			info.isTitle = 1
@@ -541,6 +545,7 @@ SlashCmdList.FOCUSOPTIONS = function(msg)
 	elseif cmd == "reset" then
 		FocusFrameDB = { scale = 1, unlock = true }
 		FocusFrame:SetScale(1)
+		FocusFrame:SetAlpha(1)
 		FocusFrame:SetPoint("TOPLEFT", 250, -300)
 		FocusFrame:StopMovingOrSizing() -- trigger db save
 		print("Frame has been reset.")
@@ -550,7 +555,7 @@ SlashCmdList.FOCUSOPTIONS = function(msg)
 		print("/foption lock - Toggle dragging of frame")
 		print("/foption nohide - Toggle hiding of frame on loading screens/release spirit.")
 		print("/foption fade - Toggle fading of frame when focus hasn't been updated/seen for ~10s.")
-		print("/foption strictaura - Toggle aura/cast optimization. See github page for more info.")
+		print("/foption strictaura - Toggle aura/cast optimization. See github wiki for more info.")
 		print("/foption reset - Reset to default settings.")
 	end
 end

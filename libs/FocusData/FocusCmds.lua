@@ -123,8 +123,10 @@ end
 SlashCmdList.FSWAP = function()
 	if Focus:FocusExists(true) and UnitExists("target") then
 		local target = UnitName("target")
-		Focus:TargetFocus()
-		Focus:SetFocus(target)
+		if target ~= Focus:GetName() then
+			Focus:TargetFocus()
+			Focus:SetFocus(target)
+		end
 	end
 end
 
