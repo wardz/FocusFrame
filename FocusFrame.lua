@@ -4,7 +4,7 @@ local AurasUpdate
 
 FocusFrameDB = FocusFrameDB or { unlock = true, scale = 1 }
 
--- Local functions here can be post-hooked using Focus:OnEvent().
+-- Most local functions here can be post-hooked using Focus:OnEvent().
 -- @see Focus:RemoveEvent() for completly overwriting functions
 -- @see UpdatePortrait() in mods/classPortraits.lua for example.
 
@@ -104,6 +104,7 @@ function FocusFrame_OnHide() -- can't be hooked, global due to xml
 		FocusFrame:Hide()
 	else
 		PlaySound("INTERFACESOUND_LOSTTARGETUNIT")
+		CloseDropDownMenus()
 	end
 end
 
@@ -120,7 +121,113 @@ function FocusFrame_OnClick(button)
 		else
 			Focus:TargetFocus()
 		end
+	else
+		ToggleDropDownMenu(1, nil, FocusFrameDropDown, "FocusFrame", 120, 10)
 	end
+end
+
+do
+	local info
+	local FocusFrameDropDown = CreateFrame("Frame", "FocusFrameDropDown")
+	FocusFrameDropDown.displayMode = "MENU"
+
+	local function SetRaidMark()
+		local mark = this.value
+		if mark >= 9 then mark = 0 end
+
+		Focus:Call(SetRaidTargetIcon, "target", mark)
+	end
+
+	local function Unlock()
+		FocusFrameDB.unlock = not FocusFrameDB.unlock
+	end
+
+	local function Rescale()
+		if FocusFrameDB.scale >= 1 then
+			FocusFrameDB.scale = 0.9
+		else
+			FocusFrameDB.scale = 1
+		end
+		FocusFrame:SetScale(FocusFrameDB.scale)
+	end
+
+	function FocusFrameDropDown_Initialize(level)
+		if not level then return end
+		info = {}
+
+		if level == 1 then
+			info.isTitle = 1
+			info.text = Focus:GetName()
+			info.notCheckable = 1
+			UIDropDownMenu_AddButton(info, level)
+
+			-- Reusing same table for mem improvements, so delete old values
+			info.disabled = nil
+			info.isTitle = nil
+			info.notCheckable = nil
+
+			local isLeader = UnitIsPartyLeader("player")
+			info.text = "Target Marker Icon"
+			info.nested = 1
+			info.hasArrow = isLeader
+			info.disabled = not isLeader
+			UIDropDownMenu_AddButton(info, level)
+
+			info.hasArrow = nil
+			info.nested = nil
+			info.menuList = nil
+			info.disabled = nil
+
+			info.text = "Clear Focus"
+			info.func = Focus.ClearFocus
+			UIDropDownMenu_AddButton(info, level)
+
+			info.isTitle = 1
+			info.text = "Other Options"
+			info.notCheckable = 1
+			UIDropDownMenu_AddButton(info, level)
+
+			info.disabled = nil
+			info.isTitle = nil
+			info.notCheckable = nil
+
+			info.text = "Larger Focus Frame"
+			info.checked = FocusFrameDB.scale >= 1
+			info.func = Rescale
+			UIDropDownMenu_AddButton(info, level)
+			info.checked = nil
+
+			info.text = "Unlock"
+			info.checked = FocusFrameDB.unlock
+			info.func = Unlock
+			UIDropDownMenu_AddButton(info, level)
+			info.checked = nil
+
+			-- Close menu item
+			info.text = CLOSE
+			info.func = CloseDropDownMenus
+			info.checked = nil
+			info.notCheckable = 1
+			UIDropDownMenu_AddButton(info, level)
+		else
+			for i, name in ipairs(UnitPopupMenus["RAID_TARGET_ICON"]) do
+				local item = UnitPopupButtons[name]
+				info.color = nil
+				info.icon = nil
+				info.value = nil
+				for k, v in pairs(item) do
+					info[k] = v
+					info.value = i
+				end
+				info.func = SetRaidMark
+				UIDropDownMenu_AddButton(info, level)
+			end
+		end
+
+		info = nil
+	end
+
+	FocusFrameDropDown.initialize = FocusFrameDropDown_Initialize
 end
 
 local function CheckPortrait(event, unit)
@@ -432,11 +539,7 @@ SlashCmdList.FOCUSOPTIONS = function(msg)
 		FSPELLCASTINGCOREstrictAuras = FocusFrameDB.strictAuras
 		print("Strict aura/cast %s", FocusFrameDB.strictAuras and "enabled" or "disabled");
 	elseif cmd == "reset" then
-		FocusFrameDB.scale = 1
-		FocusFrameDB.unlock = true
-		FocusFrameDB.alwaysShow = false
-		FocusFrameDB.fadeOnIdle = false
-		FocusFrameDB.strictAuras = false
+		FocusFrameDB = { scale = 1, unlock = true }
 		FocusFrame:SetScale(1)
 		FocusFrame:SetPoint("TOPLEFT", 250, -300)
 		FocusFrame:StopMovingOrSizing() -- trigger db save

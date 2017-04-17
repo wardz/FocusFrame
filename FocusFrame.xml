@@ -441,6 +441,7 @@
 		<Scripts>
 			<OnLoad>
 				FocusFrame:RegisterForDrag("LeftButton")
+				FocusFrame:RegisterForClicks("RightButtonUp", "LeftButtonUp")
 				SetTextStatusBarText(FocusFrameHealthBar, FocusFrameHealthBarText)
 				SetTextStatusBarText(FocusFrameManaBar, FocusFrameManaBarText)
 				SetTextStatusBarTextZeroText(FocusFrameHealthBar, "")
