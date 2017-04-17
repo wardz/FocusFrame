@@ -127,7 +127,7 @@ function FocusFrame_OnClick(button)
 end
 
 do
-	local info
+	local info = {}
 	local FocusFrameDropDown = CreateFrame("Frame", "FocusFrameDropDown")
 	FocusFrameDropDown.displayMode = "MENU"
 
@@ -155,9 +155,9 @@ do
 		Focus:ClearFocus()
 	end
 
-	function FocusFrameDropDown_Initialize(level)
+	function FocusFrameDropDown_Initialize(level) -- ran every time dropdown is shown/updated
 		if not level then return end
-		info = {}
+		for k,v in pairs(info) do info[k] = nil end
 
 		if level == 1 then
 			info.isTitle = 1
