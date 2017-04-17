@@ -157,6 +157,7 @@ do
 
 	local scantipTextLeft1 = _G["FocusDataScantipTextLeft1"]
 	local scantipTextRight1 = _G["FocusDataScantipTextRight1"]
+	local playersFaction = UnitFactionGroup("player")
 
 	-- Store buff into spellcastingcore db
 	local function SyncBuff(unit, i, texture, stack, debuffType, isDebuff)
@@ -203,7 +204,8 @@ do
 		if rawData.health <= 0 then
 			return ClearBuffs(focusTargetName, false)
 		end
-		ClearBuffs(focusTargetName, rawData.unitIsEnemy == 1)
+		local isEnemy = rawData.unitIsEnemy == 1 and rawData.unitFactionGroup ~= playersFaction
+		ClearBuffs(focusTargetName, isEnemy)
 
 		for i = 1, 5 do
 			local texture = UnitBuff(unit, i)
@@ -676,6 +678,8 @@ do
 		if not name or name == "" then
 			name = UnitName("target")
 		end
+
+		if Focus:GetName() == name then return end
 
 		local isFocusChanged = Focus:FocusExists()
 		if isFocusChanged then
