@@ -18,8 +18,8 @@ local focusTargetName
 local partyUnit
 
 -- Upvalues
-local GetTime, UnitName, UnitIsPlayer, strfind, tonumber, type, tgetn =
-	  GetTime, UnitName, UnitIsPlayer, strfind, tonumber, type, table.getn
+local GetTime, UnitName, UnitIsPlayer, type, strfind, tgetn =
+	  GetTime, UnitName, UnitIsPlayer, type, string.find, table.getn
 
 -- Functions
 local NameplateScanner
@@ -223,7 +223,7 @@ end
 
 -- Nameplate scanning
 do
-	local WorldFrame, ipairs = WorldFrame, ipairs
+	local ipairs, tonumber = ipairs, tonumber
 
 	local RaidIconCoordinate = {
 		[0]		= { [0]	= 1,	[0.25]	= 5, },
@@ -470,7 +470,7 @@ end
 -- Documentation: https://wardz.github.io/FocusFrame/
 --------------------------------------
 do
-	local SetCVar, GetCVar, pcall = SetCVar, GetCVar, pcall
+	local SetCVar, GetCVar, pcall, pairs = SetCVar, GetCVar, pcall, pairs
 
 	local UnitIsUnit, UnitIsDead, UnitExists, SpellIsTargeting, SpellStopTargeting =
 		  UnitIsUnit, UnitIsDead, UnitExists, SpellIsTargeting, SpellStopTargeting
@@ -576,7 +576,7 @@ do
 			self:TargetPrevious()
 		end
 	end
-	_G.FDCAST = Focus.CastSpellByName -- alias for macros
+	_G.fdcast = function(x) Focus:CastSpellByName(x) end -- alias for macros
 
 	-- @private
 	function Focus:TargetWithFixes(name)
@@ -907,7 +907,7 @@ do
 	local events = CreateFrame("frame")
 	local playerName = UnitName("player")
 	local refresh = 0
-	local next = next
+	local next, WorldFrame = next, WorldFrame
 
 	-- Call all eventlisteners for given event.
 	function CallHooks(event, arg1, arg2, arg3, arg4, recursive) --local
@@ -962,7 +962,6 @@ do
 		end
 	end
 
-	local WorldFrame = WorldFrame
 	local OnUpdateHandler = function()
 		refresh = refresh - arg1
 		if refresh < 0 then
