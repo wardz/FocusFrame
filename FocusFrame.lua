@@ -208,7 +208,7 @@ do
 			info.checked = nil
 
 			-- Close menu item
-			info.text = CLOSE
+			info.text = "Close"
 			info.func = CloseDropDownMenus
 			info.checked = nil
 			info.notCheckable = 1
@@ -550,12 +550,12 @@ SlashCmdList.FOCUSOPTIONS = function(msg)
 		FocusFrame:StopMovingOrSizing() -- trigger db save
 		print("Frame has been reset.")
 	else
-		print("Valid commands are:")
-		print("/foption scale 1 - Change frame size (0.2 - 2)")
-		print("/foption lock - Toggle dragging of frame")
-		print("/foption nohide - Toggle hiding of frame on loading screens/release spirit.")
-		print("/foption fade - Toggle fading of frame when focus hasn't been updated/seen for ~10s.")
-		print("/foption strictaura - Toggle aura/cast optimization. See github wiki for more info.")
-		print("/foption reset - Reset to default settings.")
+		print("FocusFrame v%s:", GetAddOnMetadata("FocusFrame", "version"))
+		print("    scale 1.0 - |cff00FF7F Change frame size (0.2 - 2)")
+		print("    lock - |cff00FF7F Toggle dragging of frame")
+		print("    nohide - |cff00FF7F Toggle hiding of frame on loading screens/release spirit.")
+		print("    fade - |cff00FF7F Toggle fading of frame when focus hasn't been updated for ~10s.")
+		print("    strictaura - |cff00FF7F Toggle aura/cast optimization. See github wiki for more info.")
+		print("    reset - |cff00FF7F Reset to default settings.")
 	end
 end
