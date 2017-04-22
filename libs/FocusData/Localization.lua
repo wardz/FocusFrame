@@ -45,6 +45,17 @@ else]]
     L["(.+)'s (.+) was resisted by (.+)."]  = "(.+)'s (.+) was resisted by (.+)."
     L["(.+)'s (.+) was resisted."]          = "(.+)'s (.+) was resisted."
 
+--[[
+    'Your (.+) failed. (.+) is immune.',
+    'Your (.+) missed (.+)%.',
+    'Your (.+) was resisted by (.+)%.',
+    'Your (.+) was evaded by (.+)%.',
+    'Your (.+) was dodged by (.+)%.',
+    'Your (.+) was deflected by (.+)%.',
+    'Your (.+) is reflected back by (.+)%.',
+    'Your (.+) is parried by (.+)%.'
+]]
+
     L["(.+) suffers (.+) from (.+)'s (.+)."]    = "(.+) suffers (.+) from (.+)'s (.+)."
     L['(.+) suffers (.+) from your (.+).']      = '(.+) suffers (.+) from your (.+).'
     L["You suffer (.+) from (.+)'s (.+)."]      = "You suffer (.+) from (.+)'s (.+)."

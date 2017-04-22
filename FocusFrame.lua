@@ -126,114 +126,6 @@ function FocusFrame_OnClick(button)
 	end
 end
 
-do
-	local info = {}
-	local FocusFrameDropDown = CreateFrame("Frame", "FocusFrameDropDown")
-	FocusFrameDropDown.displayMode = "MENU"
-
-	local function SetRaidMark()
-		local mark = this.value
-		if mark >= 9 then mark = 0 end
-
-		Focus:Call(SetRaidTargetIcon, "target", mark)
-	end
-
-	local function Unlock()
-		FocusFrameDB.unlock = not FocusFrameDB.unlock
-	end
-
-	local function Rescale()
-		if FocusFrameDB.scale >= 1 then
-			FocusFrameDB.scale = 0.9
-		else
-			FocusFrameDB.scale = 1
-		end
-		FocusFrame:SetScale(FocusFrameDB.scale)
-	end
-
-	local function ClearFocus()
-		Focus:ClearFocus()
-	end
-
-	function FocusFrameDropDown_Initialize(level) -- ran every time dropdown is shown/updated
-		if not level then return end
-		for k,v in pairs(info) do info[k] = nil end
-
-		if level == 1 then
-			info.isTitle = 1
-			info.text = Focus:GetName()
-			info.notCheckable = 1
-			UIDropDownMenu_AddButton(info, level)
-
-			-- Reusing same table for mem improvements, so delete old values
-			info.disabled = nil
-			info.isTitle = nil
-			info.notCheckable = nil
-
-			local isLeader = UnitIsPartyLeader("player")
-			info.text = "Target Marker Icon"
-			info.nested = 1
-			info.hasArrow = isLeader
-			info.disabled = not isLeader
-			UIDropDownMenu_AddButton(info, level)
-
-			info.hasArrow = nil
-			info.nested = nil
-			info.menuList = nil
-			info.disabled = nil
-
-			info.text = "Clear Focus"
-			info.func = ClearFocus
-			UIDropDownMenu_AddButton(info, level)
-
-			info.isTitle = 1
-			info.text = "Other Options"
-			info.notCheckable = 1
-			UIDropDownMenu_AddButton(info, level)
-
-			info.disabled = nil
-			info.isTitle = nil
-			info.notCheckable = nil
-
-			info.text = "Larger Focus Frame"
-			info.checked = FocusFrameDB.scale >= 1
-			info.func = Rescale
-			UIDropDownMenu_AddButton(info, level)
-			info.checked = nil
-
-			info.text = "Unlock"
-			info.checked = FocusFrameDB.unlock
-			info.func = Unlock
-			UIDropDownMenu_AddButton(info, level)
-			info.checked = nil
-
-			-- Close menu item
-			info.text = "Close"
-			info.func = CloseDropDownMenus
-			info.checked = nil
-			info.notCheckable = 1
-			UIDropDownMenu_AddButton(info, level)
-		else
-			for i, name in ipairs(UnitPopupMenus["RAID_TARGET_ICON"]) do
-				local item = UnitPopupButtons[name]
-				info.color = nil
-				info.icon = nil
-				info.value = nil
-				for k, v in pairs(item) do
-					info[k] = v
-					info.value = i
-				end
-				info.func = SetRaidMark
-				UIDropDownMenu_AddButton(info, level)
-			end
-		end
-
-		info = nil
-	end
-
-	FocusFrameDropDown.initialize = FocusFrameDropDown_Initialize
-end
-
 local function CheckPortrait(event, unit)
 	SetPortraitTexture(FocusPortrait, unit)
 	FocusPortrait:SetAlpha(1)
@@ -446,6 +338,116 @@ do
 	end
 end
 
+-- Dropdown menu
+do
+	local info = {}
+	local FocusFrameDropDown = CreateFrame("Frame", "FocusFrameDropDown")
+	FocusFrameDropDown.displayMode = "MENU"
+
+	local function SetRaidMark()
+		local mark = this.value
+		if mark >= 9 then mark = 0 end
+
+		Focus:Call(SetRaidTargetIcon, "target", mark)
+	end
+
+	local function Unlock()
+		FocusFrameDB.unlock = not FocusFrameDB.unlock
+	end
+
+	local function Rescale()
+		if FocusFrameDB.scale >= 1 then
+			FocusFrameDB.scale = 0.9
+		else
+			FocusFrameDB.scale = 1
+		end
+		FocusFrame:SetScale(FocusFrameDB.scale)
+	end
+
+	local function ClearFocus()
+		Focus:ClearFocus()
+	end
+
+	function FocusFrameDropDown_Initialize(level) -- ran every time dropdown is shown/updated
+		if not level then return end
+		for k,v in pairs(info) do info[k] = nil end
+
+		if level == 1 then
+			info.isTitle = 1
+			info.text = Focus:GetName()
+			info.notCheckable = 1
+			UIDropDownMenu_AddButton(info, level)
+
+			-- Reusing same table for mem improvements, so delete old values
+			info.disabled = nil
+			info.isTitle = nil
+			info.notCheckable = nil
+
+			local isLeader = UnitIsPartyLeader("player")
+			info.text = "Target Marker Icon"
+			info.nested = 1
+			info.hasArrow = isLeader
+			info.disabled = not isLeader
+			UIDropDownMenu_AddButton(info, level)
+
+			info.hasArrow = nil
+			info.nested = nil
+			info.menuList = nil
+			info.disabled = nil
+
+			info.text = "Clear Focus"
+			info.func = ClearFocus
+			UIDropDownMenu_AddButton(info, level)
+
+			info.isTitle = 1
+			info.text = "Other Options"
+			info.notCheckable = 1
+			UIDropDownMenu_AddButton(info, level)
+
+			info.disabled = nil
+			info.isTitle = nil
+			info.notCheckable = nil
+
+			info.text = "Larger Focus Frame"
+			info.checked = FocusFrameDB.scale >= 1
+			info.func = Rescale
+			UIDropDownMenu_AddButton(info, level)
+			info.checked = nil
+
+			info.text = "Unlock"
+			info.checked = FocusFrameDB.unlock
+			info.func = Unlock
+			UIDropDownMenu_AddButton(info, level)
+			info.checked = nil
+
+			-- Close menu item
+			info.text = "Close"
+			info.func = CloseDropDownMenus
+			info.checked = nil
+			info.notCheckable = 1
+			UIDropDownMenu_AddButton(info, level)
+		else
+			-- Build nested dropdown for raid marks
+			for i, name in ipairs(UnitPopupMenus["RAID_TARGET_ICON"]) do
+				local item = UnitPopupButtons[name]
+				info.color = nil
+				info.icon = nil
+				info.value = nil
+				for k, v in pairs(item) do
+					info[k] = v
+					info.value = i
+				end
+				info.func = SetRaidMark
+				UIDropDownMenu_AddButton(info, level)
+			end
+		end
+
+		info = nil
+	end
+
+	FocusFrameDropDown.initialize = FocusFrameDropDown_Initialize
+end
+
 -- Create castbar
 -- TODO add to xml
 -- lua table names are deprecated. Please use global frame names if you're gonna modify these
@@ -521,7 +523,9 @@ SlashCmdList.FOCUSOPTIONS = function(msg)
 	local cmd = strsub(msg, 1, space and (space-1))
 	local value = tonumber(strsub(msg, space or -1))
 
-	local print = function(a, b, c) DEFAULT_CHAT_FRAME:AddMessage(string.format(a, b, c)) end
+	local print = function(a, b, c)
+		DEFAULT_CHAT_FRAME:AddMessage(string.format(a, b, c))
+	end
 
 	if cmd == "scale" and value then
 		local x = value > 0.1 and value <= 2 and value or 1
