@@ -614,6 +614,7 @@ do
 
 	--- Target the focus.
 	-- @tparam[opt=nil] string name
+	-- @tparam[opt=nil] bool setFocusName true to update vars storing focus unit name
 	-- @treturn bool true on success
 	function Focus:TargetFocus(name, setFocusName)
 		if not setFocusName and not self:FocusExists() then
