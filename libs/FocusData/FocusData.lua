@@ -7,7 +7,6 @@
 -- @license MIT
 local _G = getfenv(0)
 if _G.FocusData then return end
-print = print or function(msg) DEFAULT_CHAT_FRAME:AddMessage(msg or "nil") end
 
 -- Vars
 local Focus = {}
@@ -39,14 +38,18 @@ local GetCast = FSPELLCASTINGCOREgetCast
 --------------------------------------
 
 do
-	local showDebug = false
-	local showDebugEvents = false
+	-- 0 = disabled, 1 = info/error, 2 = debug, 3 = verbose
+	local debugLevel = 0
 
-	function debug(str, arg1, arg2, arg3) --local
-		if showDebug then
-			if not showDebugEvents and strfind(str, "CallHooks") or strfind(str, "event callback") then return end
-			print(string.format(str, arg1, arg2, arg3))
+	function log(level, str, arg1, arg2, arg3, arg4) -- no vararg available
+		if debugLevel <= 0 then return end
+		if type(level) == "string" then
+			str = level -- default to 1 when no lvl is given
+		else
+			if level > debugLevel then return end
 		end
+
+		DEFAULT_CHAT_FRAME:AddMessage(string.format(str or "nil", arg1, arg2, arg3, arg4))
 	end
 end
 
@@ -96,7 +99,7 @@ do
 		__index = function(self, key)
 			local value = rawData[key]
 			if value == nil then
-				debug("unknown data key %s", key)
+				log("unknown data key %s", key)
 			end
 			return value
 		end,
@@ -105,7 +108,7 @@ do
 		__newindex = function(self, key, value)
 			if not focusTargetName then
 				-- may happen on focus cleared while event is being triggered
-				return debug("attempt to set data (%s) while focus doesn't exist.")
+				return log("attempt to set data (%s) while focus doesn't exist.")
 			end
 
 			-- insert to 'rawData' instead of 'data'
@@ -451,11 +454,11 @@ do
 			if SetFocusInfo(unit, true) then
 				raidMemberIndex = 1
 				partyUnit = unit -- cache unit id
-				debug("partyUnit = %s", unit)
+				log("partyUnit = %s", unit)
 			elseif SetFocusInfo(unitPet, true) then
 				raidMemberIndex = 1
 				partyUnit = unitPet
-				debug("partyUnit = %s", unitPet)
+				log("partyUnit = %s", unitPet)
 			else
 				partyUnit = nil
 				-- Scan 1 unitID every frame instead of all at once
@@ -737,7 +740,7 @@ do
 	-- @section getters
 
 	--- Get focus unit name.
-	-- Global var CURR_FOCUS_TARGET may also be used.
+	-- Global var CURR_FOCUS_TARGET may also be used when performance is critical.
 	-- @treturn[1] string unit name
 	-- @treturn[2] nil
 	function Focus:GetName()
@@ -774,7 +777,8 @@ do
 	do
 		local mod, floor = mod, floor
 
-		local function Round(num, idp)
+		local function Round(num)
+			local idp = num > 3 and 0 or 1
 			local mult = 10^(idp or 0)
 
 			return floor(num * mult + 0.5) / mult
@@ -790,38 +794,36 @@ do
 		-- @treturn[2] nil
 		function Focus:GetCast()
 			local cast = GetCast(focusTargetName)
-			if cast then
-				local timeEnd, timeStart = cast.timeEnd, cast.timeStart
-				local getTime = GetTime()
-				rawData.lastSeen = getTime -- TODO add to spellcastingcore?
+			if not cast then return end
 
-				if getTime < timeEnd then
-					local t = timeEnd - getTime
-					local timer = Round(t, t > 3 and 0 or 1)
-					local maxValue = timeEnd - timeStart
-					local value, sparkPosition
+			local timeEnd, timeStart = cast.timeEnd, cast.timeStart
+			local getTime = GetTime()
+			rawData.lastSeen = getTime -- TODO add to spellcastingcore?
 
-					if cast.inverse then
-						value = mod(t, timeEnd - timeStart)
-						sparkPosition = t / (timeEnd - timeStart)
-					else
-						value = mod((getTime - timeStart), timeEnd - timeStart)
-						sparkPosition = (getTime - timeStart) / (timeEnd - timeStart)
-					end
+			if getTime < timeEnd then
+				local t = timeEnd - getTime
+				local timer = Round(t)
+				local maxValue = timeEnd - timeStart
+				local value, sparkPosition
 
-					if sparkPosition < 0 then
-						sparkPosition = 0
-					end
-
-					return cast, value, maxValue, sparkPosition, timer
+				if cast.inverse then
+					value = mod(t, timeEnd - timeStart)
+					sparkPosition = t / (timeEnd - timeStart)
+				else
+					value = mod((getTime - timeStart), timeEnd - timeStart)
+					sparkPosition = (getTime - timeStart) / (timeEnd - timeStart)
 				end
-			end
 
-			return nil
+				if sparkPosition < 0 then
+					sparkPosition = 0
+				end
+
+				return cast, value, maxValue, sparkPosition, timer
+			end
 		end
 	end
 
-	--- Get UnitReactionColor for focus. (player only, not npc)
+	--- Get UnitReactionColor for focus
 	-- @treturn number r
 	-- @treturn number g
 	-- @treturn number b
@@ -854,7 +856,7 @@ do
 	--- Data
 	-- @section data
 
-	--- Get specific focus data.
+	--- Get focus data by key.
 	-- If no key is specified, returns all the data.
 	-- See SetFocusInfo() for list of data available.
 	-- @tparam[opt=nil] string key1
@@ -920,7 +922,7 @@ do
 
 		local callbacks = hookEvents[event]
 		if callbacks then
-			debug("CallHooks(%s, %s)", event, arg1 or "")
+			log(3, "CallHooks(%s, %s)", event, arg1 or "")
 			for i = 1, tgetn(callbacks) do
 				callbacks[i](event, arg1, arg2, arg3, arg4)
 			end
@@ -958,12 +960,13 @@ do
 		-- Combine into 1 single event
 		if event == "UNIT_DISPLAYPOWER" or event == "UNIT_HEALTH" or event == "UNIT_MANA"
 			or event == "UNIT_RAGE" or event == "UNIT_FOCUS" or event == "UNIT_ENERGY" then
-				--return events:UNIT_HEALTH_OR_POWER(event, arg1)
 				return SetFocusHealth(arg1)
 		end
 
 		if events[event] then
 			events[event](Focus, event, arg1, arg2, arg3, arg4)
+		else
+			log("unhandled event %s", event)
 		end
 	end
 
@@ -1027,21 +1030,17 @@ do
 	-- @tparam func callback
 	-- @treturn number event ID
 	function Focus:OnEvent(eventName, callback)
-		if type(eventName) ~= "string" or type(callback) ~= "function" then
-			return error('Usage: OnEvent("event", callbackFunc)')
-		end
+		assert(type(eventName) == "string", "#1 string expected.")
+		assert(type(callback) == "function", "#2 function expected.")
 
 		if not hookEvents[eventName] then
 			hookEvents[eventName] = {}
 		end
 
-		--[[if not events:IsEventRegistered(eventName) then
-			events:RegisterEvent(eventName)
-		end]]
-
 		local i = tgetn(hookEvents[eventName]) + 1
 		hookEvents[eventName][i] = callback
-		debug("registered event callback for %s (%d)", eventName, i)
+
+		log(2, "registered event handler for %s:%d", eventName, i)
 		return i
 	end
 
@@ -1049,15 +1048,14 @@ do
 	-- @tparam string eventName
 	-- @tparam number eventID
 	function Focus:RemoveEvent(eventName, eventID)
-		if type(eventName) ~= "string" or type(eventID) ~= "number" then
-			return error('Usage: UnhookEvent("event", id)')
-		end
+		assert(type(eventName) == "string", "#1 string expected.")
+		assert(type(eventID) == "number", "#2 number expected.")
 
 		if hookEvents[eventName] and hookEvents[eventName][eventID] then
 			table.remove(hookEvents[eventName], eventID)
-			debug("removed event callback for %s (%d)", eventName, eventID)
+			log(2, "removed event handler for %s:%d", eventName, eventID)
 		else
-			error("Invalid event name or id.")
+			log("unknown event %s:%d", eventName, eventID)
 		end
 	end
 
@@ -1094,7 +1092,7 @@ do
 	end
 
 	function events:UNIT_FACTION(event, unit)
-		-- Mindcontrolled, etc
+		-- We need to update certain states when focus gets mindcontrolled or changes pvp status
 		rawData.playerCanAttack = UnitCanAttack("player", unit)
 		rawData.unitCanAttack = UnitCanAttack(unit, "player")
 		rawData.unitReaction = UnitReaction(unit, "player")
