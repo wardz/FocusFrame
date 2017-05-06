@@ -1,7 +1,6 @@
 ------------
--- Documentation: https://wardz.github.io/FocusFrame/.
--- Feel free to use or fork this module.
--- See FocusFrame.lua for examples.
+-- API documentation can be generated using LDoc or viewed here:
+-- https://wardz.github.io/FocusFrame/
 -- @module FocusData
 -- @author Wardz
 -- @license MIT
@@ -25,7 +24,7 @@ local PartyScanner
 local SetFocusAuras
 local CallHooks
 local CheckTargetPlateForFocus
-local debug
+local log
 
 -- 'Interface'
 local ClearBuffs = FSPELLCASTINGCOREClearBuffs
@@ -56,22 +55,22 @@ end
 -- Event handling for data struct
 do
 	local rawset = rawset
+	rawData = { eventsThrottle = {} }
 
 	--- FocusData events.
-	-- List of events that you can register for. All events can be
-	-- registered multiple times.
+	-- List of available events. All events can be registered multiple times.
 	-- @table Events
-	-- @usage Focus:OnEvent("EVENT_NAME", callbackFunc)
-	-- @field UNIT_HEALTH_OR_POWER arg1=event, arg2=unit or nil
-	-- @field UNIT_LEVEL arg1=event, arg2=unit or nil
-	-- @field UNIT_AURA arg1=event, arg2=unit or nil
-	-- @field UNIT_CLASSIFICATION_CHANGED arg1=event, arg2=unit or nil
-	-- @field UNIT_FACTION arg1=event, arg2=unit
+	-- @usage Focus:OnEvent("EVENT_NAME", function(event, unit, value) end) -- unit arg may be nil!
+	-- @field UNIT_HEALTH_OR_POWER
+	-- @field UNIT_LEVEL
+	-- @field UNIT_AURA
+	-- @field UNIT_CLASSIFICATION_CHANGED
+	-- @field UNIT_FACTION
 	-- @field PLAYER_FLAGS_CHANGED
 	-- @field RAID_TARGET_UPDATE
-	-- @field FOCUS_UNITID_EXISTS arg1=event, arg2=unit
-	-- @field FOCUS_SET arg1=event, arg2=unit
-	-- @field FOCUS_CHANGED arg1=event, arg2=unit
+	-- @field FOCUS_UNITID_EXISTS
+	-- @field FOCUS_SET
+	-- @field FOCUS_CHANGED
 	-- @field FOCUS_CLEAR
 	local events = {
 		health              = "UNIT_HEALTH_OR_POWER",
@@ -89,8 +88,6 @@ do
 		unitReaction		= "UNIT_FACTION",
 		unitIsTappedByPlayer = "UNIT_FACTION",
 	}
-
-	rawData = { eventsThrottle = {} }
 
 	-- proxy for rawData
 	-- data.x will trigger events.
