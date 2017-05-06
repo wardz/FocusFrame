@@ -36,17 +36,20 @@ local GetCast = FSPELLCASTINGCOREgetCast
 -- Core
 --------------------------------------
 
+--[[
+	@TODO
+	- run SetFocusAuras only if auras has changed in spellcastingcore
+	- optimize nameplate scanning
+	- add ace2 lib support
+	- rewrite spellcastingcore, add localization
+]]
+
 do
 	-- 0 = disabled, 1 = info/error, 2 = debug, 3 = verbose
 	local debugLevel = 0
 
 	function log(level, str, arg1, arg2, arg3, arg4) -- no vararg available
-		if debugLevel <= 0 then return end
-		if type(level) == "string" then
-			str = level -- default to 1 when no lvl is given
-		else
-			if level > debugLevel then return end
-		end
+		if debugLevel <= 0 or level > debugLevel then return end
 
 		DEFAULT_CHAT_FRAME:AddMessage(string.format(str or "nil", arg1, arg2, arg3, arg4))
 	end
@@ -57,10 +60,10 @@ do
 	local rawset = rawset
 	rawData = { eventsThrottle = {} }
 
-	--- FocusData events.
-	-- List of available events. All events can be registered multiple times.
+	--- List of available events.
+	-- All events can be registered multiple times.
 	-- @table Events
-	-- @usage Focus:OnEvent("EVENT_NAME", function(event, unit, value) end) -- unit arg may be nil!
+	-- @usage Focus:OnEvent("EVENT_NAME", function(event, unit) end) -- unit arg may be nil!
 	-- @field UNIT_HEALTH_OR_POWER
 	-- @field UNIT_LEVEL
 	-- @field UNIT_AURA
@@ -96,7 +99,7 @@ do
 		__index = function(self, key)
 			local value = rawData[key]
 			if value == nil then
-				log("unknown data key %s", key)
+				log(1, "unknown data key %s", key)
 			end
 			return value
 		end,
@@ -105,7 +108,7 @@ do
 		__newindex = function(self, key, value)
 			if not focusTargetName then
 				-- may happen on focus cleared while event is being triggered
-				return log("attempt to set data (%s) while focus doesn't exist.")
+				return log(1, "attempt to set data (%s) while focus doesn't exist.")
 			end
 
 			-- insert to 'rawData' instead of 'data'
@@ -388,10 +391,12 @@ local function SetFocusInfo(unit, resetRefresh)
 	data.unit = unit
 	SetFocusHealth(unit, false, true)
 	SetFocusAuras(unit)
+
 	data.raidIcon = GetRaidTargetIndex(unit)
 	data.unitLevel = UnitLevel(unit)
-	data.unitIsPVP = UnitIsPVP(unit)
-	data.unitIsTapped = UnitIsTapped(unit)
+
+	rawData.unitIsPVP = UnitIsPVP(unit)
+	rawData.unitIsTapped = UnitIsTapped(unit)
 	data.unitIsTappedByPlayer = UnitIsTappedByPlayer(unit)
 
 	if resetRefresh then
@@ -406,25 +411,31 @@ local function SetFocusInfo(unit, resetRefresh)
 	end
 
 	data.unitIsPartyLeader = UnitIsPartyLeader(unit)
-	data.unitClassification = UnitClassification(unit)
-
-	local _, class = UnitClass(unit) -- localized
 	rawData.playerCanAttack = UnitCanAttack("player", unit)
 	rawData.unitCanAttack = UnitCanAttack(unit, "player")
 	rawData.unitIsEnemy = rawData.playerCanAttack == 1 and rawData.unitCanAttack == 1 and 1 -- UnitIsEnemy() does not count neutral targets
 	rawData.unitIsFriend = UnitIsFriend(unit, "player")
+	rawData.unitIsCorpse = UnitIsCorpse(unit)
+	rawData.unitPlayerControlled = UnitPlayerControlled(unit)
+	data.unitReaction = UnitReaction(unit, "player")
+	rawData.refreshed = getTime
+
+	if rawData.refreshed2 then
+		if (getTime - rawData.refreshed2) < 5 then
+			return true
+		end
+	end
+
+	local _, class = UnitClass(unit) -- localized
+	data.unitClassification = UnitClassification(unit)
 	rawData.unitIsConnected = UnitIsConnected(unit)
 	rawData.unitFactionGroup = UnitFactionGroup(unit)
 	rawData.unitClass = class
 	rawData.unitName = GetUnitName(unit)
 	rawData.unitIsPlayer = UnitIsPlayer(unit)
 	rawData.unitIsCivilian = UnitIsCivilian(unit)
-	rawData.unitIsCorpse = UnitIsCorpse(unit)
 	rawData.unitIsPVPFreeForAll = UnitIsPVPFreeForAll(unit)
-	rawData.unitPlayerControlled = UnitPlayerControlled(unit)
-	data.unitReaction = UnitReaction(unit, "player")
-	rawData.refreshed = getTime
-	-- More data can be sat using Focus:SetData() in FOCUS_SET event
+	rawData.refreshed2 = getTime
 
 	return true
 end
@@ -451,11 +462,11 @@ do
 			if SetFocusInfo(unit, true) then
 				raidMemberIndex = 1
 				partyUnit = unit -- cache unit id
-				log("partyUnit = %s", unit)
+				log(1, "partyUnit = %s", unit)
 			elseif SetFocusInfo(unitPet, true) then
 				raidMemberIndex = 1
 				partyUnit = unitPet
-				log("partyUnit = %s", unitPet)
+				log(1, "partyUnit = %s", unitPet)
 			else
 				partyUnit = nil
 				-- Scan 1 unitID every frame instead of all at once
@@ -963,7 +974,7 @@ do
 		if events[event] then
 			events[event](Focus, event, arg1, arg2, arg3, arg4)
 		else
-			log("unhandled event %s", event)
+			log(1, "unhandled event %s", event)
 		end
 	end
 
@@ -1052,9 +1063,30 @@ do
 			table.remove(hookEvents[eventName], eventID)
 			log(2, "removed event handler for %s:%d", eventName, eventID)
 		else
-			log("unknown event %s:%d", eventName, eventID)
+			log(1, "unknown event %s:%d", eventName, eventID)
 		end
 	end
+
+	--[[function Focus:UnregisterAll()
+		Focus:ClearFocus()
+
+		for event,_ in pairs(hookEvents) do
+			hookEvents[event] = nil
+		end
+
+		events:UnregisterAllEvents()
+		events:SetScript("OnEvent", nil)
+		events:SetScript("OnUpdate", nil)
+		for _, func in pairs(events) do
+			events[func] = nil
+		end
+
+		for _, func in pairs(Focus) do
+			Focus[func] = nil
+		end
+
+		FocusData, data, rawData = nil, nil, nil
+	end]]
 
 	--------------------------------------------------------
 
