@@ -10,7 +10,6 @@ if _G.FocusData then return end
 print = print or function(msg) DEFAULT_CHAT_FRAME:AddMessage(msg or "nil") end
 
 -- Vars
-local L = _G.FocusData_Locale
 local Focus = {}
 local rawData, data
 local focusPlateRan, focusPlateRef
@@ -90,10 +89,9 @@ do
 
 	rawData = { eventsThrottle = {} }
 
-	-- data = rawData, but:
+	-- proxy for rawData
 	-- data.x will trigger events.
 	-- rawData.x will not and has less overhead.
-
 	data = setmetatable({}, {
 		__index = function(self, key)
 			local value = rawData[key]
@@ -141,7 +139,7 @@ do
 				rawData.eventsThrottle[key] = getTime
 
 				-- Trigger all event listeners
-				CallHooks(events[key], rawData.unit)
+				CallHooks(events[key], rawData.unit, key, value)
 			end
 		end
 	})
@@ -485,7 +483,7 @@ do
 	--- Display an error in UIErrorsFrame.
 	-- @tparam[opt="You have no focus"] string msg
 	function Focus:ShowError(msg)
-		UIErrorsFrame:AddMessage("|cffFF003F " .. (msg or L.NO_FOCUS) .. "|r")
+		UIErrorsFrame:AddMessage("|cffFF003F " .. (msg or "You have no focus.") .. "|r")
 	end
 
 	--- Unit
@@ -999,13 +997,14 @@ do
 		end
 	end
 
+	-- not kept in spellcastingcore for more decoupled architecture
 	local function ParseCombatDeath(event, arg1)
 		if not Focus:FocusExists() then return end
 
-		local pdie 		= L.YOU_DIE						local fpdie		= strfind(arg1, pdie)
-		local dies		= L['(.+) dies.']				local fdies		= strfind(arg1, dies)
-		local slain 	= L['(.+) is slain by (.+).']	local fslain 	= strfind(arg1, slain)
-		local pslain 	= L['You have slain (.+).']		local fpslain 	= strfind(arg1, pslain)
+		local pdie 		= 'You die.'					local fpdie		= strfind(arg1, pdie)
+		local dies		= '(.+) dies.'					local fdies		= strfind(arg1, dies)
+		local slain 	= '(.+) is slain by (.+).'		local fslain 	= strfind(arg1, slain)
+		local pslain 	= 'You have slain (.+).'		local fpslain 	= strfind(arg1, pslain)
 
 		if fpdie or fdies or fslain or fpslain then
 			local m = fdies and dies or fslain and slain or fpslain and pslain or ""
