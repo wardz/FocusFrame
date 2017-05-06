@@ -30,6 +30,7 @@ local function ParseSpell(msg)
 	end
 
 	if isSuffix then
+		-- Remove suffix from str
 		msg = gsub(msg, "-target", "")
 	end
 
@@ -37,12 +38,17 @@ local function ParseSpell(msg)
 end
 
 -- Target focus
-SlashCmdList.TARFOCUS = function() Focus:TargetFocus() end
+SlashCmdList.TARFOCUS = function()
+	Focus:TargetFocus()
+end
 
 -- Remove focus
-SlashCmdList.CLEARFOCUS = function() Focus:ClearFocus() end
+SlashCmdList.CLEARFOCUS = function()
+	Focus:ClearFocus()
+end
 
 -- Focus current target or by name
+-- Note: nil msg is allowed here to clear focus
 SlashCmdList.FOCUS = function(msg)
 	Focus:SetFocus(msg)
 end
@@ -59,17 +65,17 @@ SlashCmdList.FCAST = function(msg)
 	local spell, useOnTarget = ParseSpell(msg)
 	if not spell then return end
 
-	if spell == "petattack" then
-		if useOnTarget then
-			PetAttack()
-		else
-			Focus:Call(PetAttack)
-		end
-	else
+	if spell ~= "petattack" then
 		if useOnTarget then
 			CastSpellByName(spell)
 		else
 			Focus:CastSpellByName(spell)
+		end
+	else
+		if useOnTarget then
+			PetAttack()
+		else
+			Focus:Call(PetAttack)
 		end
 	end
 end
@@ -79,14 +85,15 @@ SlashCmdList.FITEM = function(msg)
 	local item, useOnTarget = ParseSpell(msg)
 	if not item then return end
 
-	local scantip = _G.FocusDataScantip
-	local scantipTextLeft1 = _G.FocusDataScantipTextLeft1
-
 	if not useOnTarget and not Focus:FocusExists() then
 		return Focus:ShowError()
 	end
 
-	for i = 0, 19 do
+	local scantip = _G.FocusDataScantip
+	local scantipTextLeft1 = _G.FocusDataScantipTextLeft1
+
+	-- Loop through inventory (gear)
+	for i = 19, 1, -1 do
 		scantip:ClearLines()
 		scantip:SetInventoryItem("player", i, true)
 
@@ -100,6 +107,7 @@ SlashCmdList.FITEM = function(msg)
 		end
 	end
 
+	-- Loop through backpacks
 	for i = 0, 4 do
 		for j = 1, GetContainerNumSlots(i) do
 			scantip:ClearLines()
@@ -139,6 +147,7 @@ SlashCmdList.FASSIST = function()
 		if UnitName("target") == Focus:GetName() then
 			-- Focus didn't have a target
 			Focus:TargetPrevious()
+			Focus:ShowError("Unknown unit.")
 		end
 	end
 end
