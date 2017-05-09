@@ -512,7 +512,7 @@ Focus:OnEvent("UNIT_FACTION", CheckFaction)
 Focus:OnEvent("UNIT_CLASSIFICATION_CHANGED", CheckClassification)
 Focus:OnEvent("UNIT_PORTRAIT_UPDATE", CheckPortrait)
 Focus:OnEvent("FOCUS_UNITID_EXISTS", CheckPortrait) -- update on retarget/mouseover aswell
---Focus:OnEvent("FOCUS_CHANGED", function() print("ran2") end)
+--Focus:OnEvent("FOCUS_CHANGED", function() DEFAULT_CHAT_FRAME:AddMessage("ran2") end)
 Focus:OnEvent("FOCUS_ACTIVE", OnFocusActive)
 Focus:OnEvent("FOCUS_INACTIVE", OnFocusIdle)
 
@@ -545,7 +545,12 @@ SlashCmdList.FOCUSOPTIONS = function(msg)
 	elseif cmd == "strictaura" then
 		FocusFrameDB.strictAuras = not FocusFrameDB.strictAuras
 		FSPELLCASTINGCOREstrictAuras = FocusFrameDB.strictAuras
-		print("Strict aura/cast %s", FocusFrameDB.strictAuras and "enabled" or "disabled");
+		print("Strict aura/cast %s", FocusFrameDB.strictAuras and "enabled" or "disabled")
+	elseif cmd == "nameplates" then
+		FocusFrameDB.disableNameplateScan = not FocusFrameDB.disableNameplateScan
+		local x = FocusFrameDB.disableNameplateScan
+		Focus:ToggleNameplateScan(not x)
+		print("Nameplate scanning %s", x and "disabled" or "enabled")
 	elseif cmd == "reset" then
 		FocusFrameDB = { scale = 1, unlock = true }
 		FocusFrame:SetScale(1)
@@ -560,6 +565,7 @@ SlashCmdList.FOCUSOPTIONS = function(msg)
 		print("    nohide - |cff00FF7F Toggle hiding of frame on loading screens/release spirit.")
 		print("    fade - |cff00FF7F Toggle fading of frame when focus hasn't been updated for ~10s.")
 		print("    strictaura - |cff00FF7F Toggle aura/cast optimization. See github wiki for more info.")
+		print("    nameplates - |cff00FF7F Toggle nameplate scanning. Disable if you don't use nameplates.")
 		print("    reset - |cff00FF7F Reset to default settings.")
 	end
 end
