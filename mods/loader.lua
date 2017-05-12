@@ -1,11 +1,9 @@
-local Focus = getfenv(0).FocusData
-
 local Loader = CreateFrame("Frame")
 Loader.addons = {}
 
-local function debug(str)
+local function debug(str, arg1, arg2, arg3)
 	if false then
-		DEFAULT_CHAT_FRAME:AddMessage(str)
+		DEFAULT_CHAT_FRAME:AddMessage(string.format(str or "nil", arg1, arg2, arg3))
 	end
 end
 
@@ -14,9 +12,9 @@ end
 -- @tparam func callback
 -- @tparam[opt=false] bool - True if addon is loaded on demand, and not instantly on login.
 function Loader:Register(addonName, callback, onDemand)
-	if type(addonName) ~= "string" or type(callback) ~= "function" then
-		return error('Usage: Register("name", callbackFunc, false)')
-	end
+	assert(type(addonName) == "string", "#1 string expected.")
+	assert(type(callback) == "function", "#2 function expected.")
+	assert(onDemand and type(onDemand) == "boolean" or true, "#3 boolean expected.")
 
 	self.addons[addonName] = {
 		init = callback,
@@ -25,17 +23,11 @@ function Loader:Register(addonName, callback, onDemand)
 		hasRan = false
 	}
 
-	debug("registered " .. addonName)
+	debug("registered %s", addonName)
 
 	-- Trigger event ourselves if addon is already loaded
 	if IsAddOnLoaded(addonName) then
 		self:ADDON_LOADED(addonName)
-	end
-end
-
-local EventHandler = function()
-	if this[event] then
-		return this[event](this, arg1)
 	end
 end
 
@@ -47,7 +39,7 @@ function Loader:FreeLoadedAddons()
 	for name, addon in pairs(self.addons) do
 		if not addon.onDemand or (addon.hasRan and not addon.loaded) then
 			self.addons[name] = nil
-			debug("free " .. name)
+			debug("free %s", name)
 		end
 	end
 end
@@ -55,7 +47,7 @@ end
 function Loader:ADDON_LOADED(addonName)
 	local addon = self.addons[addonName]
 	if addon then
-		local success = pcall(addon.init, Focus, addonName)
+		local success = pcall(addon.init, FocusData, addonName)
 		addon.loaded = success
 		addon.hasRan = true
 
@@ -72,11 +64,17 @@ function Loader:PLAYER_ENTERING_WORLD()
 		self:UnregisterEvent("PLAYER_ENTERING_WORLD")
 		self:SetScript("OnEvent", nil)
 
-		for k, v in pairs(self) do
+		for k, _ in pairs(self) do
 			self[k] = nil
 		end
 
 		debug("all free")
+	end
+end
+
+local EventHandler = function()
+	if this[event] then
+		return this[event](this, arg1)
 	end
 end
 
