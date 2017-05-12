@@ -108,7 +108,6 @@ do
 
 		if not recursive and event == "FOCUS_SET" then
 			-- Trigger all events for easy GUI updating
-			SetFocusAuras(nil, nil, "target")
 			for evnt, _ in next, hookEvents do
 				if evnt ~= "FOCUS_CLEAR" and evnt ~= "FOCUS_SET" and evnt ~= "FOCUS_CHANGED" then
 					CallHooks(evnt, arg1, arg2, arg3, arg4, true)
@@ -222,7 +221,7 @@ local function SetFocusInfo(unit, resetRefresh)
 	-- Ran every 0.3s
 	data.unit = unit
 	SetFocusHealth(unit, false, true)
-	--SetFocusAuras(nil, nil, unit)
+	SetFocusAuras(nil, nil, unit)
 	data.raidIcon = GetRaidTargetIndex(unit)
 	data.unitLevel = UnitLevel(unit)
 	data.unitIsPVP = UnitIsPVP(unit)
@@ -1060,12 +1059,6 @@ do
 		CallHooks(event, arg1)
 	end
 
-	function events:PLAYER_TARGET_CHANGED(event)
-		if Focus:UnitIsFocus("target") then
-			SetFocusAuras(nil, event, "target")
-		end
-	end
-
 	-- Call these functions directly instead for better performance
 	events.UNIT_AURA = SetFocusAuras
 	events.PLAYER_AURAS_CHANGED = SetFocusAuras
@@ -1127,7 +1120,6 @@ do
 	--------------------------------------------------------
 
 	events:RegisterEvent("PLAYER_ENTERING_WORLD")
-	events:RegisterEvent("PLAYER_TARGET_CHANGED")
 	events:RegisterEvent("PLAYER_ALIVE")
 	events:RegisterEvent("PLAYER_FLAGS_CHANGED")
 	events:RegisterEvent("PLAYER_AURAS_CHANGED")
