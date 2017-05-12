@@ -36,23 +36,27 @@ local GetCast = FSPELLCASTINGCOREgetCast
 
 --[[
 	@TODO
-	- run SetFocusAuras only if auras has changed in spellcastingcore
 	- optimize nameplate scanning
-	- add ace2 lib support
-	- rewrite spellcastingcore
+	- add AceLibrary support if possible
+	- rewrite spellcastingcore completely
+	- update raid mark, leader icon etc on focus leave party
 ]]
 
 do
 	-- 0 = disabled, 1 = info/error, 2 = debug, 3 = verbose
-	local debugLevel = 0
+	local logLevel = 0
 
-	function log(level, str, arg1, arg2, arg3, arg4) -- no vararg available
-		if debugLevel <= 0 or level > debugLevel then return end
+	function log(level, str, arg1, arg2, arg3, arg4) -- no vararg available :(
+		if logLevel <= 0 or level > logLevel then return end
 
 		DEFAULT_CHAT_FRAME:AddMessage(string.format(str or "nil", arg1, arg2, arg3, arg4))
 	end
+	FocusData_Log = log
 end
 
+--------------------------------
+-- Proxy event handling for data
+--------------------------------
 do
 	local rawset, next = rawset, next
 	rawData = { eventsThrottle = {} }
@@ -104,8 +108,9 @@ do
 
 		if not recursive and event == "FOCUS_SET" then
 			-- Trigger all events for easy GUI updating
+			SetFocusAuras(nil, nil, "target")
 			for evnt, _ in next, hookEvents do
-				if evnt ~= "FOCUS_CLEAR" and evnt ~= "FOCUS_SET"  and evnt ~= "FOCUS_CHANGED" then
+				if evnt ~= "FOCUS_CLEAR" and evnt ~= "FOCUS_SET" and evnt ~= "FOCUS_CHANGED" then
 					CallHooks(evnt, arg1, arg2, arg3, arg4, true)
 				end
 			end
@@ -217,11 +222,11 @@ local function SetFocusInfo(unit, resetRefresh)
 	-- Ran every 0.3s
 	data.unit = unit
 	SetFocusHealth(unit, false, true)
-	SetFocusAuras(nil, nil, unit)
+	--SetFocusAuras(nil, nil, unit)
 	data.raidIcon = GetRaidTargetIndex(unit)
 	data.unitLevel = UnitLevel(unit)
-	rawData.unitIsPVP = UnitIsPVP(unit)
-	rawData.unitIsTapped = UnitIsTapped(unit)
+	data.unitIsPVP = UnitIsPVP(unit)
+	data.unitIsTapped = UnitIsTapped(unit)
 	data.unitIsTappedByPlayer = UnitIsTappedByPlayer(unit)
 
 	if resetRefresh then
@@ -270,7 +275,7 @@ end
 -- Aura scanning
 --------------------------------
 do
-	local UnitBuff, UnitDebuff = UnitBuff, UnitDebuff
+	local UnitBuff, UnitDebuff, UnitIsEnemy = UnitBuff, UnitDebuff, UnitIsEnemy
 
 	local scantip = CreateFrame("GameTooltip", "FocusDataScantip", nil, "GameTooltipTemplate")
 	scantip:SetOwner(UIParent, "ANCHOR_NONE")
@@ -302,18 +307,6 @@ do
 		end
 	end
 
-	--[[local function HasAurasChanged()
-		local len, texture = GetLastAura(focusTargetName)
-
-		if len == prevAmount then
-			if prevTexture == texture then
-				return false
-			end
-		end
-
-		return true
-	end]]
-
 	-- scan focus unitID for any auras
 	function SetFocusAuras(_, event, unit) --local
 		--if not HasAurasChanged() then return end
@@ -326,12 +319,14 @@ do
 		-- This is needed when buffs are not removed in the combat log. (i.e unit out of range)
 		-- If unit is enemy, only debuffs are deleted.
 		-- TODO continue only if buffList has changed
+
 		if rawData.health <= 0 then
 			return ClearBuffs(focusTargetName, false)
 		end
 
-		local faction = rawData.unitFactionGroup
-		local isEnemy = rawData.unitIsEnemy == 1 or (faction and faction ~= playersFaction)
+		--local faction = rawData.unitFactionGroup
+		--local isEnemy = rawData.unitIsEnemy == 1 or (faction and faction ~= playersFaction)
+		local isEnemy = UnitIsEnemy(unit, "player") == 1
 		ClearBuffs(focusTargetName, isEnemy)
 
 		for i = 1, 5 do
@@ -425,7 +420,7 @@ do
 
 		for k, plate in ipairs(childs) do
 			local overlay, _, name = plate:GetRegions()
-			if plate:IsVisible() and plate:GetAlpha() == 1 and IsPlate(overlay) then
+			if plate:IsVisible() and plate:GetAlpha() == 1 and IsPlate(overlay) then -- is targeted
 				if name:GetText() == focusTargetName then
 					if rawData.unitIsPlayer == UnitIsPlayer("target") then -- player vs pet
 						if SetFocusPlateID(plate) then
@@ -439,9 +434,6 @@ do
 	end
 
 	function NameplateScanner(childs, plate) -- local, ran when no unitID found
-		--if rawData.unitIsEnemy and GetCVar("nameplateShowEnemies") == "1" then return end
-		--if rawData.unitIsFriend and GetCVar("nameplateShowFriends") == "1" then return end
-
 		plate = plate or focusPlateRef
 		if plate then -- focus plate
 			local _, _, name, level, _, raidIcon = plate:GetRegions()
@@ -450,14 +442,14 @@ do
 			end
 		end
 
-		for _, plate in ipairs(childs) do
-			local overlay, _, name, level, _, raidIcon = plate:GetRegions()
+		for _, frame in ipairs(childs) do
+			local overlay, _, name, level, _, raidIcon = frame:GetRegions()
 
-			if plate:IsVisible() and IsPlate(overlay) then
-				if focusPlateRan and not plate.isFocus then return end
+			if frame:IsVisible() and IsPlate(overlay) then
+				if focusPlateRan and not frame.isFocus then return end
 
 				if name:GetText() == focusTargetName then
-					SavePlateInfo(plate:GetChildren(), name, level, raidIcon)
+					SavePlateInfo(frame:GetChildren(), name, level, raidIcon)
 				end
 			end
 		end
@@ -523,8 +515,8 @@ do
 	--- Toggle nameplate scanning.
 	-- @treturn bool true if enabled
 	function Focus:ToggleNameplateScan(state)
-		enableNameplateScan = state or false
-		log(1, "nameplate enabled: %s", enableNameplateScan)
+		enableNameplateScan = state
+		log(1, "nameplate disabled: %s", tostring(enableNameplateScan))
 	end
 
 	--- Unit
@@ -584,6 +576,7 @@ do
 				if self:TargetFocus() then
 					if argType == "function" then
 						result = pcall(func, arg1, arg2, arg3, arg4)
+						log(1, "ran")
 					else
 						local fn = loadstring(func)
 						if fn then
@@ -936,7 +929,7 @@ do
 		if key then
 			data[key] = nil
 		else
-			for k, v in pairs(rawData) do
+			for k, _ in pairs(rawData) do
 				if k == "eventsThrottle" then
 					rawData[k] = {}
 				else
@@ -1007,7 +1000,7 @@ do
 	end
 
 	-- not kept in spellcastingcore for more decoupled architecture
-	local function ParseCombatDeath(event, arg1)
+	local function ParseCombatDeath()
 		if not Focus:FocusExists() then return end
 
 		local pdie 		= 'You die.'					local fpdie		= strfind(arg1, pdie)
@@ -1025,8 +1018,8 @@ do
 		end
 	end
 
-	local function UpdatePartyLeader(event, unit)
-		data.unitIsPartyLeader = UnitIsPartyLeader(unit)
+	local function UpdatePartyLeader()
+		data.unitIsPartyLeader = UnitIsPartyLeader(arg1)
 	end
 
 	function events:UNIT_LEVEL(event, unit)
@@ -1043,6 +1036,7 @@ do
 		rawData.unitCanAttack = UnitCanAttack(unit, "player")
 		rawData.unitReaction = UnitReaction(unit, "player")
 		rawData.unitPlayerControlled = UnitPlayerControlled(unit)
+		rawData.unitFactionGroup = UnitFactionGroup(unit)
 		CallHooks("UNIT_FACTION", unit)
 	end
 
@@ -1062,12 +1056,21 @@ do
 		end
 	end
 
+	function events:UNIT_PORTRAIT_UPDATE()
+		CallHooks(event, arg1)
+	end
+
+	function events:PLAYER_TARGET_CHANGED(event)
+		if Focus:UnitIsFocus("target") then
+			SetFocusAuras(nil, event, "target")
+		end
+	end
+
 	-- Call these functions directly instead for better performance
 	events.UNIT_AURA = SetFocusAuras
 	events.PLAYER_AURAS_CHANGED = SetFocusAuras
 	events.PLAYER_FLAGS_CHANGED = UpdatePartyLeader
 	events.PARTY_LEADER_CHANGED = UpdatePartyLeader
-	events.UNIT_PORTRAIT_UPDATE = CallHooks
 	events.CHAT_MSG_COMBAT_HOSTILE_DEATH = ParseCombatDeath
 	events.CHAT_MSG_COMBAT_FRIENDLY_DEATH = ParseCombatDeath
 
@@ -1100,8 +1103,8 @@ do
 				local childs = enableNameplateScan and { WorldFrame:GetChildren() } -- add here for reuse in functions
 				local plate = enableNameplateScan and CheckTargetPlateForFocus(childs)
 
-				if not SetFocusInfo(partyUnit) or not SetFocusInfo("target") then
-					if not SetFocusInfo("mouseover") or not SetFocusInfo("targettarget") then
+				if not SetFocusInfo(partyUnit) and not SetFocusInfo("target") then
+					if not SetFocusInfo("mouseover") and not SetFocusInfo("targettarget") then
 						if not SetFocusInfo("pettarget") then
 							rawData.unit = nil
 							if enableNameplateScan then
@@ -1124,6 +1127,7 @@ do
 	--------------------------------------------------------
 
 	events:RegisterEvent("PLAYER_ENTERING_WORLD")
+	events:RegisterEvent("PLAYER_TARGET_CHANGED")
 	events:RegisterEvent("PLAYER_ALIVE")
 	events:RegisterEvent("PLAYER_FLAGS_CHANGED")
 	events:RegisterEvent("PLAYER_AURAS_CHANGED")
