@@ -1,12 +1,12 @@
 local _G = getfenv(0)
-local Focus = _G.FocusData
+local Focus = assert(_G.FocusData, "FocusData not loaded.")
 local AurasUpdate
 
 FocusFrameDB = FocusFrameDB or { unlock = true, scale = 1 }
 
--- Most local functions here can be post-hooked using Focus:OnEvent().
--- @see Focus:RemoveEvent() for completly overwriting functions
--- @see UpdatePortrait() in mods/classPortraits.lua for example.
+-- Most local functions here can be post-hooked using Focus:OnEvent() if needed.
+-- @see UpdatePortrait() in mods/classPortraits.lua for examples.
+-- @see Focus:RemoveEvent() for completely overwriting functions
 
 local function OnFocusSat(event, unit)
 	FocusName:SetText(UnitName(unit))
@@ -370,7 +370,7 @@ do
 
 	function FocusFrameDropDown_Initialize(level) -- ran every time dropdown is shown/updated
 		if not level then return end
-		for k,v in pairs(info) do info[k] = nil end
+		for k, v in pairs(info) do info[k] = nil end
 
 		if level == 1 then
 			info.isTitle = 1
@@ -442,14 +442,14 @@ do
 			end
 		end
 
-		info = nil
+		info = {}
 	end
 
 	FocusFrameDropDown.initialize = FocusFrameDropDown_Initialize
 end
 
 -- Create castbar
--- TODO add to xml
+-- @TODO add to xml
 -- lua table names are deprecated. Please use global frame names if you're gonna modify these
 FocusFrame.cast = CreateFrame("StatusBar", "FocusCastingBar", FocusFrame)
 FocusFrame.cast:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar")
@@ -462,7 +462,7 @@ FocusFrame.cast:Hide()
 
 FocusFrame.cast.spark = FocusFrame.cast:CreateTexture("FocusCastingBarSpark", "OVERLAY")
 FocusFrame.cast.spark:SetTexture("Interface\\CastingBar\\UI-CastingBar-Spark")
-FocusFrame.cast.spark:SetHeight(26)	
+FocusFrame.cast.spark:SetHeight(26)
 FocusFrame.cast.spark:SetWidth(26)
 FocusFrame.cast.spark:SetBlendMode("ADD")
 
@@ -512,7 +512,6 @@ Focus:OnEvent("UNIT_FACTION", CheckFaction)
 Focus:OnEvent("UNIT_CLASSIFICATION_CHANGED", CheckClassification)
 Focus:OnEvent("UNIT_PORTRAIT_UPDATE", CheckPortrait)
 Focus:OnEvent("FOCUS_UNITID_EXISTS", CheckPortrait) -- update on retarget/mouseover aswell
---Focus:OnEvent("FOCUS_CHANGED", function() DEFAULT_CHAT_FRAME:AddMessage("ran2") end)
 Focus:OnEvent("FOCUS_ACTIVE", OnFocusActive)
 Focus:OnEvent("FOCUS_INACTIVE", OnFocusIdle)
 
@@ -556,13 +555,15 @@ SlashCmdList.FOCUSOPTIONS = function(msg)
 		FocusFrame:SetScale(1)
 		FocusFrame:SetAlpha(1)
 		FocusFrame:SetPoint("TOPLEFT", 250, -300)
-		FocusFrame:StopMovingOrSizing() -- trigger db save
-		print("Frame has been reset.")
+		FocusFrame:StopMovingOrSizing() -- trigger save
+		FSPELLCASTINGCOREstrictAuras = false
+		Focus:ToggleNameplateScan(true)
+		print("FocusFrame has been reset.")
 	else
 		print("FocusFrame v%s:", GetAddOnMetadata("FocusFrame", "version"))
-		print("    scale 1.0 - |cff00FF7F Change frame size (0.2 - 2)")
+		print("    scale 1.0 - |cff00FF7F Change frame size (0.2 - 2.0)")
 		print("    lock - |cff00FF7F Toggle dragging of frame")
-		print("    nohide - |cff00FF7F Toggle hiding of frame on loading screens/release spirit.")
+		print("    nohide - |cff00FF7F Toggle auto hide of frame on loading screens/release spirit.")
 		print("    fade - |cff00FF7F Toggle fading of frame when focus hasn't been updated for ~10s.")
 		print("    strictaura - |cff00FF7F Toggle aura/cast optimization. See github wiki for more info.")
 		print("    nameplates - |cff00FF7F Toggle nameplate scanning. Disable if you don't use nameplates.")
