@@ -178,6 +178,7 @@ local tableMaintenance = function(reset)
 	if not CURR_FOCUS_TARGET then
 		-- Delete ALL buffs every X sec when there is no focus target
 		-- This is needed to remove buffs that fail to expire due to no combat event found
+		-- (we can't jst remove all on every focus changed as it will make tracking very inaccurate)
 		if getTime - lastCleared > 60 then
 			if tgetn(buffList) >= 1 then
 				if not UnitAffectingCombat("player") then
@@ -287,8 +288,7 @@ local function newbuff(tar, b, s, castOn, texture, debuff, magictype, debuffStac
 	local i = 1
 	for k, v in pairs(buffList) do
 		if v.caster == tar and v.spell == b then
-			-- return?
-			-- breaks when diff buffs have same name i.e noggenfogger
+			-- TODO just overwrite instead
 			tremove(buffList, i)
 			break
 		end
@@ -310,7 +310,7 @@ local function newbuff(tar, b, s, castOn, texture, debuff, magictype, debuffStac
 	end
 end
 
-local function refreshBuff(tar, b, s)
+--[[local function refreshBuff(tar, b, s)
 	if FSPELLCASTINGCOREstrictAuras then
 		if tar ~= CURR_FOCUS_TARGET then return end
 	end
@@ -324,7 +324,7 @@ local function refreshBuff(tar, b, s)
 			end
 		end
 	end
-end
+end]]
 
 local CastCraftPerform = function()
 	-- TODO loop
@@ -422,6 +422,11 @@ local GainAfflict = function()
 
 		-- buffs/debuffs to be displayed
 		if FOCUS_BUFFS_TO_TRACK[s] then
+			if CURR_FOCUS_TARGET and CURR_FOCUS_TARGET == c then
+				local unit = Focus:GetData("unit")
+				if unit then return end -- buffs will be added in FocusData sync instead
+			end
+
 			newbuff(c, s, 1, false)
 		end
 		-- self-cast buffs that interrupt cast (blink, ice block ...)
@@ -458,6 +463,10 @@ local GainAfflict = function()
 			--if st > 1 then
 			--	refreshBuff(c, s, st)
 			--else
+			if CURR_FOCUS_TARGET and CURR_FOCUS_TARGET == c then
+				local unit = Focus:GetData("unit")
+				if unit then return end -- buffs will be added in FocusData sync instead
+			end
 				newbuff(c, s, st, false, nil, true)
 			--end
 		end
@@ -816,17 +825,25 @@ do
 		end
 	end
 
+	local function OnFocusChange()
+		if FSPELLCASTINGCOREstrictAuras then
+			tableMaintenance(true)
+		end
+	end
+
 	local events = CreateFrame("Frame")
 	local f = CreateFrame("Frame")
 	events:RegisterEvent("VARIABLES_LOADED")
 	events:SetScript("OnEvent", function()
 		if event == "VARIABLES_LOADED" then
-			Focus = getglobal("FocusData")
+			Focus = assert(FocusData, "FocusData not loaded.")
 			events:UnregisterEvent("VARIABLES_LOADED")
 			events:RegisterEvent("PLAYER_ENTERING_WORLD")
 			events:RegisterEvent("PLAYER_ALIVE") -- Releases from death to a graveyard
 			events:SetScript("OnUpdate", OnUpdate)
 			f:SetScript("OnEvent", combatlogParser)
+			Focus:OnEvent("FOCUS_CHANGED", OnFocusChange)
+			Focus:OnEvent("FOCUS_CLEAR", OnFocusChange)
 		else
 			tableMaintenance(true)
 		end
