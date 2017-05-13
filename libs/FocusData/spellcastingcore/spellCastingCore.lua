@@ -12,7 +12,7 @@ buff.__index 		= buff
 
 local Focus
 local playerName = UnitName("player")
-FSPELLCASTINGCOREstrictAuras = FocusFrameDB and FocusFrameDB.strictAuras or false
+FSPELLCASTINGCOREstrictAuras = false
 
 -- Upvalues
 local FOCUS_CHANNELED_SPELLCASTS_TO_TRACK, FOCUS_INSTANT_SPELLCASTS_TO_TRACK =
@@ -24,8 +24,8 @@ local FOCUS_SPELLCASTS_TO_TRACK, FOCUS_TRADECASTS_TO_TRACK =
 local FOCUS_BUFFS_TO_TRACK, FOCUS_BORDER_DEBUFFS_COLOR =
 	  FOCUS_BUFFS_TO_TRACK, FOCUS_BORDER_DEBUFFS_COLOR
 
-local tinsert, tremove, strfind, gsub, ipairs, pairs, GetTime, GetNetStats, setmetatable, tgetn =
-	  table.insert, table.remove, string.find, string.gsub, ipairs, pairs, GetTime, GetNetStats, setmetatable, table.getn
+local tinsert, tremove, strfind, gsub, ipairs, pairs, GetTime, GetNetStats, setmetatable, tgetn, strlower =
+	  table.insert, table.remove, string.find, string.gsub, ipairs, pairs, GetTime, GetNetStats, setmetatable, table.getn, string.lower
 
 Cast.create = function(caster, spell, info, timeMod, time, inv)
 	local acnt = {
@@ -121,6 +121,7 @@ local forceHideTableItem = function(tab, caster, spell, debuffsOnly)
 				end
 			else
 				if v.spell == spell then
+					-- TODO we should also compare texture here when mult buffs have same name
 					if debuffsOnly then
 						if v.btype then
 							tremove(tab, i)
@@ -288,9 +289,8 @@ local function newbuff(tar, b, s, castOn, texture, debuff, magictype, debuffStac
 	local i = 1
 	for k, v in pairs(buffList) do
 		if v.caster == tar and v.spell == b then
-			if v.debuffType == (magictype or "none") and v.icon == texture then -- ensure buff is exactly same
-				-- TODO just refresh instead
-				FocusData_Log(1, "ran %s", v.debuffType)
+			if strlower(v.icon) == strlower(texture) then
+				-- TODO just refresh instead?
 				tremove(buffList, i)
 				break
 			end
@@ -840,6 +840,7 @@ do
 	events:SetScript("OnEvent", function()
 		if event == "VARIABLES_LOADED" then
 			Focus = assert(FocusData, "FocusData not loaded.")
+			FSPELLCASTINGCOREstrictAuras = FocusFrameDB and FocusFrameDB.strictAuras
 			events:UnregisterEvent("VARIABLES_LOADED")
 			events:RegisterEvent("PLAYER_ENTERING_WORLD")
 			events:RegisterEvent("PLAYER_ALIVE") -- Releases from death to a graveyard
