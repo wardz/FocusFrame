@@ -713,7 +713,11 @@ do
 			name = UnitName("target")
 		end
 
-		if Focus:GetName() == name then return end
+		if Focus:GetName() == name then
+			if rawData.unitIsPlayer == UnitIsPlayer("target") then -- pet vs player
+				return
+			end
+		end
 
 		local isFocusChanged = Focus:FocusExists()
 		if isFocusChanged then
