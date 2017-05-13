@@ -566,7 +566,7 @@ SlashCmdList.FOCUSOPTIONS = function(msg)
 		print("    nohide - |cff00FF7F Toggle auto hide of frame on loading screens/release spirit.")
 		print("    fade - |cff00FF7F Toggle fading of frame when focus hasn't been updated for ~10s.")
 		print("    strictaura - |cff00FF7F Toggle aura/cast optimization. See github wiki for more info.")
-		print("    nameplates - |cff00FF7F Toggle nameplate scanning. Disable if you don't use nameplates.")
+		print("    noplates - |cff00FF7F Toggle nameplate scanning. Disable if you don't use nameplates.")
 		print("    reset - |cff00FF7F Reset to default settings.")
 	end
 end
