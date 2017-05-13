@@ -39,7 +39,7 @@ local GetCast = FSPELLCASTINGCOREgetCast
 	- optimize nameplate scanning
 	- add AceLibrary support if possible
 	- rewrite spellcastingcore completely
-	- update raid mark, leader icon etc on focus leave party
+	- update raid mark, leader icon etc on focus leave party and duel
 ]]
 
 do
@@ -313,7 +313,7 @@ do
 			-- PLAYER_AURAS_CHANGED has no unitid arg
 			unit = "player"
 		end
-
+	
 		-- Delete all buffs stored in DB, then re-add them later if found on target
 		-- This is needed when buffs are not removed in the combat log. (i.e unit out of range)
 		-- If unit is enemy, only debuffs are deleted.
@@ -323,8 +323,6 @@ do
 			return ClearBuffs(focusTargetName, false)
 		end
 
-		--local faction = rawData.unitFactionGroup
-		--local isEnemy = rawData.unitIsEnemy == 1 or (faction and faction ~= playersFaction)
 		local isEnemy = UnitIsEnemy(unit, "player") == 1
 		ClearBuffs(focusTargetName, isEnemy)
 
@@ -722,14 +720,14 @@ do
 			rawData.pauseEvents = true -- prevent calling FOCUS_CLEAR here
 			--self:PauseEvents():ClearFocus():StartEvents()
 			self:ClearFocus()
-			rawData.pauseEvents = nil
+			rawData.pauseEvents = false
 		end
 		focusTargetName = name
 
 		if focusTargetName then
 			rawData.pauseEvents = true -- prevent calling events, FOCUS_SET will handle that here
 			self:TargetFocus(name, true)
-			rawData.pauseEvents = nil
+			rawData.pauseEvents = false
 
 			if self:FocusExists() then
 				CallHooks("FOCUS_SET", "target")
@@ -765,8 +763,8 @@ do
 		end
 		focusPlateRan = nil
 
-		self:ClearData()
 		CallHooks("FOCUS_CLEAR")
+		self:ClearData()
 	end
 
 	--- Getters
@@ -957,7 +955,7 @@ do
 		local i = tgetn(hookEvents[eventName]) + 1
 		hookEvents[eventName][i] = callback
 
-		log(2, "registered event handler for %s:%d", eventName, i)
+		log(2, "registered handler for %s:%d", eventName, i)
 		return i
 	end
 
