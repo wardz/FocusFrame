@@ -288,9 +288,12 @@ local function newbuff(tar, b, s, castOn, texture, debuff, magictype, debuffStac
 	local i = 1
 	for k, v in pairs(buffList) do
 		if v.caster == tar and v.spell == b then
-			-- TODO just overwrite instead
-			tremove(buffList, i)
-			break
+			if v.debuffType == (magictype or "none") and v.icon == texture then -- ensure buff is exactly same
+				-- TODO just refresh instead
+				FocusData_Log(1, "ran %s", v.debuffType)
+				tremove(buffList, i)
+				break
+			end
 		end
 		i = i + 1
 	end
