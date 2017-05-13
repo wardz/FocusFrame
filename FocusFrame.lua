@@ -545,7 +545,7 @@ SlashCmdList.FOCUSOPTIONS = function(msg)
 		FocusFrameDB.strictAuras = not FocusFrameDB.strictAuras
 		FSPELLCASTINGCOREstrictAuras = FocusFrameDB.strictAuras
 		print("Strict aura/cast %s.", FocusFrameDB.strictAuras and "enabled. Tracking is now faster, but less accurate" or "disabled")
-	elseif cmd == "nameplates" then
+	elseif cmd == "noplates" then
 		FocusFrameDB.disableNameplateScan = not FocusFrameDB.disableNameplateScan
 		local x = FocusFrameDB.disableNameplateScan
 		Focus:ToggleNameplateScan(not x)
