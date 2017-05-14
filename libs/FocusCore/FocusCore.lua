@@ -18,7 +18,7 @@ local partyUnit
 
 -- Upvalues
 local GetTime, UnitName, UnitIsPlayer, type, strfind, tgetn =
-	  GetTime, UnitName, UnitIsPlayer, type, string.find, table.getn
+      GetTime, UnitName, UnitIsPlayer, type, string.find, table.getn
 
 -- Functions
 local NameplateScanner
@@ -43,7 +43,7 @@ local GetCast = FSPELLCASTINGCOREgetCast
 
 do
 	-- 0 = disabled, 1 = info/error, 2 = debug, 3 = verbose
-	local logLevel = 0
+	local logLevel = 1
 
 	function log(level, str, arg1, arg2, arg3, arg4) -- no vararg available :(
 		if logLevel <= 0 or level > logLevel then return end
@@ -88,7 +88,7 @@ do
 		unit                = "FOCUS_UNITID_EXISTS",
 		unitIsPVP           = "UNIT_FACTION",
 		unitIsTapped        = "UNIT_FACTION",
-		unitReaction		= "UNIT_FACTION",
+		unitReaction        = "UNIT_FACTION",
 		unitIsTappedByPlayer = "UNIT_FACTION",
 	}
 
@@ -98,7 +98,7 @@ do
 
 		local callbacks = hookEvents[event]
 		if callbacks then
-			log(3, "CallHooks(%s, %s)", event, arg1 or "")
+			log(3, "CallHooks(%s, %s)", event, arg1 or "nil")
 
 			for i = 1, tgetn(callbacks) do
 				callbacks[i](event, arg1, arg2, arg3, arg4)
@@ -130,12 +130,11 @@ do
 		-- This function is called everytime a property in data has been changed
 		__newindex = function(self, key, value)
 			if not focusTargetName then
-				-- may happen on focus cleared while event is being triggered
 				return log(1, "attempt to set data (%s) while focus doesn't exist.")
 			end
 
 			-- insert to 'rawData' instead of 'data'
-			-- This will make sure __index is always called in 'data
+			-- This will make sure __index is always called in 'data'
 			local oldValue = rawData[key]
 			rawset(rawData, key, value)
 
@@ -157,29 +156,26 @@ do
 				if key == "unit" and not value then return end
 
 				-- Throttle events to run only every 0.1s+
-				-- (Health/aura events can sometimes be triggered quite frequently)
 				local last = rawData.eventsThrottle[key]
 				if last then
 					if (getTime - last) < 0.1 then return end
 				end
 				rawData.eventsThrottle[key] = getTime
 
-				-- Trigger all event listeners
 				CallHooks(events[key], rawData.unit, key, value)
 			end
 		end
 	})
 end
 
+-- Check if current target actually is the focus, or just an npc with the exact same name
 local function IsPlayerWithSamePetName(unit)
-	--if rawData.unitClass == "HUNTER" or rawData.unitClass == "WARRIOR" then -- warrior: default for mobs
-		if rawData.unitName and rawData.unitName == UnitName(unit) then
-			if rawData.unitIsPlayer ~= UnitIsPlayer(unit) then -- If focus is player, but curr target is not (or vice versa)
-				rawData.IsPlayerWithSamePetName = true
-				return true
-			end
+	if rawData.unitName and rawData.unitName == UnitName(unit) then
+		if rawData.unitIsPlayer ~= UnitIsPlayer(unit) then
+			rawData.IsPlayerWithSamePetName = true
+			return true
 		end
-	--end
+	end
 
 	--rawData.IsPlayerWithSamePetName = false
 	return false
@@ -192,23 +188,20 @@ local function SetFocusHealth(unit, isDead, hasPetFixRan)
 		end
 	end
 
-	--[[if isDead and rawData.feignDeath then
-		return
-	end]]
-
-	data.health = isDead and 0 or UnitHealth(unit)
-	data.maxHealth = isDead and 0 or UnitHealthMax(unit)
-	data.power = isDead and 0 or UnitMana(unit)
-	data.maxPower = isDead and 0 or UnitManaMax(unit)
+	rawData.health = isDead and 0 or UnitHealth(unit)
+	rawData.maxHealth = isDead and 0 or UnitHealthMax(unit)
+	rawData.power = isDead and 0 or UnitMana(unit)
+	rawData.maxPower = isDead and 0 or UnitManaMax(unit)
 
 	if not isDead then
-		data.powerType = UnitPowerType(unit)
+		rawData.powerType = UnitPowerType(unit)
 	end
 
 	if (rawData.maxHealth or 0) < (rawData.health or 0) then
-		-- need to re update maxHealth after unit with same name dies
 		rawData.maxHealth = 100
 	end
+
+	CallHooks("UNIT_HEALTH_OR_POWER")
 end
 
 local function SetFocusInfo(unit, resetRefresh)
@@ -229,6 +222,7 @@ local function SetFocusInfo(unit, resetRefresh)
 
 	if resetRefresh then
 		rawData.refreshed = nil
+		rawData.refreshed2 = nil
 	end
 
 	-- Run all code below only every ~4s
@@ -248,7 +242,7 @@ local function SetFocusInfo(unit, resetRefresh)
 	data.unitReaction = UnitReaction(unit, "player")
 	rawData.refreshed = getTime
 
-	-- Run every 5
+	-- Run every ~5
 	if rawData.refreshed2 then
 		if (getTime - rawData.refreshed2) < 5 then
 			return true
@@ -281,7 +275,6 @@ do
 
 	local scantipTextLeft1 = _G["FocusCoreScantipTextLeft1"]
 	local scantipTextRight1 = _G["FocusCoreScantipTextRight1"]
-	local playersFaction = UnitFactionGroup("player")
 
 	-- Store buff into spellcastingcore db
 	local function SyncBuff(unit, i, texture, stack, debuffType, isDebuff)
@@ -306,13 +299,14 @@ do
 	end
 
 	-- scan focus unitID for any auras
-	function SetFocusAuras(_, event, unit) --local
+	-- only #3 arg is used when called outside an event
+	function SetFocusAuras(_, event, unit)
 		--if not HasAurasChanged() then return end
 		if not unit then
 			-- PLAYER_AURAS_CHANGED has no unitid arg
 			unit = "player"
 		end
-	
+
 		-- Delete all buffs stored in DB, then re-add them later if found on target
 		-- This is needed when buffs are not removed in the combat log. (i.e unit out of range)
 		-- If unit is enemy, only debuffs are deleted.
@@ -342,7 +336,7 @@ do
 end
 
 --------------------------------
--- Namplate scannig
+-- Namplate scanning
 --------------------------------
 do
 	local ipairs, tonumber = ipairs, tonumber
@@ -362,19 +356,21 @@ do
 		return true
 	end
 
+	-- store focus property to a nameplate
 	local function SetFocusPlateID(plate)
 		if not focusPlateRan then
 			local handler = plate:GetScript("OnHide")
 			plate.isFocus = true
+			focusPlateRan = true
 
+			-- reset on OnHide because nameplate will be recycled
+			-- to a random unit when shown again
 			plate:SetScript("OnHide", function()
 				if handler then
-					-- post-hook
+					-- call handlers used by other addons
 					handler(this)
 				end
 
-				-- reset on OnHide because nameplate will be recycled
-				-- to a random unit when shown again
 				if plate.isFocus then
 					plate.isFocus = nil
 					focusPlateRan = nil
@@ -384,11 +380,11 @@ do
 			end)
 			--plate:GetRegions():SetVertexColor(0,1,1)
 
-			focusPlateRan = true
 			return true
 		end
 	end
 
+	-- Scan plate for data
 	local function SavePlateInfo(health, name, level, raidIcon)
 		if raidIcon and raidIcon:IsVisible() then
 			local ux, uy = raidIcon:GetTexCoord()
@@ -397,8 +393,7 @@ do
 
 		local hp = health:GetValue() or 0
 		if rawData.maxHealth < hp then
-			-- need to re update maxHealth after unit with same name dies
-			rawData.maxHealth = 100
+			data.maxHealth = 100
 		end
 		data.health = hp
 
@@ -408,7 +403,7 @@ do
 		end
 	end
 
-	-- Attempt to give target plate for focus an unique ID, so we
+	-- Attempt to give nameplate for focus an unique ID, so we
 	-- can distuingish between units with same name
 	function CheckTargetPlateForFocus(childs) -- local
 		if focusPlateRan then return end
@@ -438,6 +433,7 @@ do
 			end
 		end
 
+		-- No plate cached, so scan through every nameplate available
 		for _, frame in ipairs(childs) do
 			local overlay, _, name, level, _, raidIcon = frame:GetRegions()
 
@@ -446,6 +442,8 @@ do
 
 				if name:GetText() == focusTargetName then
 					SavePlateInfo(frame:GetChildren(), name, level, raidIcon)
+					-- Do not break here or else frame.isFocus wont work properly
+					-- when units have same name
 				end
 			end
 		end
@@ -464,7 +462,7 @@ do
 	-- Scan every party/raid member found and check if unitid "partyX"
 	-- or "partyXtarget" == focus. We can then use this unitid to update focus data
 	-- in "real time"
-	function PartyScanner() --local
+	function PartyScanner() --local, ran when no unitid found
 		local groupType = UnitInRaid("player") and "raid" or "party"
 		local members = groupType == "raid" and GetNumRaidMembers() or GetNumPartyMembers()
 
@@ -491,7 +489,7 @@ do
 end
 
 --------------------------------------
--- API
+-- Public API
 --------------------------------------
 do
 	local SetCVar, GetCVar, pcall, pairs = SetCVar, GetCVar, pcall, pairs
@@ -613,6 +611,7 @@ do
 	_G.f_cast = function(x) Focus:CastSpellByName(x) end -- alias for macros
 
 	-- @private
+	-- only used for npcs/hunters
 	function Focus:TargetWithFixes(name)
 		local unit = rawData.unit
 		local isPlayer = rawData.unitIsPlayer
@@ -712,6 +711,7 @@ do
 			name = UnitName("target")
 		end
 
+		-- Don't focus already focused target when possible
 		if Focus:GetName() == name then
 			if rawData.unitIsPlayer == UnitIsPlayer("target") then -- pet vs player
 				return
@@ -721,8 +721,7 @@ do
 		local isFocusChanged = Focus:FocusExists()
 		if isFocusChanged then
 			rawData.pauseEvents = true -- prevent calling FOCUS_CLEAR here
-			--self:PauseEvents():ClearFocus():StartEvents()
-			self:ClearFocus()
+			self:ClearFocus() -- Delete old focus data
 			rawData.pauseEvents = false
 		end
 		focusTargetName = name
@@ -1079,7 +1078,7 @@ do
 
 		-- Combine into 1 single event
 		if event == "UNIT_DISPLAYPOWER" or event == "UNIT_HEALTH" or event == "UNIT_MANA"
-			or event == "UNIT_RAGE" or event == "UNIT_FOCUS" or event == "UNIT_ENERGY" then
+			or event == "UNIT_RAGE" or event == "UNIT_FOCUS" or event == "UNIT_ENERGY" or event == "UNIT_MAXHEALTH" then
 				return SetFocusHealth(arg1)
 		end
 
@@ -1090,6 +1089,7 @@ do
 		log(1, "unhandled event %s", event)
 	end
 
+	-- Call scanners every 0.3s
 	local OnUpdateHandler = function()
 		refresh = refresh - arg1
 		if refresh < 0 then
@@ -1100,7 +1100,9 @@ do
 				if not SetFocusInfo(partyUnit) and not SetFocusInfo("target") then
 					if not SetFocusInfo("mouseover") and not SetFocusInfo("targettarget") then
 						if not SetFocusInfo("pettarget") then
+							-- no unitID available for focus
 							rawData.unit = nil
+							partyUnit = nil
 							if enableNameplateScan then
 								NameplateScanner(childs, plate)
 							end
@@ -1135,6 +1137,7 @@ do
 	events:RegisterEvent("UNIT_RAGE")
 	events:RegisterEvent("UNIT_FOCUS")
 	events:RegisterEvent("UNIT_ENERGY")
+	events:RegisterEvent("UNIT_MAXHEALTH")
 	events:RegisterEvent("CHAT_MSG_COMBAT_HOSTILE_DEATH")
 	events:RegisterEvent("CHAT_MSG_COMBAT_FRIENDLY_DEATH")
 end

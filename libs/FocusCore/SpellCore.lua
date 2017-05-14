@@ -3,12 +3,12 @@
 
 if FSPELLCASTINGCOREgetDebuffs then return end
 
-local Cast 			= {} 		local casts 		= {}
-local InstaBuff 	= {} 		local iBuffs 		= {}
-local buff 			= {} 		local buffList 		= {}
-Cast.__index   		= Cast
-InstaBuff.__index 	= InstaBuff
-buff.__index 		= buff
+local Cast          = {}        local casts     = {}
+local InstaBuff     = {}        local iBuffs    = {}
+local buff          = {}        local buffList  = {}
+Cast.__index        = Cast
+InstaBuff.__index   = InstaBuff
+buff.__index        = buff
 
 local Focus
 local playerName = UnitName("player")
@@ -16,27 +16,27 @@ FSPELLCASTINGCOREstrictAuras = false
 
 -- Upvalues
 local FOCUS_CHANNELED_SPELLCASTS_TO_TRACK, FOCUS_INSTANT_SPELLCASTS_TO_TRACK =
-	  FOCUS_CHANNELED_SPELLCASTS_TO_TRACK, FOCUS_INSTANT_SPELLCASTS_TO_TRACK
+      FOCUS_CHANNELED_SPELLCASTS_TO_TRACK, FOCUS_INSTANT_SPELLCASTS_TO_TRACK
 
 local FOCUS_SPELLCASTS_TO_TRACK, FOCUS_TRADECASTS_TO_TRACK =
-	  FOCUS_SPELLCASTS_TO_TRACK, FOCUS_TRADECASTS_TO_TRACK
+      FOCUS_SPELLCASTS_TO_TRACK, FOCUS_TRADECASTS_TO_TRACK
 
 local FOCUS_BUFFS_TO_TRACK, FOCUS_BORDER_DEBUFFS_COLOR =
-	  FOCUS_BUFFS_TO_TRACK, FOCUS_BORDER_DEBUFFS_COLOR
+      FOCUS_BUFFS_TO_TRACK, FOCUS_BORDER_DEBUFFS_COLOR
 
 local tinsert, tremove, strfind, gsub, ipairs, pairs, GetTime, GetNetStats, setmetatable, tgetn, strlower =
-	  table.insert, table.remove, string.find, string.gsub, ipairs, pairs, GetTime, GetNetStats, setmetatable, table.getn, string.lower
+      table.insert, table.remove, string.find, string.gsub, ipairs, pairs, GetTime, GetNetStats, setmetatable, table.getn, string.lower
 
 Cast.create = function(caster, spell, info, timeMod, time, inv)
 	local acnt = {
-		caster		= caster,
-		spell		= spell,
-		icon		= info.icon,
-		timeStart	= time,
-		timeEnd		= time + info.casttime * timeMod,
-		tick		= info.tick or 0,
-		inverse		= inv,
-		immune		= info.immune
+		caster      = caster,
+		spell       = spell,
+		icon        = info.icon,
+		timeStart   = time,
+		timeEnd     = time + info.casttime * timeMod,
+		tick        = info.tick or 0,
+		inverse     = inv,
+		immune      = info.immune
 	}
 
 	acnt.nextTick = info.tick and time + acnt.tick or acnt.timeEnd
@@ -47,12 +47,12 @@ end
 
 InstaBuff.create = function(c, b, list, time)
    local acnt = {
-	   caster		= c,
-	   spell		= b,
-	   timeMod		= list.mod,
-	   spellList	= list.list,
-	   timeStart	= time,
-	   timeEnd		= time + 10
+	   caster       = c,
+	   spell        = b,
+	   timeMod      = list.mod,
+	   spellList    = list.list,
+	   timeStart    = time,
+	   timeEnd      = time + 10
    }
 
    setmetatable(acnt, InstaBuff)
@@ -67,18 +67,18 @@ buff.create = function(tar, t, s, buffType, factor, time, texture, debuff, magic
 	buffType.type = magictype and strlower(magictype) or strlower(buffType.type or "none")
 
 	local acnt = {
-		target		= tar,
-		caster		= tar,
-		spell		= t,
-		stacks		= debuffStack or s or 0,
-		icon		= texture or buffType.icon,
-		timeStart	= time,
-		timeEnd		= 0, -- TODO remove
-		prio		= buffType.prio or 0,
-		border		= FOCUS_BORDER_DEBUFFS_COLOR[buffType.type],
-		display		= true,	-- TODO remove
-		btype		= debuff,
-		debuffType	= buffType.type,
+		target      = tar,
+		caster      = tar,
+		spell       = t,
+		stacks      = debuffStack or s or 0,
+		icon        = texture or buffType.icon,
+		timeStart   = time,
+		timeEnd     = 0, -- TODO remove
+		prio        = buffType.prio or 0,
+		border      = FOCUS_BORDER_DEBUFFS_COLOR[buffType.type],
+		display     = true,	-- TODO remove
+		btype       = debuff,
+		debuffType  = buffType.type,
 	}
 
 	setmetatable(acnt, buff)
@@ -844,13 +844,14 @@ do
 		if event == "VARIABLES_LOADED" then
 			Focus = assert(FocusCore, "FocusCore not loaded.")
 			FSPELLCASTINGCOREstrictAuras = FocusFrameDB and FocusFrameDB.strictAuras
+			Focus:OnEvent("FOCUS_CHANGED", OnFocusChange)
+			Focus:OnEvent("FOCUS_CLEAR", OnFocusChange)
+
 			events:UnregisterEvent("VARIABLES_LOADED")
 			events:RegisterEvent("PLAYER_ENTERING_WORLD")
 			events:RegisterEvent("PLAYER_ALIVE") -- Releases from death to a graveyard
 			events:SetScript("OnUpdate", OnUpdate)
 			f:SetScript("OnEvent", combatlogParser)
-			Focus:OnEvent("FOCUS_CHANGED", OnFocusChange)
-			Focus:OnEvent("FOCUS_CLEAR", OnFocusChange)
 		else
 			tableMaintenance(true)
 		end
