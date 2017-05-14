@@ -601,7 +601,7 @@ do
 		end
 	end
 
-	_G.f_cast = function(x) Focus:CastSpellByName(x) end -- alias for macros
+	_G.fcast = function(x) Focus:CastSpellByName(x) end -- alias for macros
 
 	-- @private
 	-- only used for npcs/hunters
