@@ -43,7 +43,7 @@ local GetCast = FSPELLCASTINGCOREgetCast
 
 do
 	-- 0 = disabled, 1 = info/error, 2 = debug, 3 = verbose
-	local logLevel = 1
+	local logLevel = 0
 
 	function log(level, str, arg1, arg2, arg3, arg4) -- no vararg available :(
 		if logLevel <= 0 or level > logLevel then return end
@@ -392,9 +392,8 @@ do
 		end
 
 		local hp = health:GetValue() or 0
-		if rawData.maxHealth < hp then
-			data.maxHealth = 100
-		end
+		local _, maxHp = health:GetMinMaxValues()
+		data.maxHealth = maxHp
 		data.health = hp
 
 		local lvl = level:GetText()
@@ -1078,7 +1077,7 @@ do
 
 		-- Combine into 1 single event
 		if event == "UNIT_DISPLAYPOWER" or event == "UNIT_HEALTH" or event == "UNIT_MANA"
-			or event == "UNIT_RAGE" or event == "UNIT_FOCUS" or event == "UNIT_ENERGY" or event == "UNIT_MAXHEALTH" then
+			or event == "UNIT_RAGE" or event == "UNIT_FOCUS" or event == "UNIT_ENERGY" then
 				return SetFocusHealth(arg1)
 		end
 
@@ -1086,7 +1085,7 @@ do
 			return events[event](Focus, event, arg1, arg2, arg3, arg4)
 		end
 
-		log(1, "unhandled event %s", event)
+		log(1, "unhandled event %s(%s)", event, arg1 or "nil")
 	end
 
 	-- Call scanners every 0.3s
@@ -1137,7 +1136,6 @@ do
 	events:RegisterEvent("UNIT_RAGE")
 	events:RegisterEvent("UNIT_FOCUS")
 	events:RegisterEvent("UNIT_ENERGY")
-	events:RegisterEvent("UNIT_MAXHEALTH")
 	events:RegisterEvent("CHAT_MSG_COMBAT_HOSTILE_DEATH")
 	events:RegisterEvent("CHAT_MSG_COMBAT_FRIENDLY_DEATH")
 end
