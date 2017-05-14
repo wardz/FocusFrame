@@ -500,6 +500,7 @@ do
 	end
 
 	--- Toggle nameplate scanning.
+	-- @tparam bool state
 	-- @treturn bool true if enabled
 	function Focus:ToggleNameplateScan(state)
 		enableNameplateScan = state
@@ -635,8 +636,8 @@ do
 	end
 
 	--- Target the focus.
-	-- @tparam[opt=nil] string name
-	-- @tparam[opt=nil] bool setFocusName true to update vars storing focus unit name
+	-- @tparam[opt=nil] string name Target unit with this name instead when not nil.
+	-- @tparam[opt=nil] bool setFocusName true to update string vars storing focus unit name
 	-- @treturn bool true on success
 	function Focus:TargetFocus(name, setFocusName)
 		if not setFocusName and not self:FocusExists() then
