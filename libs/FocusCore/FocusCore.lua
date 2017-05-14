@@ -186,22 +186,16 @@ local function SetFocusHealth(unit, isDead, hasPetFixRan)
 		if not hasPetFixRan then -- prevent calling function twice
 			if IsPlayerWithSamePetName(unit) then return end
 		end
+
+		if not isDead then
+			rawData.powerType = UnitPowerType(unit)
+		end
 	end
 
-	rawData.health = isDead and 0 or UnitHealth(unit)
 	rawData.maxHealth = isDead and 0 or UnitHealthMax(unit)
 	rawData.power = isDead and 0 or UnitMana(unit)
 	rawData.maxPower = isDead and 0 or UnitManaMax(unit)
-
-	if not isDead then
-		rawData.powerType = UnitPowerType(unit)
-	end
-
-	if (rawData.maxHealth or 0) < (rawData.health or 0) then
-		rawData.maxHealth = 100
-	end
-
-	CallHooks("UNIT_HEALTH_OR_POWER")
+	data.health = isDead and 0 or UnitHealth(unit)
 end
 
 local function SetFocusInfo(unit, resetRefresh)
