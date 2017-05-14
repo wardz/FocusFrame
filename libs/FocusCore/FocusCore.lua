@@ -1142,3 +1142,4 @@ end
 
 -- Add to global namespace
 _G.FocusCore = Focus
+_G.FocusData = Focus -- deprecated version
