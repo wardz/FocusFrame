@@ -1,11 +1,6 @@
 -- Adds support for ClassPortraits and ClassPortraits_Vanilla.
 local OnLoad = function(Focus, addonName)
-	local iconPath
-	if addonName == "ClassPortraits_Vanilla" then
-		iconPath = "Interface\\Addons\\ClassPortraits_Vanilla\\UI-CLASSES-CIRCLES"
-	else
-		iconPath = "Interface\\Addons\\ClassPortraits\\UI-CLASSES-CIRCLES"
-	end
+	local iconPath = "Interface\\Addons\\" .. addonName .. "\\UI-CLASSES-CIRCLES"
 
 	local CLASS_COORDS = {
 		["HUNTER"]	= { 0,			0.25,		0.25,	0.5  },
@@ -31,8 +26,9 @@ local OnLoad = function(Focus, addonName)
 		end
 	end
 
+	-- "post-hook" event functions used in FocusFrame.lua
 	Focus:OnEvent("FOCUS_UNITID_EXISTS", UpdatePortrait) -- on focus targeted
-	Focus:OnEvent("UNIT_PORTRAIT_UPDATE", UpdatePortrait) -- while focus is targeted
+	Focus:OnEvent("UNIT_PORTRAIT_UPDATE", UpdatePortrait) -- while focus is targeted only
 end
 
 Focus_Loader:Register("ClassPortraits", OnLoad)

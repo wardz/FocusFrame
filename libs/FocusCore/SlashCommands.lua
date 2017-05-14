@@ -2,7 +2,7 @@ if SlashCmdList.MFOCUS then return end
 
 -- Upvalues
 local _G = getfenv(0)
-local Focus = _G.FocusData
+local Focus = _G.FocusCore
 local strfind, strlower, gsub = string.find, string.lower, string.gsub
 local GetContainerNumSlots = GetContainerNumSlots
 
@@ -89,8 +89,8 @@ SlashCmdList.FITEM = function(msg)
 		return Focus:ShowError()
 	end
 
-	local scantip = _G.FocusDataScantip
-	local scantipTextLeft1 = _G.FocusDataScantipTextLeft1
+	local scantip = _G.FocusCoreScantip
+	local scantipTextLeft1 = _G.FocusCoreScantipTextLeft1
 
 	-- Loop through inventory (gear)
 	for i = 19, 1, -1 do

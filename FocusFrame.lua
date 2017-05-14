@@ -1,5 +1,5 @@
 local _G = getfenv(0)
-local Focus = assert(_G.FocusData, "FocusData not loaded.")
+local Focus = assert(_G.FocusCore, "FocusCore not loaded.")
 local AurasUpdate
 
 FocusFrameDB = FocusFrameDB or { unlock = true, scale = 1 }
@@ -470,7 +470,7 @@ FocusFrame.cast.border = FocusFrame.cast:CreateTexture("FocusCastingBarBorder", 
 FocusFrame.cast.border:SetPoint("TOPLEFT", -23, 20)
 FocusFrame.cast.border:SetPoint("TOPRIGHT", 23, 20)
 FocusFrame.cast.border:SetHeight(50)
-FocusFrame.cast.border:SetTexture("Interface\\AddOns\\FocusFrame\\media\\UI-CastingBar-Border-Small.blp")
+FocusFrame.cast.border:SetTexture("Interface\\AddOns\\FocusFrame\\Media\\UI-CastingBar-Border-Small.blp")
 
 FocusFrame.cast.text = FocusFrame.cast:CreateFontString("FocusCastingBarText", "OVERLAY")
 FocusFrame.cast.text:SetTextColor(1, 1, 1)
@@ -496,7 +496,7 @@ FocusFrame.cast.shield = FocusFrame.cast:CreateTexture("FocusCastingBarShield", 
 FocusFrame.cast.shield:SetPoint("TOPLEFT", -28, 20)
 FocusFrame.cast.shield:SetPoint("TOPRIGHT", 18, 20)
 FocusFrame.cast.shield:SetHeight(50)
-FocusFrame.cast.shield:SetTexture("Interface\\AddOns\\FocusFrame\\media\\UI-CastingBar-Small-Shield.blp")
+FocusFrame.cast.shield:SetTexture("Interface\\AddOns\\FocusFrame\\Media\\UI-CastingBar-Small-Shield.blp")
 FocusFrame.cast.shield:Hide()
 
 -- Register events
@@ -549,7 +549,7 @@ SlashCmdList.FOCUSOPTIONS = function(msg)
 		FocusFrameDB.disableNameplateScan = not FocusFrameDB.disableNameplateScan
 		local x = FocusFrameDB.disableNameplateScan
 		Focus:ToggleNameplateScan(not x)
-		print("Nameplate scanning %s", x and "disabled" or "enabled")
+		print("Nameplate scanning %s.", x and "disabled" or "enabled")
 	elseif cmd == "reset" then
 		FocusFrameDB = { scale = 1, unlock = true }
 		FocusFrame:SetScale(1)

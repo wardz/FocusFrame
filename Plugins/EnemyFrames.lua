@@ -2,7 +2,7 @@
 Focus_Loader:Register("enemyFrames", function(Focus)
 	if not CreateCooldown or not SPELLCASTINGCOREgetPrioBuff then return end
 
-	local getPrioBuff, floor, GetTime = SPELLCASTINGCOREgetPrioBuff, floor, GetTime
+	local getPrioBuff, floor, GetTime = SPELLCASTINGCOREgetPrioBuff, math.floor, GetTime
 
 	local portraitDebuff = CreateFrame("Frame", "FocusPortraitDebuff", FocusFrame)
 	portraitDebuff:SetFrameLevel(0)
@@ -40,6 +40,7 @@ Focus_Loader:Register("enemyFrames", function(Focus)
 	portraitDebuff.cd:SetAlpha(1)
 
 	local function Round(num, idp)
+		idp = idp or num > 3 and 0 or 1
 		local mult = 10^(idp or 0)
 
 		return floor(num * mult + 0.5) / mult
@@ -58,7 +59,7 @@ Focus_Loader:Register("enemyFrames", function(Focus)
 
 			local t = prioBuff.timeEnd - GetTime()
 			portraitDebuff.debuffText:SetTexture(prioBuff.icon)
-			portraitDebuff.duration:SetText(Round(t, t > 3 and 0 or 1))
+			portraitDebuff.duration:SetText(Round(t))
 			portraitDebuff.debuffText:Show()
 			portraitDebuff.cd:SetTimers(prioBuff.timeStart, prioBuff.timeEnd)
 			portraitDebuff.cd:Show()
@@ -77,11 +78,10 @@ Focus_Loader:Register("enemyFrames", function(Focus)
 	end
 
 	local refresh = 0
-	local f = CreateFrame("Frame")
-	f:SetScript("OnUpdate", function()
+	portraitDurationFrame:SetScript("OnUpdate", function()
 		refresh = refresh - arg1
 		if refresh < 0 then
-			if ENEMYFRAMESPLAYERDATA.targetPortraitDebuff and Focus:FocusExists() then
+			if ENEMYFRAMESPLAYERDATA.targetPortraitDebuff and CURR_FOCUS_TARGET then
 				UpdatePortraitDebuff()
 			else
 				--if portraitDebuff:IsVisible() then
@@ -89,7 +89,7 @@ Focus_Loader:Register("enemyFrames", function(Focus)
 					portraitDebuff.cd:Hide()
 					portraitDebuff.bgText:Hide()
 					portraitDebuff.debuffText:Hide()
-					portraitDebuff.duration:SetText(nil)
+					portraitDebuff.duration:SetText(nil) -- don't hide parent frame or else we cant reuse frame for OnUpdate
 				--end
 			end
 

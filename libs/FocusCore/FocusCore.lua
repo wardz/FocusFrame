@@ -1,11 +1,11 @@
 ------------
 -- API documentation can be generated using LDoc or viewed here:
 -- https://wardz.github.io/FocusFrame/
--- @module FocusData
+-- @module FocusCore
 -- @author Wardz
 -- @license MIT
 local _G = getfenv(0)
-if _G.FocusData then return end
+if _G.FocusCore then return end
 
 -- Vars
 local Focus = {}
@@ -37,7 +37,6 @@ local GetCast = FSPELLCASTINGCOREgetCast
 --[[
 	@TODO
 	- optimize nameplate scanning
-	- add AceLibrary support if possible
 	- rewrite spellcastingcore completely
 	- update raid mark, leader icon etc on focus leave party and duel
 ]]
@@ -51,7 +50,7 @@ do
 
 		DEFAULT_CHAT_FRAME:AddMessage(string.format(str or "nil", arg1, arg2, arg3, arg4))
 	end
-	FocusData_Log = log
+	FocusCore_Log = log
 end
 
 --------------------------------
@@ -276,12 +275,12 @@ end
 do
 	local UnitBuff, UnitDebuff, UnitIsEnemy = UnitBuff, UnitDebuff, UnitIsEnemy
 
-	local scantip = CreateFrame("GameTooltip", "FocusDataScantip", nil, "GameTooltipTemplate")
+	local scantip = CreateFrame("GameTooltip", "FocusCoreScantip", nil, "GameTooltipTemplate")
 	scantip:SetOwner(UIParent, "ANCHOR_NONE")
 	scantip:SetFrameStrata("TOOLTIP")
 
-	local scantipTextLeft1 = _G["FocusDataScantipTextLeft1"]
-	local scantipTextRight1 = _G["FocusDataScantipTextRight1"]
+	local scantipTextLeft1 = _G["FocusCoreScantipTextLeft1"]
+	local scantipTextRight1 = _G["FocusCoreScantipTextRight1"]
 	local playersFaction = UnitFactionGroup("player")
 
 	-- Store buff into spellcastingcore db
@@ -1141,4 +1140,4 @@ do
 end
 
 -- Add to global namespace
-_G.FocusData = Focus
+_G.FocusCore = Focus

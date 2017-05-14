@@ -427,7 +427,7 @@ local GainAfflict = function()
 		if FOCUS_BUFFS_TO_TRACK[s] then
 			if CURR_FOCUS_TARGET and CURR_FOCUS_TARGET == c then
 				local unit = Focus:GetData("unit")
-				if unit then return end -- buffs will be added in FocusData sync instead
+				if unit then return end -- buffs will be added in FocusCore sync instead
 			end
 
 			newbuff(c, s, 1, false)
@@ -468,7 +468,7 @@ local GainAfflict = function()
 			--else
 			if CURR_FOCUS_TARGET and CURR_FOCUS_TARGET == c then
 				local unit = Focus:GetData("unit")
-				if unit then return end -- buffs will be added in FocusData sync instead
+				if unit then return end -- buffs will be added in FocusCore sync instead
 			end
 				newbuff(c, s, st, false, nil, true)
 			--end
@@ -822,7 +822,10 @@ do
 	local function OnUpdate()
 		refresh = refresh - arg1
 		if refresh < 0 then
-			if FSPELLCASTINGCOREstrictAuras and not Focus:FocusExists() then return end
+			if FSPELLCASTINGCOREstrictAuras and not Focus:FocusExists() then
+				refresh = interval
+				return
+			end
 			tableMaintenance(false)
 			refresh = interval
 		end
@@ -839,7 +842,7 @@ do
 	events:RegisterEvent("VARIABLES_LOADED")
 	events:SetScript("OnEvent", function()
 		if event == "VARIABLES_LOADED" then
-			Focus = assert(FocusData, "FocusData not loaded.")
+			Focus = assert(FocusCore, "FocusCore not loaded.")
 			FSPELLCASTINGCOREstrictAuras = FocusFrameDB and FocusFrameDB.strictAuras
 			events:UnregisterEvent("VARIABLES_LOADED")
 			events:RegisterEvent("PLAYER_ENTERING_WORLD")
