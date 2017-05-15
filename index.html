@@ -40,21 +40,17 @@
 
 <h2>Modules</h2>
 <ul class="nowrap">
-  <li><strong>FocusData</strong></li>
+  <li><strong>FocusCore</strong></li>
 </ul>
 
 </div>
 
 <div id="content">
 
-<h1>Module <code>FocusData</code></h1>
-<p>(This page is auto generated using ldoc. Please do not commit any changes here.)</p>
-<p>
- Feel free to use or fork this module.</p>
-<p>
-Most of this API may only be used after certain events, or in an OnUpdate script with focus exist check.<br>
-See FocusFrame.lua for examples.
-</p>
+<h1>Module <code>FocusCore</code></h1>
+<p>API documentation can be generated using LDoc or viewed here:
+ https://wardz.github.io/FocusFrame/</p>
+<p></p>
     <h3>Info:</h3>
     <ul>
         <li><strong>License</strong>: MIT</li>
@@ -66,7 +62,7 @@ See FocusFrame.lua for examples.
 <table class="function_list">
 	<tr>
 	<td class="name" nowrap><a href="#Events">Events</a></td>
-	<td class="summary">FocusData events.</td>
+	<td class="summary">List of available events.</td>
 	</tr>
 </table>
 <h2><a href="#Misc">Misc </a></h2>
@@ -74,6 +70,10 @@ See FocusFrame.lua for examples.
 	<tr>
 	<td class="name" nowrap><a href="#Focus:ShowError">Focus:ShowError ([msg="You have no focus"])</a></td>
 	<td class="summary">Display an error in UIErrorsFrame.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#Focus:ToggleNameplateScan">Focus:ToggleNameplateScan (state)</a></td>
+	<td class="summary">Toggle nameplate scanning.</td>
 	</tr>
 </table>
 <h2><a href="#Unit">Unit </a></h2>
@@ -95,7 +95,11 @@ See FocusFrame.lua for examples.
 	<td class="summary">Call functions on focus.</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#Focus:TargetFocus">Focus:TargetFocus ([name=nil])</a></td>
+	<td class="name" nowrap><a href="#Focus:CastSpellByName">Focus:CastSpellByName (name)</a></td>
+	<td class="summary">Trigger CastSpellByName on focus target.</td>
+	</tr>
+	<tr>
+	<td class="name" nowrap><a href="#Focus:TargetFocus">Focus:TargetFocus ([name=nil[, setFocusName=nil]])</a></td>
 	<td class="summary">Target the focus.</td>
 	</tr>
 	<tr>
@@ -134,10 +138,6 @@ See FocusFrame.lua for examples.
 	<td class="summary">Get statusbar color for power.</td>
 	</tr>
 	<tr>
-	<td class="name" nowrap><a href="#Focus:GetDebuffColor">Focus:GetDebuffColor (debuffType)</a></td>
-	<td class="summary">Get border color for debuffs.</td>
-	</tr>
-	<tr>
 	<td class="name" nowrap><a href="#Focus:GetBuffs">Focus:GetBuffs ()</a></td>
 	<td class="summary">Get table containing all buff+debuff data for focus.</td>
 	</tr>
@@ -147,14 +147,14 @@ See FocusFrame.lua for examples.
 	</tr>
 	<tr>
 	<td class="name" nowrap><a href="#Focus:GetReactionColors">Focus:GetReactionColors ()</a></td>
-	<td class="summary">Get UnitReactionColor for focus.</td>
+	<td class="summary">Get UnitReactionColor for focus</td>
 	</tr>
 </table>
 <h2><a href="#Data">Data </a></h2>
 <table class="function_list">
 	<tr>
 	<td class="name" nowrap><a href="#Focus:GetData">Focus:GetData ([key1=nil[, key2=nil[, key3=nil[, key4=nil]]]])</a></td>
-	<td class="summary">Get specific focus data.</td>
+	<td class="summary">Get focus data by key.</td>
 	</tr>
 	<tr>
 	<td class="name" nowrap><a href="#Focus:SetData">Focus:SetData (key, value)</a></td>
@@ -189,27 +189,26 @@ See FocusFrame.lua for examples.
     <strong>Events</strong>
     </dt>
     <dd>
-    FocusData events.
- List of events that you can register for. All events can be
- registered multiple times.
+    List of available events.
+ All events can be registered multiple times.
 
 
     <h3>Fields:</h3>
     <ul>
         <li><span class="parameter">UNIT_HEALTH_OR_POWER</span>
-         arg1=event, arg2=unit or nil
+
         </li>
         <li><span class="parameter">UNIT_LEVEL</span>
-         arg1=event, arg2=unit or nil
+
         </li>
         <li><span class="parameter">UNIT_AURA</span>
-         arg1=event, arg2=unit or nil
+
         </li>
         <li><span class="parameter">UNIT_CLASSIFICATION_CHANGED</span>
-         arg1=event, arg2=unit or nil
+
         </li>
         <li><span class="parameter">UNIT_FACTION</span>
-         arg1=event, arg2=unit
+
         </li>
         <li><span class="parameter">PLAYER_FLAGS_CHANGED</span>
 
@@ -218,13 +217,13 @@ See FocusFrame.lua for examples.
 
         </li>
         <li><span class="parameter">FOCUS_UNITID_EXISTS</span>
-         arg1=event, arg2=unit
+
         </li>
         <li><span class="parameter">FOCUS_SET</span>
-         arg1=event, arg2=unit
+
         </li>
         <li><span class="parameter">FOCUS_CHANGED</span>
-         arg1=event, arg2=unit
+
         </li>
         <li><span class="parameter">FOCUS_CLEAR</span>
 
@@ -236,7 +235,7 @@ See FocusFrame.lua for examples.
 
     <h3>Usage:</h3>
     <ul>
-        <pre class="example">Focus:OnEvent(<span class="string">"EVENT_NAME"</span>, callbackFunc)</pre>
+        <pre class="example">Focus:OnEvent(<span class="string">"EVENT_NAME"</span>, <span class="keyword">function</span>(event, unit) <span class="keyword">end</span>) <span class="comment">-- unit arg may be nil!</span></pre>
     </ul>
 
 </dd>
@@ -261,6 +260,33 @@ See FocusFrame.lua for examples.
         </li>
     </ul>
 
+
+
+
+
+</dd>
+    <dt>
+    <a name = "Focus:ToggleNameplateScan"></a>
+    <strong>Focus:ToggleNameplateScan (state)</strong>
+    </dt>
+    <dd>
+    Toggle nameplate scanning.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">state</span>
+            <span class="types"><span class="type">bool</span></span>
+
+        </li>
+    </ul>
+
+    <h3>Returns:</h3>
+    <ol>
+
+           <span class="types"><span class="type">bool</span></span>
+        true if enabled
+    </ol>
 
 
 
@@ -336,6 +362,7 @@ See FocusFrame.lua for examples.
     </dt>
     <dd>
     Check if focus is sat.  (not same as UnitExists!)
+ Use falseness check on CURR_FOCUS_TARGET instead when performance is critical.
 
 
     <h3>Parameters:</h3>
@@ -402,8 +429,33 @@ See FocusFrame.lua for examples.
 
 </dd>
     <dt>
+    <a name = "Focus:CastSpellByName"></a>
+    <strong>Focus:CastSpellByName (name)</strong>
+    </dt>
+    <dd>
+    Trigger CastSpellByName on focus target.
+
+
+    <h3>Parameters:</h3>
+    <ul>
+        <li><span class="parameter">name</span>
+            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
+         name of spell to cast
+        </li>
+    </ul>
+
+
+
+
+    <h3>Usage:</h3>
+    <ul>
+        <pre class="example">Focus:CastSpellByName(<span class="string">"Fireball"</span>) <span class="comment">-- Casts Fireball on focus target</span></pre>
+    </ul>
+
+</dd>
+    <dt>
     <a name = "Focus:TargetFocus"></a>
-    <strong>Focus:TargetFocus ([name=nil])</strong>
+    <strong>Focus:TargetFocus ([name=nil[, setFocusName=nil]])</strong>
     </dt>
     <dd>
     Target the focus.
@@ -413,7 +465,12 @@ See FocusFrame.lua for examples.
     <ul>
         <li><span class="parameter">name</span>
             <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
-
+         Target unit with this name instead when not nil.
+         (<em>default</em> nil)
+        </li>
+        <li><span class="parameter">setFocusName</span>
+            <span class="types"><span class="type">bool</span></span>
+         true to update string vars storing focus unit name
          (<em>default</em> nil)
         </li>
     </ul>
@@ -510,7 +567,7 @@ See FocusFrame.lua for examples.
     </dt>
     <dd>
     Get focus unit name.
- Global var CURR_FOCUS_TARGET may also be used.
+ Global var CURR_FOCUS_TARGET may also be used when performance is critical.
 
 
 
@@ -598,33 +655,6 @@ See FocusFrame.lua for examples.
 
 </dd>
     <dt>
-    <a name = "Focus:GetDebuffColor"></a>
-    <strong>Focus:GetDebuffColor (debuffType)</strong>
-    </dt>
-    <dd>
-    Get border color for debuffs.
- [DEPRECATED] Uses numeric indexes.
-
-
-    <h3>Parameters:</h3>
-    <ul>
-        <li><span class="parameter">debuffType</span>
-            <span class="types"><a class="type" href="https://www.lua.org/manual/5.1/manual.html#5.4">string</a></span>
-         e.g "magic" or "physical"
-        </li>
-    </ul>
-
-    <h3>Returns:</h3>
-    <ol>
-
-        table
-    </ol>
-
-
-
-
-</dd>
-    <dt>
     <a name = "Focus:GetBuffs"></a>
     <strong>Focus:GetBuffs ()</strong>
     </dt>
@@ -689,7 +719,7 @@ See FocusFrame.lua for examples.
     <strong>Focus:GetReactionColors ()</strong>
     </dt>
     <dd>
-    Get UnitReactionColor for focus.  (player only, not npc)
+    Get UnitReactionColor for focus
 
 
 
@@ -719,7 +749,7 @@ See FocusFrame.lua for examples.
     <strong>Focus:GetData ([key1=nil[, key2=nil[, key3=nil[, key4=nil]]]])</strong>
     </dt>
     <dd>
-    Get specific focus data.
+    Get focus data by key.
  If no key is specified, returns all the data.
  See SetFocusInfo() for list of data available.
 
@@ -884,7 +914,7 @@ See FocusFrame.lua for examples.
 </div> <!-- id="main" -->
 <div id="about">
 <i>generated by <a href="http://github.com/stevedonovan/LDoc">LDoc 1.4.6</a></i>
-<i style="float:right;">Last updated 2017-03-26 04:38:29 </i>
+<i style="float:right;">Last updated 2017-05-14 18:48:42 </i>
 </div> <!-- id="about" -->
 </div> <!-- id="container" -->
 </body>
