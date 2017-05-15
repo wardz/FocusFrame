@@ -192,9 +192,9 @@ local function SetFocusHealth(unit, isDead, hasPetFixRan)
 		end
 	end
 
-	rawData.maxHealth = isDead and 0 or UnitHealthMax(unit)
-	rawData.power = isDead and 0 or UnitMana(unit)
-	rawData.maxPower = isDead and 0 or UnitManaMax(unit)
+	data.maxHealth = isDead and 0 or UnitHealthMax(unit)
+	data.power = isDead and 0 or UnitMana(unit)
+	data.maxPower = isDead and 0 or UnitManaMax(unit)
 	data.health = isDead and 0 or UnitHealth(unit)
 end
 
