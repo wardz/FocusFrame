@@ -46,18 +46,18 @@ Cast.create = function(caster, spell, info, timeMod, time, inv)
 end
 
 InstaBuff.create = function(c, b, list, time)
-   local acnt = {
-	   caster       = c,
-	   spell        = b,
-	   timeMod      = list.mod,
-	   spellList    = list.list,
-	   timeStart    = time,
-	   timeEnd      = time + 10
-   }
+	local acnt = {
+		caster       = c,
+		spell        = b,
+		timeMod      = list.mod,
+		spellList    = list.list,
+		timeStart    = time,
+		timeEnd      = time + 10
+	}
 
-   setmetatable(acnt, InstaBuff)
+	setmetatable(acnt, InstaBuff)
 
-   return acnt
+	return acnt
 end
 
 buff.create = function(tar, t, s, buffType, factor, time, texture, debuff, magictype, debuffStack)
