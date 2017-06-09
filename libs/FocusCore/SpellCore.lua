@@ -289,7 +289,7 @@ local function newbuff(tar, b, s, castOn, texture, debuff, magictype, debuffStac
 	local i = 1
 	for k, v in pairs(buffList) do
 		if v.caster == tar and v.spell == b then
-			if strlower(v.icon) == strlower(texture) then
+			if strlower(v.icon or "") == strlower(texture or "") then
 				-- TODO just refresh instead?
 				tremove(buffList, i)
 				break
