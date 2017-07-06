@@ -284,7 +284,7 @@ do
 		-- Get buff name. UnitBuff only gives texture
 		local name = scantipTextLeft1:GetText()
 		if name then
-			if isDebuff and not debuffType or debuffType == "" then
+			if not debuffType or debuffType == "" then
 				debuffType = scantipTextRight1:GetText()
 			end
 
