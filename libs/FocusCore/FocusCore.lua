@@ -264,7 +264,7 @@ do
 	local UnitBuff, UnitDebuff, UnitIsEnemy = UnitBuff, UnitDebuff, UnitIsEnemy
 
 	local scantip = CreateFrame("GameTooltip", "FocusCoreScantip", nil, "GameTooltipTemplate")
-	scantip:SetOwner(UIParent, "ANCHOR_NONE")
+	scantip:SetOwner(WorldFrame, "ANCHOR_NONE")
 	scantip:SetFrameStrata("TOOLTIP")
 
 	local scantipTextLeft1 = _G["FocusCoreScantipTextLeft1"]
