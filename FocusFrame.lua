@@ -8,9 +8,41 @@ FocusFrameDB = FocusFrameDB or { unlock = true, scale = 1 }
 -- @see UpdatePortrait() in mods/classPortraits.lua for examples.
 -- @see Focus:RemoveEvent() for completely overwriting functions
 
+local function OnFocusTargetChanged(event, name, isDead)
+	if not name then
+		FocusFrameTargetofTargetFrame:Hide()
+		return
+	end
+	
+	if name == "target" then return end
+	
+	FocusFrameTargetofTargetFrame:Show()
+	
+	local health, maxHealth = Focus:GetTargetHealth()
+	local mana, maxMana = Focus:GetTargetPower()
+
+	FocusFrameTargetofTargetHealthBar:SetMinMaxValues(0, maxHealth)
+	FocusFrameTargetofTargetHealthBar:SetValue(health)
+	FocusFrameTargetofTargetManaBar:SetMinMaxValues(0, maxMana)
+	FocusFrameTargetofTargetManaBar:SetValue(mana)
+	
+	if isDead then
+		FocusFrameTargetofTargetDeadText:Show()
+	else
+		FocusFrameTargetofTargetDeadText:Hide()
+	end
+	
+	FocusFrameTargetofTargetName:SetText(name)
+	SetPortraitTexture(FocusFrameTargetofTargetPortrait, "targettarget")
+end
+
 local function OnFocusSat(event, unit)
 	FocusName:SetText(UnitName(unit))
 	FocusFrame:SetScale(FocusFrameDB.scale or 1)
+	
+	if Focus:GetTargetName() then
+		OnFocusTargetChanged(event, Focus:GetTargetName(), Focus:TargetIsDead())
+	end
 
 	FocusFrame:SetScript("OnUpdate", FocusFrame_CastingBarOnUpdate)
 	FocusFrame:Show()
@@ -123,6 +155,12 @@ function FocusFrame_OnClick(button)
 		end
 	else
 		ToggleDropDownMenu(1, nil, FocusFrameDropDown, "FocusFrame", 120, 10)
+	end
+end
+
+function FocusFrameTarget_OnClick(button)
+	if button == "LeftButton" then
+		Focus:TargetFocusTarget()
 	end
 end
 
@@ -514,6 +552,7 @@ Focus:OnEvent("UNIT_PORTRAIT_UPDATE", CheckPortrait)
 Focus:OnEvent("FOCUS_UNITID_EXISTS", CheckPortrait) -- update on retarget/mouseover aswell
 Focus:OnEvent("FOCUS_ACTIVE", OnFocusActive)
 Focus:OnEvent("FOCUS_INACTIVE", OnFocusIdle)
+Focus:OnEvent("FOCUS_TARGET_CHANGED", OnFocusTargetChanged)
 
 -- Chat options
 SLASH_FOCUSOPTIONS1 = "/foption"
@@ -550,6 +589,9 @@ SlashCmdList.FOCUSOPTIONS = function(msg)
 		local x = FocusFrameDB.disableNameplateScan
 		Focus:ToggleNameplateScan(not x)
 		print("Nameplate scanning %s.", x and "disabled" or "enabled")
+	elseif cmd == "target" then
+		FocusFrameDB.tot = not FocusFrameDB.tot
+		print("Scale set to %s", tostring(FocusFrameDB.tot))
 	elseif cmd == "reset" then
 		FocusFrameDB = { scale = 1, unlock = true }
 		FocusFrame:SetScale(1)

@@ -181,6 +181,26 @@ local function IsPlayerWithSamePetName(unit)
 	return false
 end
 
+local function GetFocusTargetData()
+	if UnitExists("targettarget") then
+		data.targetMaxHealth = UnitHealthMax("targettarget") or 0
+		data.targetPowerType = UnitPowerType("targettarget")
+		data.targetPower = UnitMana("targettarget") or 0
+		data.targetMaxPower = UnitManaMax("targettarget") or 0
+		data.targetHealth = UnitHealth("targettarget") or 0
+		data.targetName = UnitName("targettarget")
+		data.targetIsDead = UnitIsDead("targettarget")
+	else
+		data.targetMaxHealth = 0
+		data.targetPowerType = nil
+		data.targetPower = 0
+		data.targetMaxPower = 0
+		data.targetHealth = 0
+		data.targetName = nil
+		data.targetIsDead = nil
+	end
+end
+
 local function SetFocusHealth(unit, isDead, hasPetFixRan)
 	if unit then
 		if not hasPetFixRan then -- prevent calling function twice
@@ -196,6 +216,24 @@ local function SetFocusHealth(unit, isDead, hasPetFixRan)
 	data.power = isDead and 0 or UnitMana(unit)
 	data.maxPower = isDead and 0 or UnitManaMax(unit)
 	data.health = isDead and 0 or UnitHealth(unit)
+	
+	if FocusFrameDB.tot then
+		local oldTarget = UnitName("target")
+		TargetUnit(unit)
+		
+		GetFocusTargetData()
+		
+		if data.targetPrevious ~= data.targetName then
+			data.targetPrevious = data.targetName
+			CallHooks("FOCUS_TARGET_CHANGED", data.targetName, data.targetIsDead)
+		end
+		
+		if oldTarget then
+			TargetByName(oldTarget, true)
+		else
+			ClearTarget()
+		end
+	end
 end
 
 local function SetFocusInfo(unit, resetRefresh)
@@ -680,6 +718,11 @@ do
 
 		return SetFocusInfo("target", true)
 	end
+	
+	--- Target the focus' target.
+	function Focus:TargetFocusTarget()
+		TargetByName(data.targetName, true)
+	end
 
 	--- Target last target after having targeted focus.
 	-- This can only be used after TargetFocus() has been ran!
@@ -745,6 +788,12 @@ do
 	function Focus:IsDead()
 		return rawData.health and rawData.health <= 0 --and data.unitIsConnected
 	end
+	
+	--- Check if focus' target is dead.
+	-- @treturn bool true if dead
+	function Focus:TargetIsDead()
+		return rawData.targetHealth and rawData.targetHealth <= 0
+	end
 
 	--- Remove focus & all data.
 	function Focus:ClearFocus()
@@ -786,6 +835,21 @@ do
 	-- @treturn number max
 	function Focus:GetPower()
 		return rawData.power or 0, rawData.maxPower or 100
+	end
+	
+	--- Get focus' target name.
+	function Focus:GetTargetName()
+		return rawData.targetName
+	end
+	
+	--- Get focus' target health.
+	function Focus:GetTargetHealth()
+		return rawData.targetHealth or 0, rawData.targetMaxHealth or 100
+	end
+	
+	--- Get focus' target power.
+	function Focus:GetTargetPower()
+		return rawData.targetPower or 0, rawData.targetMaxPower or 100
 	end
 
 	--- Get statusbar color for power.
