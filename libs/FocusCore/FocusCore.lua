@@ -198,7 +198,7 @@ local function SetFocusHealth(unit, isDead, hasPetFixRan)
 	data.health = isDead and 0 or UnitHealth(unit)
 end
 
-local function SetFocusInfo(unit, resetRefresh)
+local function SetFocusInfo(unit, resetRefresh, test)
 	if not unit or not Focus:UnitIsFocus(unit) then return false end
 	if IsPlayerWithSamePetName(unit) then return false end
 
@@ -645,7 +645,7 @@ do
 		end
 
 		self.oldTarget = UnitName("target")
-		if not self.oldTarget or self.oldTarget ~= focusTargetName then
+		if not self.oldTarget or self.oldTarget ~= focusTargetName or rawData.IsPlayerWithSamePetName then
 			if rawData.unitIsPlayer ~= 1 then
 				self:TargetWithFixes(name)
 			else
