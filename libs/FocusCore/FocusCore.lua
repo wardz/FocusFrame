@@ -813,14 +813,15 @@ do
 
 		--- Get cast data for focus.
 		-- Should be ran in an OnUpdate script.
+		-- @tparam[opt=focusTargetName] string name
 		-- @treturn[1] table FSPELLCASTINGCORE cast data
 		-- @treturn[1] number Current cast time
 		-- @treturn[1] number Max cast time
 		-- @treturn[1] number Spark position
 		-- @treturn[1] number Time left formatted
 		-- @treturn[2] nil
-		function Focus:GetCast()
-			local cast = GetCast(focusTargetName)
+		function Focus:GetCast(name)
+			local cast = GetCast(name or focusTargetName)
 			if not cast then return end
 
 			local timeEnd, timeStart = cast.timeEnd, cast.timeStart
