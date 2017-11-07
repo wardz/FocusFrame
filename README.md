@@ -12,7 +12,8 @@ The focus frame works for both friendly and enemy **players**.
 - [Chat commands/macros](https://github.com/wardz/FocusFrame/wiki/Commands)
 - [Options](https://github.com/wardz/FocusFrame/wiki/Options)
 - [Addon limitations](https://github.com/wardz/FocusFrame/wiki/Limitations) (Important)
-- [What is focus and why is it useful?](http://wow.gamepedia.com/Focus_target) 
+- [Increase combatlog distance (optional)](https://github.com/wardz/FocusFrame/wiki/Combatlog-Distance)
+- [What is focus and why is it useful?](http://wow.gamepedia.com/Focus_target)
 
 ## Installation
 1. Download latest [version here.](https://github.com/wardz/FocusFrame/releases)
@@ -21,3 +22,4 @@ The focus frame works for both friendly and enemy **players**.
 
 ## Plugins
 - [modui-FocusFrame](https://github.com/gashole/modui-FocusFrame) by [Gashole](https://github.com/gashole)
+- [FocusFrame_TargetCastbar](https://github.com/wardz/FocusFrame_TargetCastbar)
