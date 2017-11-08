@@ -826,7 +826,9 @@ do
 
 			local timeEnd, timeStart = cast.timeEnd, cast.timeStart
 			local getTime = GetTime()
-			rawData.lastSeen = getTime -- TODO add to spellcastingcore?
+			if not name or name == focusTargetName then -- name is used for target in FocusFrame_TargetCastbar plugin
+				rawData.lastSeen = getTime
+			end
 
 			if getTime < timeEnd then
 				local t = timeEnd - getTime
