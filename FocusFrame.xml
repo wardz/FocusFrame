@@ -450,6 +450,8 @@
 				FocusFrameManaBar.textLockable = 1
 			</OnLoad>
 			<OnShow>
+				FocusFrameHealthBar.TextString:SetAlpha(FocusFrameDB.statusText and 0 or 1)
+				FocusFrameManaBar.TextString:SetAlpha(FocusFrameDB.statusText and 0 or 1)
 				FocusFrame_OnShow()
 			</OnShow>
 			<OnHide>
