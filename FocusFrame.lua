@@ -568,6 +568,8 @@ SlashCmdList.FOCUSOPTIONS = function(msg)
 		FocusFrame:StopMovingOrSizing() -- trigger save
 		FSPELLCASTINGCOREstrictAuras = false
 		Focus:ToggleNameplateScan(true)
+		FocusFrameHealthBar.TextString:SetAlpha(1)
+		FocusFrameManaBar.TextString:SetAlpha(1)
 		print("FocusFrame has been reset.")
 	else
 		print("FocusFrame v%s:", GetAddOnMetadata("FocusFrame", "version"))
@@ -577,7 +579,7 @@ SlashCmdList.FOCUSOPTIONS = function(msg)
 		print("    fade - |cff00FF7F Toggle fading of frame when focus hasn't been updated for ~10s.")
 		print("    strictaura - |cff00FF7F Toggle aura/cast optimization. See github wiki for more info.")
 		print("    noplates - |cff00FF7F Toggle nameplate scanning. Disable if you don't use nameplates.")
-		print("    statustext - |cff00FF7F Toggle mana/hp status.")
+		print("    statustext - |cff00FF7F Toggle mana/hp status text.")
 		print("    reset - |cff00FF7F Reset to default settings.")
 	end
 end
