@@ -591,7 +591,17 @@ SlashCmdList.FOCUSOPTIONS = function(msg)
 		print("Nameplate scanning %s.", x and "disabled" or "enabled")
 	elseif cmd == "target" then
 		FocusFrameDB.tot = not FocusFrameDB.tot
-		print("Scale set to %s", tostring(FocusFrameDB.tot))
+		print("Target of Target set to %s", tostring(FocusFrameDB.tot))
+	elseif cmd == "statustext" then
+		FocusFrameDB.statusText = not FocusFrameDB.statusText
+		if not FocusFrameDB.statusText then
+			FocusFrameHealthBar.TextString:SetAlpha(1) -- kinda hacky but easiest solution
+			FocusFrameManaBar.TextString:SetAlpha(1)
+		else
+			FocusFrameHealthBar.TextString:SetAlpha(0)
+			FocusFrameManaBar.TextString:SetAlpha(0)
+		end
+		print("Status text %s.", FocusFrameDB.statusText and "disabled" or "enabled")
 	elseif cmd == "reset" then
 		FocusFrameDB = { scale = 1, unlock = true }
 		FocusFrame:SetScale(1)
@@ -600,6 +610,8 @@ SlashCmdList.FOCUSOPTIONS = function(msg)
 		FocusFrame:StopMovingOrSizing() -- trigger save
 		FSPELLCASTINGCOREstrictAuras = false
 		Focus:ToggleNameplateScan(true)
+		FocusFrameHealthBar.TextString:SetAlpha(1)
+		FocusFrameManaBar.TextString:SetAlpha(1)
 		print("FocusFrame has been reset.")
 	else
 		print("FocusFrame v%s:", GetAddOnMetadata("FocusFrame", "version"))
@@ -609,6 +621,7 @@ SlashCmdList.FOCUSOPTIONS = function(msg)
 		print("    fade - |cff00FF7F Toggle fading of frame when focus hasn't been updated for ~10s.")
 		print("    strictaura - |cff00FF7F Toggle aura/cast optimization. See github wiki for more info.")
 		print("    noplates - |cff00FF7F Toggle nameplate scanning. Disable if you don't use nameplates.")
+		print("    statustext - |cff00FF7F Toggle mana/hp status text.")
 		print("    reset - |cff00FF7F Reset to default settings.")
 	end
 end

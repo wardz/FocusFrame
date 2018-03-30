@@ -236,7 +236,7 @@ local function SetFocusHealth(unit, isDead, hasPetFixRan)
 	end
 end
 
-local function SetFocusInfo(unit, resetRefresh)
+local function SetFocusInfo(unit, resetRefresh, test)
 	if not unit or not Focus:UnitIsFocus(unit) then return false end
 	if IsPlayerWithSamePetName(unit) then return false end
 
@@ -683,7 +683,7 @@ do
 		end
 
 		self.oldTarget = UnitName("target")
-		if not self.oldTarget or self.oldTarget ~= focusTargetName then
+		if not self.oldTarget or self.oldTarget ~= focusTargetName or rawData.IsPlayerWithSamePetName then
 			if rawData.unitIsPlayer ~= 1 then
 				self:TargetWithFixes(name)
 			else
@@ -877,19 +877,22 @@ do
 
 		--- Get cast data for focus.
 		-- Should be ran in an OnUpdate script.
+		-- @tparam[opt=focusTargetName] string name
 		-- @treturn[1] table FSPELLCASTINGCORE cast data
 		-- @treturn[1] number Current cast time
 		-- @treturn[1] number Max cast time
 		-- @treturn[1] number Spark position
 		-- @treturn[1] number Time left formatted
 		-- @treturn[2] nil
-		function Focus:GetCast()
-			local cast = GetCast(focusTargetName)
+		function Focus:GetCast(name)
+			local cast = GetCast(name or focusTargetName)
 			if not cast then return end
 
 			local timeEnd, timeStart = cast.timeEnd, cast.timeStart
 			local getTime = GetTime()
-			rawData.lastSeen = getTime -- TODO add to spellcastingcore?
+			if not name or name == focusTargetName then -- name is used for target in FocusFrame_TargetCastbar plugin
+				rawData.lastSeen = getTime
+			end
 
 			if getTime < timeEnd then
 				local t = timeEnd - getTime
