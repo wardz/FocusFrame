@@ -254,11 +254,11 @@ end
 
 do
 	-- Aura handling
-	-- Works the same as in blizz TargetFrame.lua,
-	-- but without TargetOfTarget wrap
+	-- Works the same as in blizz TargetFrame.lua
 
 	local function AdjustAuras(numDebuffs, numBuffs)
 		local unitIsFriend = Focus:GetData("unitIsFriend")
+		local targetofTarget = FocusFrameTargetofTargetFrame:IsShown()
 		local debuffSize, debuffFrameSize
 		local debuffWrap = 6
 
@@ -275,7 +275,29 @@ do
 			FocusFrameDebuff1:SetPoint("TOPLEFT", "FocusFrameBuff1", "BOTTOMLEFT", 0, -2)
 		else
 			FocusFrameDebuff1:SetPoint("TOPLEFT", "FocusFrame", "BOTTOMLEFT", 5, 32)
-			FocusFrameBuff1:SetPoint("TOPLEFT", "FocusFrameDebuff7", "BOTTOMLEFT", 0, -2)
+			if targetofTarget then
+				if numDebuffs < 5 then
+					FocusFrameBuff1:SetPoint("TOPLEFT", "FocusFrameDebuff6", "BOTTOMLEFT", 0, -2)
+				elseif numDebuffs >= 5 and numDebuffs < 10 then
+					FocusFrameBuff1:SetPoint("TOPLEFT", "FocusFrameDebuff6", "BOTTOMLEFT", 0, -2)
+				elseif numDebuffs >= 10 then
+					FocusFrameBuff1:SetPoint("TOPLEFT", "FocusFrameDebuff11", "BOTTOMLEFT", 0, -2)
+				end
+			else
+				FocusFrameBuff1:SetPoint("TOPLEFT", "FocusFrameDebuff7", "BOTTOMLEFT", 0, -2)
+			end
+		end
+
+		-- set the wrap point for the rows of de/buffs.
+		debuffWrap = targetofTarget and 5 or 6
+
+		-- and shrinks the debuffs if they begin to overlap the TargetFrame
+		if ((targetofTarget and (numBuffs == 5)) or (numDebuffs >= debuffWrap)) then
+			debuffSize = 17
+			debuffFrameSize = 19
+		else
+			debuffSize = 21
+			debuffFrameSize = 23
 		end
 
 		-- resize Buffs
@@ -308,8 +330,17 @@ do
 		_G["FocusFrameDebuff"..(debuffWrap + 1)]:SetPoint("TOPLEFT", "FocusFrameDebuff1", "BOTTOMLEFT", 0, -2)
 		_G["FocusFrameDebuff"..(debuffWrap + 2)]:ClearAllPoints()
 		_G["FocusFrameDebuff"..(debuffWrap + 2)]:SetPoint("LEFT", _G["FocusFrameDebuff"..(debuffWrap + 1)], "RIGHT", 3, 0)
+
 		FocusFrameDebuff11:ClearAllPoints()
 		FocusFrameDebuff11:SetPoint("LEFT", "FocusFrameDebuff10", "RIGHT", 3, 0)
+
+		-- Set anchor for the last row if debuffWrap is 5
+		TargetFrameDebuff11:ClearAllPoints()
+		if debuffWrap == 5 then
+			TargetFrameDebuff11:SetPoint("TOPLEFT", "TargetFrameDebuff6", "BOTTOMLEFT", 0, -2)
+		else
+			TargetFrameDebuff11:SetPoint("LEFT", "TargetFrameDebuff10", "RIGHT", 3, 0)
+		end
 
 		-- Move castbar based on amount of auras shown
 		local y = (numBuffs + numDebuffs) > 7 and -70 or -35
