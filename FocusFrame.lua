@@ -13,11 +13,11 @@ local function OnFocusTargetChanged(event, name, isDead)
 		FocusFrameTargetofTargetFrame:Hide()
 		return
 	end
-	
+
 	if name == "target" then return end
-	
+
 	FocusFrameTargetofTargetFrame:Show()
-	
+
 	local health, maxHealth = Focus:GetTargetHealth()
 	local mana, maxMana = Focus:GetTargetPower()
 
@@ -25,13 +25,13 @@ local function OnFocusTargetChanged(event, name, isDead)
 	FocusFrameTargetofTargetHealthBar:SetValue(health)
 	FocusFrameTargetofTargetManaBar:SetMinMaxValues(0, maxMana)
 	FocusFrameTargetofTargetManaBar:SetValue(mana)
-	
+
 	if isDead then
 		FocusFrameTargetofTargetDeadText:Show()
 	else
 		FocusFrameTargetofTargetDeadText:Hide()
 	end
-	
+
 	FocusFrameTargetofTargetName:SetText(name)
 	SetPortraitTexture(FocusFrameTargetofTargetPortrait, "targettarget")
 end
@@ -39,7 +39,7 @@ end
 local function OnFocusSat(event, unit)
 	FocusName:SetText(UnitName(unit))
 	FocusFrame:SetScale(FocusFrameDB.scale or 1)
-	
+
 	if Focus:GetTargetName() then
 		OnFocusTargetChanged(event, Focus:GetTargetName(), Focus:TargetIsDead())
 	end
@@ -561,8 +561,9 @@ SlashCmdList.FOCUSOPTIONS = function(msg)
 	local cmd = strsub(msg, 1, space and (space-1))
 	local value = tonumber(strsub(msg, space or -1))
 
-	local print = function(a, b, c)
-		DEFAULT_CHAT_FRAME:AddMessage(string.format(a, b, c))
+	local print = function(a, b)
+		if type(b) == "boolean" then b = tostring(b) end
+		DEFAULT_CHAT_FRAME:AddMessage(string.format(a, b))
 	end
 
 	if cmd == "scale" and value then
@@ -574,34 +575,29 @@ SlashCmdList.FOCUSOPTIONS = function(msg)
 		FocusFrameDB.unlock = not FocusFrameDB.unlock
 		print("Frame is now %slocked.", FocusFrameDB.unlock and "un" or "")
 	elseif cmd == "nohide" then
-		FocusFrameDB.alwaysShow = not FocusFrameDB.alwaysShow
-		local s = FocusFrameDB.alwaysShow
-		print("Frame is now %s after loading screens/death.", s and "still shown" or "hidden")
+		local x = FocusFrameDB.alwaysShow
+		FocusFrameDB.alwaysShow = not x
+		print("Frame auto hide set to %s", not x)
 	elseif cmd == "fade" then
 		FocusFrameDB.fadeOnIdle = not FocusFrameDB.fadeOnIdle
-		print("Fade on inactive %s (requires retarget on focus)", FocusFrameDB.fadeOnIdle and "enabled" or "disabled")
+		print("Fade on inactive set to %s (requires retarget on focus)", FocusFrameDB.fadeOnIdle)
 	elseif cmd == "strictaura" then
 		FocusFrameDB.strictAuras = not FocusFrameDB.strictAuras
 		FSPELLCASTINGCOREstrictAuras = FocusFrameDB.strictAuras
-		print("Strict aura/cast %s.", FocusFrameDB.strictAuras and "enabled. Tracking is now faster, but less accurate" or "disabled")
+		print("Strict aura/cast set to %s.", FocusFrameDB.strictAuras)
 	elseif cmd == "noplates" then
-		FocusFrameDB.disableNameplateScan = not FocusFrameDB.disableNameplateScan
 		local x = FocusFrameDB.disableNameplateScan
+		FocusFrameDB.disableNameplateScan = not x
 		Focus:ToggleNameplateScan(not x)
-		print("Nameplate scanning %s.", x and "disabled" or "enabled")
+		print("Nameplate scanning set to %s.", not x)
 	elseif cmd == "target" then
 		FocusFrameDB.tot = not FocusFrameDB.tot
-		print("Target of Target set to %s", tostring(FocusFrameDB.tot))
+		print("Target of Target set to %s", FocusFrameDB.tot)
 	elseif cmd == "statustext" then
 		FocusFrameDB.statusText = not FocusFrameDB.statusText
-		if not FocusFrameDB.statusText then
-			FocusFrameHealthBar.TextString:SetAlpha(1) -- kinda hacky but easiest solution
-			FocusFrameManaBar.TextString:SetAlpha(1)
-		else
-			FocusFrameHealthBar.TextString:SetAlpha(0)
-			FocusFrameManaBar.TextString:SetAlpha(0)
-		end
-		print("Status text %s.", FocusFrameDB.statusText and "disabled" or "enabled")
+		FocusFrameHealthBar.TextString:SetAlpha(FocusFrameDB.statusText and 0 or 1) -- kinda hacky with alpha but easiest solution
+		FocusFrameManaBar.TextString:SetAlpha(FocusFrameDB.statusText and 0 or 1)
+		print("Status text set to %s.", not FocusFrameDB.statusText)
 	elseif cmd == "reset" then
 		FocusFrameDB = { scale = 1, unlock = true }
 		FocusFrame:SetScale(1)
@@ -615,13 +611,14 @@ SlashCmdList.FOCUSOPTIONS = function(msg)
 		print("FocusFrame has been reset.")
 	else
 		print("FocusFrame v%s:", GetAddOnMetadata("FocusFrame", "version"))
-		print("    scale 1.0 - |cff00FF7F Change frame size (0.2 - 2.0)")
-		print("    lock - |cff00FF7F Toggle dragging of frame")
-		print("    nohide - |cff00FF7F Toggle auto hide of frame on loading screens/release spirit.")
-		print("    fade - |cff00FF7F Toggle fading of frame when focus hasn't been updated for ~10s.")
-		print("    strictaura - |cff00FF7F Toggle aura/cast optimization. See github wiki for more info.")
-		print("    noplates - |cff00FF7F Toggle nameplate scanning. Disable if you don't use nameplates.")
-		print("    statustext - |cff00FF7F Toggle mana/hp status text.")
-		print("    reset - |cff00FF7F Reset to default settings.")
+		print("    scale 1.0 -|cff00FF7F Change frame size (0.2 - 2.0)")
+		print("    lock -|cff00FF7F Toggle dragging of frame")
+		print("    nohide -|cff00FF7F Toggle auto hide of frame on loading screens/release spirit.")
+		print("    fade -|cff00FF7F Toggle fading of frame when focus hasn't been updated for ~10s.")
+		print("    strictaura -|cff00FF7F Toggle aura/cast optimization. See github wiki for more info.")
+		print("    noplates -|cff00FF7F Toggle nameplate scanning. Disable if you don't use nameplates.")
+		print("    target -|cff00FF7F Toggle focus target's target frame.")
+		print("    statustext -|cff00FF7F Toggle mana/hp status text.")
+		print("    reset -|cff00FF7F Reset to default settings.")
 	end
 end
