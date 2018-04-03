@@ -8,7 +8,7 @@ FocusFrameDB = FocusFrameDB or { unlock = true, scale = 1 }
 -- @see UpdatePortrait() in mods/classPortraits.lua for examples.
 -- @see Focus:RemoveEvent() for completely overwriting functions
 
-local function OnFocusTargetChanged(event, name, isDead)
+local function OnFocusTargetUpdated(event, name, isDead, unitID)
 	if not name then
 		FocusFrameTargetofTargetFrame:Hide()
 		return
@@ -33,16 +33,16 @@ local function OnFocusTargetChanged(event, name, isDead)
 	end
 
 	FocusFrameTargetofTargetName:SetText(name)
-	SetPortraitTexture(FocusFrameTargetofTargetPortrait, "targettarget")
+	SetPortraitTexture(FocusFrameTargetofTargetPortrait, unitID)
 end
 
 local function OnFocusSat(event, unit)
 	FocusName:SetText(UnitName(unit))
 	FocusFrame:SetScale(FocusFrameDB.scale or 1)
 
-	if Focus:GetTargetName() then
+	--[[if Focus:GetTargetName() then
 		OnFocusTargetChanged(event, Focus:GetTargetName(), Focus:TargetIsDead())
-	end
+	end]]
 
 	FocusFrame:SetScript("OnUpdate", FocusFrame_CastingBarOnUpdate)
 	FocusFrame:Show()
@@ -583,7 +583,7 @@ Focus:OnEvent("UNIT_PORTRAIT_UPDATE", CheckPortrait)
 Focus:OnEvent("FOCUS_UNITID_EXISTS", CheckPortrait) -- update on retarget/mouseover aswell
 Focus:OnEvent("FOCUS_ACTIVE", OnFocusActive)
 Focus:OnEvent("FOCUS_INACTIVE", OnFocusIdle)
-Focus:OnEvent("FOCUS_TARGET_CHANGED", OnFocusTargetChanged)
+Focus:OnEvent("FOCUS_TARGET_UPDATED", OnFocusTargetUpdated)
 
 -- Chat options
 SLASH_FOCUSOPTIONS1 = "/foption"

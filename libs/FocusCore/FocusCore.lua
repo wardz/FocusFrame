@@ -181,29 +181,9 @@ local function IsPlayerWithSamePetName(unit)
 	return false
 end
 
-local function GetFocusTargetData()
-	if UnitExists("targettarget") then
-		data.targetMaxHealth = UnitHealthMax("targettarget") or 0
-		data.targetPowerType = UnitPowerType("targettarget")
-		data.targetPower = UnitMana("targettarget") or 0
-		data.targetMaxPower = UnitManaMax("targettarget") or 0
-		data.targetHealth = UnitHealth("targettarget") or 0
-		data.targetName = UnitName("targettarget")
-		data.targetIsDead = UnitIsDead("targettarget")
-	else
-		data.targetMaxHealth = 0
-		data.targetPowerType = nil
-		data.targetPower = 0
-		data.targetMaxPower = 0
-		data.targetHealth = 0
-		data.targetName = nil
-		data.targetIsDead = nil
-	end
-end
-
 local function SetFocusHealth(unit, isDead, hasPetFixRan)
 	if unit then
-		if not hasPetFixRan then -- prevent calling function twice
+		if not hasPetFixRan then
 			if IsPlayerWithSamePetName(unit) then return end
 		end
 
@@ -216,24 +196,35 @@ local function SetFocusHealth(unit, isDead, hasPetFixRan)
 	data.power = isDead and 0 or UnitMana(unit)
 	data.maxPower = isDead and 0 or UnitManaMax(unit)
 	data.health = isDead and 0 or UnitHealth(unit)
-	
-	if FocusFrameDB.tot then
-		local oldTarget = UnitName("target")
-		TargetUnit(unit)
-		
-		GetFocusTargetData()
-		
-		if data.targetPrevious ~= data.targetName then
-			data.targetPrevious = data.targetName
-			CallHooks("FOCUS_TARGET_CHANGED", data.targetName, data.targetIsDead)
+end
+
+local function SetFocusTargetInfo(event, unit)
+	if not FocusFrameDB.tot then return end
+
+	local tot = unit == "player" and "target" or unit.."target"
+
+	if UnitExists(tot) then
+		rawData.targetMaxHealth = UnitHealthMax(tot) or 0
+		rawData.targetPowerType = UnitPowerType(tot)
+		rawData.targetPower = UnitMana(tot) or 0
+		rawData.targetMaxPower = UnitManaMax(tot) or 0
+		rawData.targetHealth = UnitHealth(tot) or 0
+		rawData.targetName = UnitName(tot)
+		rawData.targetIsDead = UnitIsDead(tot)
+
+		if rawData.targetPrevious ~= rawData.targetName then
+			rawData.targetPrevious = rawData.targetName
 		end
-		
-		if oldTarget then
-			TargetByName(oldTarget, true)
-		else
-			ClearTarget()
-		end
+	else
+		rawData.targetMaxHealth = 0
+		rawData.targetPowerType = nil
+		rawData.targetPower = 0
+		rawData.targetMaxPower = 0
+		rawData.targetHealth = 0
+		rawData.targetName = nil
+		rawData.targetIsDead = nil
 	end
+	CallHooks("FOCUS_TARGET_UPDATED", rawData.targetName, rawData.targetIsDead, tot)
 end
 
 local function SetFocusInfo(unit, resetRefresh, test)
@@ -263,6 +254,8 @@ local function SetFocusInfo(unit, resetRefresh, test)
 			return true
 		end
 	end
+
+	SetFocusTargetInfo(nil, unit)
 
 	data.unitIsPartyLeader = UnitIsPartyLeader(unit)
 	rawData.playerCanAttack = UnitCanAttack("player", unit)
@@ -602,7 +595,7 @@ do
 				if self:TargetFocus() then
 					if argType == "function" then
 						result = pcall(func, arg1, arg2, arg3, arg4)
-						log(1, "ran")
+						--log(1, "ran")
 					else
 						local fn = loadstring(func)
 						if fn then
@@ -718,10 +711,12 @@ do
 
 		return SetFocusInfo("target", true)
 	end
-	
+
 	--- Target the focus' target.
 	function Focus:TargetFocusTarget()
-		TargetByName(data.targetName, true)
+		if rawData.targetName then
+			TargetByName(rawData.targetName, true)
+		end
 	end
 
 	--- Target last target after having targeted focus.
@@ -788,7 +783,7 @@ do
 	function Focus:IsDead()
 		return rawData.health and rawData.health <= 0 --and data.unitIsConnected
 	end
-	
+
 	--- Check if focus' target is dead.
 	-- @treturn bool true if dead
 	function Focus:TargetIsDead()
@@ -836,18 +831,23 @@ do
 	function Focus:GetPower()
 		return rawData.power or 0, rawData.maxPower or 100
 	end
-	
+
 	--- Get focus' target name.
+	-- @treturn string or nil
 	function Focus:GetTargetName()
 		return rawData.targetName
 	end
-	
+
 	--- Get focus' target health.
+	-- @treturn number min
+	-- @treturn number max
 	function Focus:GetTargetHealth()
 		return rawData.targetHealth or 0, rawData.targetMaxHealth or 100
 	end
-	
+
 	--- Get focus' target power.
+	-- @treturn number min
+	-- @treturn number max
 	function Focus:GetTargetPower()
 		return rawData.targetPower or 0, rawData.targetMaxPower or 100
 	end
@@ -1059,7 +1059,8 @@ do
 		end
 	end
 
-	-- not kept in spellcastingcore for more decoupled architecture
+	Focus:OnEvent("FOCUS_UNITID_EXISTS", SetFocusTargetInfo)
+
 	local function ParseCombatDeath()
 		if not Focus:FocusExists() then return end
 
