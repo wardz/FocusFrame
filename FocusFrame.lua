@@ -623,6 +623,7 @@ SlashCmdList.FOCUSOPTIONS = function(msg)
 		print("Nameplate scanning set to %s.", not x)
 	elseif cmd == "target" then
 		FocusFrameDB.tot = not FocusFrameDB.tot
+		OnFocusTargetUpdated(nil, nil) -- force hide tot frame
 		print("Target of Target set to %s", FocusFrameDB.tot)
 	elseif cmd == "statustext" then
 		FocusFrameDB.statusText = not FocusFrameDB.statusText
