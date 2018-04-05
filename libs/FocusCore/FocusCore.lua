@@ -200,10 +200,11 @@ end
 
 local function SetFocusTargetInfo(event, unit)
 	if not FocusFrameDB.tot then return end
+	if unit == "mouseover" then return end
 
-	local tot = unit == "player" and "target" or unit.."target"
+	local tot = unit == "player" and "target" or unit and unit.."target"
 
-	if UnitExists(tot) then
+	if unit and UnitExists(tot) then
 		rawData.targetMaxHealth = UnitHealthMax(tot) or 0
 		rawData.targetPowerType = UnitPowerType(tot)
 		rawData.targetPower = UnitMana(tot) or 0
@@ -243,6 +244,8 @@ local function SetFocusInfo(unit, resetRefresh, test)
 	data.unitIsTapped = UnitIsTapped(unit)
 	data.unitIsTappedByPlayer = UnitIsTappedByPlayer(unit)
 
+	SetFocusTargetInfo(nil, unit)
+
 	if resetRefresh then
 		rawData.refreshed = nil
 		rawData.refreshed2 = nil
@@ -254,8 +257,6 @@ local function SetFocusInfo(unit, resetRefresh, test)
 			return true
 		end
 	end
-
-	SetFocusTargetInfo(nil, unit)
 
 	data.unitIsPartyLeader = UnitIsPartyLeader(unit)
 	rawData.playerCanAttack = UnitCanAttack("player", unit)
@@ -1075,6 +1076,7 @@ do
 
 			if focusTargetName == c then
 				SetFocusHealth(nil, true)
+				SetFocusTargetInfo(nil, nil)
 			end
 		end
 	end
