@@ -41,6 +41,10 @@ local GetCast = FSPELLCASTINGCOREgetCast
 	- update raid mark, leader icon etc on focus leave party and duel
 ]]
 
+if IsAddOnLoaded("ClassicFocus") then
+	DisableAddOn("ClassicFocus")
+end
+
 do
 	-- 0 = disabled, 1 = info/error, 2 = debug, 3 = verbose
 	local logLevel = 0
