@@ -36,7 +36,7 @@ local GetCast = FSPELLCASTINGCOREgetCast
 
 --[[
 	@TODO
-	- optimize nameplate scanning
+	- cleanup nameplate scanning
 	- rewrite spellcastingcore completely
 	- update raid mark, leader icon etc on focus leave party and duel
 ]]
@@ -370,6 +370,7 @@ end
 --------------------------------
 do
 	local ipairs, tonumber = ipairs, tonumber
+	local focusPlateHandler
 
 	local RaidIconCoordinate = {
 		[0]		= { [0]	= 1,	[0.25]	= 5, },
@@ -386,29 +387,38 @@ do
 		return true
 	end
 
+	local function NameplateOnHide()
+		if not focusPlateRef then return end
+
+		if focusPlateHandler then
+			-- call handlers used by other addons
+			focusPlateRef:SetScript("OnHide", focusPlateHandler)
+			focusPlateHandler(this)
+		else
+			focusPlateRef:SetScript("OnHide", nil)
+		end
+
+		-- reset on OnHide because nameplate will be recycled
+		-- to a random unit when shown again
+		if focusPlateRef.isFocus then
+			--focusPlateRef:GetRegions():SetVertexColor(1,1,1)
+			focusPlateRef.isFocus = nil
+			focusPlateRan = nil
+			focusPlateRef = nil
+		end
+	end
+
 	-- store focus property to a nameplate
 	local function SetFocusPlateID(plate)
 		if not focusPlateRan then
-			local handler = plate:GetScript("OnHide")
 			plate.isFocus = true
 			focusPlateRan = true
+			focusPlateRef = plate
 
-			-- reset on OnHide because nameplate will be recycled
-			-- to a random unit when shown again
-			plate:SetScript("OnHide", function()
-				if handler then
-					-- call handlers used by other addons
-					handler(this)
-				end
+			focusPlateHandler = focusPlateRef:GetScript("OnHide")
 
-				if plate.isFocus then
-					plate.isFocus = nil
-					focusPlateRan = nil
-					focusPlateRef = nil
-					--plate:GetRegions():SetVertexColor(1,1,1)
-				end
-			end)
-			--plate:GetRegions():SetVertexColor(0,1,1)
+			plate:SetScript("OnHide", NameplateOnHide)
+			plate:GetRegions():SetVertexColor(0,1,1)
 
 			return true
 		end
@@ -444,7 +454,6 @@ do
 				if name:GetText() == focusTargetName then
 					if rawData.unitIsPlayer == UnitIsPlayer("target") then -- player vs pet
 						if SetFocusPlateID(plate) then
-							focusPlateRef = childs[k]
 							return childs[k]
 						end
 					end
