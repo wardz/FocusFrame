@@ -418,7 +418,7 @@ do
 			focusPlateHandler = focusPlateRef:GetScript("OnHide")
 
 			plate:SetScript("OnHide", NameplateOnHide)
-			plate:GetRegions():SetVertexColor(0,1,1)
+			--plate:GetRegions():SetVertexColor(0,1,1)
 
 			return true
 		end
@@ -444,17 +444,20 @@ do
 
 	-- Attempt to give nameplate for focus an unique ID, so we
 	-- can distuingish between units with same name
-	function CheckTargetPlateForFocus(childs) -- local
+	function CheckTargetPlateForFocus(childs, numChilds) -- local
 		if focusPlateRan then return end
-		if not UnitExists("target") then return end
+		if not UnitExists("target") or not childs then return end
 
-		for k, plate in ipairs(childs) do
+		--for k, plate in ipairs(childs) do
+		for i = 1, numChilds do
+			local plate = childs[i]
+
 			local overlay, _, name = plate:GetRegions()
 			if plate:IsVisible() and plate:GetAlpha() == 1 and IsPlate(overlay) then -- is targeted
 				if name:GetText() == focusTargetName then
 					if rawData.unitIsPlayer == UnitIsPlayer("target") then -- player vs pet
 						if SetFocusPlateID(plate) then
-							return childs[k]
+							return childs[i]
 						end
 					end
 				end
@@ -462,7 +465,7 @@ do
 		end
 	end
 
-	function NameplateScanner(childs, plate) -- local, ran when no unitID found
+	function NameplateScanner(childs, plate, numChilds) -- local, ran when no unitID found
 		plate = plate or focusPlateRef
 		if plate then -- focus plate
 			local _, _, name, level, _, raidIcon = plate:GetRegions()
@@ -472,7 +475,10 @@ do
 		end
 
 		-- No plate cached, so scan through every nameplate available
-		for _, frame in ipairs(childs) do
+		if not childs then return end
+		--for _, frame in ipairs(childs) do
+		for i = 1, numChilds do
+			local frame = childs[i]
 			local overlay, _, name, level, _, raidIcon = frame:GetRegions()
 
 			if frame:IsVisible() and IsPlate(overlay) then
@@ -1166,13 +1172,23 @@ do
 		log(1, "unhandled event %s(%s)", event, arg1 or "nil")
 	end
 
+	local worldNumChildren = 0
+	local childs
+
 	-- Call scanners every 0.3s
 	local OnUpdateHandler = function()
 		refresh = refresh - arg1
 		if refresh < 0 then
 			if focusTargetName then -- focus exists
-				local childs = enableNameplateScan and { WorldFrame:GetChildren() } -- add here for reuse in functions
-				local plate = enableNameplateScan and CheckTargetPlateForFocus(childs)
+				local plate, childAmount
+				if enableNameplateScan then
+					childAmount = WorldFrame:GetNumChildren()
+					if childAmount ~= worldNumChildren then
+						childs = { WorldFrame:GetChildren() }
+						worldNumChildren = childAmount
+					end
+					plate = CheckTargetPlateForFocus(childs, childAmount)
+				end
 
 				if not SetFocusInfo(partyUnit) and not SetFocusInfo("target") then
 					if not SetFocusInfo("mouseover") and not SetFocusInfo("targettarget") then
@@ -1181,7 +1197,7 @@ do
 							rawData.unit = nil
 							partyUnit = nil
 							if enableNameplateScan then
-								NameplateScanner(childs, plate)
+								NameplateScanner(childs, plate, childAmount)
 							end
 							PartyScanner()
 							CheckIdle()
