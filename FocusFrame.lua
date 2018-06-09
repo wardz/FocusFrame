@@ -353,6 +353,8 @@ do
 
 	function AurasUpdate() -- local, ran very frequent
 		local buffData = Focus:GetBuffs()
+		if not buffData then return end
+
 		local buffs = buffData.buffs
 		local debuffs = buffData.debuffs
 		local numBuffs = 0
@@ -510,8 +512,6 @@ do
 				UIDropDownMenu_AddButton(info, level)
 			end
 		end
-
-		info = {}
 	end
 
 	FocusFrameDropDown.initialize = FocusFrameDropDown_Initialize

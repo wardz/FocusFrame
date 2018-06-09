@@ -882,7 +882,7 @@ do
 	-- Should be ran in an OnUpdate script or OnEvent("UNIT_AURA")
 	-- @treturn table data or empty table
 	function Focus:GetBuffs()
-		return GetBuffs(focusTargetName) or {}
+		return GetBuffs(focusTargetName)
 	end
 
 	do
