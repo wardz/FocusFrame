@@ -14,6 +14,7 @@ SLASH_FSWAP1 = "/fswap"
 SLASH_FASSIST1 = "/fassist"
 SLASH_TARFOCUS1 = "/tarfocus"
 SLASH_CLEARFOCUS1 = "/clearfocus"
+SLASH_FMARK1 = "/fmark"
 
 local function ParseSpell(msg)
 	if not msg or msg == "" then return end
@@ -149,5 +150,14 @@ SlashCmdList.FASSIST = function()
 			Focus:TargetPrevious()
 			Focus:ShowError("Unknown unit.")
 		end
+	end
+end
+
+SlashCmdList.FMARK = function(msg)
+	local mark = tonumber(msg)
+	if mark and mark > 0 and mark <= 8 then
+		Focus:Call(SetRaidTargetIcon, "target", mark)
+	else
+		UIErrorsFrame:AddMessage("Invalid raid marker.", 1, 0, 0)
 	end
 end
