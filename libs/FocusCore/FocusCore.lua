@@ -379,7 +379,8 @@ do
 		[0.75]	= { [0]	= 4,	[0.25]	= 8, },
 	}
 
-	local function IsPlate(overlayRegion)
+	local function IsPlate(overlayRegion, plate)
+		if plate and plate.nameplate then return true end
 		if not overlayRegion or overlayRegion:GetObjectType() ~= "Texture"
 		or overlayRegion:GetTexture() ~= "Interface\\Tooltips\\Nameplate-Border" then
 			return false
@@ -423,7 +424,25 @@ do
 	end
 
 	-- Scan plate for data
-	local function SavePlateInfo(health, name, level, raidIcon)
+	local function SavePlateInfo(health, name, level, raidIcon, plate)
+		if plate and plate.nameplate then
+			if plate.raidicon and plate.raidicon:IsVisible() then
+				local ux, uy = plate.raidicon:GetTexCoord()
+				data.raidIcon = RaidIconCoordinate[ux][uy]
+			end
+
+			local hp = plate.healthbar:GetValue() or 0
+			local _, maxHp = plate.healthbar:GetMinMaxValues()
+			data.maxHealth = maxHp
+			data.health = hp
+
+			local lvl = plate.level:GetText()
+			if lvl then -- lvl is not shown when unit is skull (too high lvl)
+				data.unitLevel = tonumber(lvl)
+			end
+			return
+		end
+
 		if raidIcon and raidIcon:IsVisible() then
 			local ux, uy = raidIcon:GetTexCoord()
 			data.raidIcon = RaidIconCoordinate[ux][uy]
@@ -440,6 +459,10 @@ do
 		end
 	end
 
+	local function GetPlateName(plate, name)
+		return plate.name and plate.name:GetText() or name:GetText()
+	end
+
 	-- Attempt to give nameplate for focus an unique ID, so we
 	-- can distuingish between units with same name
 	function CheckTargetPlateForFocus(childs, numChilds) -- local
@@ -451,8 +474,8 @@ do
 			local plate = childs[i]
 
 			local overlay, _, name = plate:GetRegions()
-			if plate:IsVisible() and plate:GetAlpha() == 1 and IsPlate(overlay) then -- is targeted
-				if name:GetText() == focusTargetName then
+			if plate:IsVisible() and plate:GetAlpha() == 1 and IsPlate(overlay, plate) then -- is targeted
+				if GetPlateName(plate, name) == focusTargetName then
 					if rawData.unitIsPlayer == UnitIsPlayer("target") then -- player vs pet
 						if SetFocusPlateID(plate) then
 							return childs[i]
@@ -467,8 +490,8 @@ do
 		plate = plate or focusPlateRef
 		if plate then -- focus plate
 			local _, _, name, level, _, raidIcon = plate:GetRegions()
-			if name:GetText() == focusTargetName then -- just incase
-				return SavePlateInfo(plate:GetChildren(), name, level, raidIcon)
+			if GetPlateName(plate, name) == focusTargetName then -- just incase
+				return SavePlateInfo(plate:GetChildren(), name, level, raidIcon, plate)
 			end
 		end
 
@@ -479,11 +502,11 @@ do
 			local frame = childs[i]
 			local overlay, _, name, level, _, raidIcon = frame:GetRegions()
 
-			if frame:IsVisible() and IsPlate(overlay) then
+			if frame:IsVisible() and IsPlate(overlay, frame) then
 				--if focusPlateRan and not frame.isFocus then return end
 
-				if name:GetText() == focusTargetName then
-					SavePlateInfo(frame:GetChildren(), name, level, raidIcon)
+				if GetPlateName(frame, name) == focusTargetName then
+					SavePlateInfo(frame:GetChildren(), name, level, raidIcon, frame)
 					-- Do not break here or else frame.isFocus wont work properly
 					-- when units have same name
 				end
