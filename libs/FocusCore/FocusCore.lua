@@ -338,7 +338,7 @@ do
 		end
 
 		-- Delete all buffs stored in DB, then re-add them later if found on target
-		-- This is needed when buffs are not removed in the combat log. (i.e unit out of range)
+		-- This is needed when buffs are not removed in the combat log (i.e unit out of range) or not found in SpellGlobals.lua
 		-- If unit is enemy, only debuffs are deleted.
 		-- TODO continue only if buffList has changed
 
@@ -388,21 +388,19 @@ do
 	end
 
 	local function NameplateOnHide()
-		if not focusPlateRef then return end
-
 		if focusPlateHandler then
 			-- call handlers used by other addons
-			focusPlateRef:SetScript("OnHide", focusPlateHandler)
+			this:SetScript("OnHide", focusPlateHandler)
 			focusPlateHandler(this)
 		else
-			focusPlateRef:SetScript("OnHide", nil)
+			this:SetScript("OnHide", nil)
 		end
 
 		-- reset on OnHide because nameplate will be recycled
 		-- to a random unit when shown again
-		if focusPlateRef.isFocus then
-			--focusPlateRef:GetRegions():SetVertexColor(1,1,1)
-			focusPlateRef.isFocus = nil
+		if this.isFocus then
+			--this:GetRegions():SetVertexColor(1,1,1)
+			this.isFocus = nil
 			focusPlateRan = nil
 			focusPlateRef = nil
 		end
@@ -475,14 +473,14 @@ do
 		end
 
 		-- No plate cached, so scan through every nameplate available
-		if not childs then return end
+		if not childs or focusPlateRan then return end
 		--for _, frame in ipairs(childs) do
 		for i = 1, numChilds do
 			local frame = childs[i]
 			local overlay, _, name, level, _, raidIcon = frame:GetRegions()
 
 			if frame:IsVisible() and IsPlate(overlay) then
-				if focusPlateRan and not frame.isFocus then return end
+				--if focusPlateRan and not frame.isFocus then return end
 
 				if name:GetText() == focusTargetName then
 					SavePlateInfo(frame:GetChildren(), name, level, raidIcon)
@@ -674,6 +672,19 @@ do
 		TargetByName(_name, false)
 		-- Case insensitive name will make the game target nearest enemy
 		-- instead of first unit rendered on screen, atleast on elysium
+
+		--[[if focusPlateRef and focusPlateRef.isFocus then
+			if UnitExists("target") == 1 and focusPlateRef:GetAlpha() ~= 1 then
+				for i = 1, 10 do
+					if UnitExists("target") and focusPlateRef:GetAlpha() == 1 then
+						DEFAULT_CHAT_FRAME:AddMessage("found")
+						return
+					else
+						TargetNearestEnemy()
+					end
+				end
+			end
+		end]]
 
 		if UnitIsDead("target") == 1 or (isPlayer and isPlayer ~= UnitIsPlayer("target")) or UnitIsUnit("target", "player") then
 			-- Try case sensitive search
