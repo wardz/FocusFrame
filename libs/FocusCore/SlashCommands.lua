@@ -168,54 +168,43 @@ SlashCmdList.FMARK = function(msg)
 	end
 end
 
--- /fmcast 5 Polymorph
--- /fmcast 5 Polymorph 15
 SlashCmdList.FMCAST = function(msg)
-	local marker, ability, cycles
+	local space = strfind(msg or "", " ")
+	local marker = tonumber(strsub(msg, 1, space and (space-1)))
+	local ability = strsub(msg, (space and space + 1 or -1))
 
-	local i = 0
-	for elem in gfind(msg, '[^ ]+') do
-		if i == 0 then -- avoids having to repeatedly create new tables
-			marker = tonumber(elem)
-		elseif i == 1 then
-			ability = tostring(elem)
+	if not ability then return end
+
+	if not UnitInParty("player") and not UnitInRaid("player")  then
+		DEFAULT_CHAT_FRAME:AddMessage("ran1")
+		return SlashCmdList.FCAST(ability)
+	end
+
+	local origTarget = UnitName("target")
+	local nearestDistance, nearestRadius = GetCVar("targetNearestDistance"), GetCVar("targetNearestDistanceRadius")
+	SetCVar("targetNearestDistance", 50)
+	SetCVar("targetNearestDistanceRadius", 50)
+
+	local isEnemy = Focus:GetData("unitIsEnemy") == 1
+	for i = 1, 15 do
+		if UnitExists("target") and GetRaidTargetIndex("target") == marker then
+			Focus:CastSpellByName(ability)
+			break
 		else
-			cycles = tonumber(elem)
-		end
-		i = i + 1
-	end
-
-	if not marker or type(marker) ~= "number" or marker <= 0 or marker > 8 then
-		return UIErrorsFrame:AddMessage("Invalid raid marker.", 1, 0, 0)
-	end
-
-	if not UnitInParty("player") then
-		return SlashCmdList.FCAST(ability)
-	elseif not UnitInRaid("player") then
-		return SlashCmdList.FCAST(ability)
-	end
-
-	if ability then
-		local origTarget = UnitName("target")
-		local nearestDistance, nearestRadius = GetCVar("targetNearestDistance"), GetCVar("targetNearestDistanceRadius")
-		SetCVar("targetNearestDistance", 50)
-		SetCVar("targetNearestDistanceRadius", 50)
-
-		for i = 1, cycles or 10 do
-			if GetRaidTargetIndex("target") == marker then
-				Focus:CastSpellByName(ability)
-				break
-			else
+			if isEnemy then
 				TargetNearestEnemy()
+			else
+				TargetNearestFriend()
 			end
 		end
+	end
 
-		if origTarget then
-			Focus:TargetWithFixes(origTarget)
-		else
-			ClearTarget()
-		end
-		SetCVar("targetNearestDistance", nearestDistance) -- reset to previous values
-		SetCVar("targetNearestDistanceRadius", nearestRadius)
+	SetCVar("targetNearestDistance", nearestDistance) -- reset to previous values
+	SetCVar("targetNearestDistanceRadius", nearestRadius)
+
+	if origTarget then
+		Focus:TargetWithFixes(origTarget)
+	else
+		ClearTarget()
 	end
 end
