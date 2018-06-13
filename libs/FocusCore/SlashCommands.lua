@@ -3,8 +3,8 @@ if SlashCmdList.MFOCUS then return end
 -- Upvalues
 local _G = getfenv(0)
 local Focus = _G.FocusCore
-local strfind, strlower, gsub = string.find, string.lower, string.gsub
-local GetContainerNumSlots = GetContainerNumSlots
+local strfind, strlower, gsub, gfind = string.find, string.lower, string.gsub, string.gfind
+local GetContainerNumSlots, GetRaidTargetIndex, TargetNearestEnemy = GetContainerNumSlots, GetRaidTargetIndex, TargetNearestEnemy
 
 SLASH_FOCUS1 = "/focus"
 SLASH_MFOCUS1 = "/mfocus"
@@ -15,6 +15,7 @@ SLASH_FASSIST1 = "/fassist"
 SLASH_TARFOCUS1 = "/tarfocus"
 SLASH_CLEARFOCUS1 = "/clearfocus"
 SLASH_FMARK1 = "/fmark"
+SLASH_FMCAST1 = "/fmcast"
 
 local function ParseSpell(msg)
 	if not msg or msg == "" then return end
@@ -154,10 +155,61 @@ SlashCmdList.FASSIST = function()
 end
 
 SlashCmdList.FMARK = function(msg)
+	-- TODO: does this work for raid leader?
+	--[[if not UnitIsPartyLeader("player") then
+		return UIErrorsFrame:AddMessage("Must be in a group to set raid marker.")
+	end]]
+
 	local mark = tonumber(msg)
 	if mark and mark > 0 and mark <= 8 then
 		Focus:Call(SetRaidTargetIcon, "target", mark)
 	else
 		UIErrorsFrame:AddMessage("Invalid raid marker.", 1, 0, 0)
+	end
+end
+
+-- /fmcast 5 Polymorph
+-- /fmcast 5 Polymorph 15
+SlashCmdList.FMCAST = function(msg)
+	local marker, ability, cycles
+
+	local i = 0
+	for elem in gfind(msg, '[^ ]+') do
+		if i == 0 then -- avoids having to repeatedly create new tables
+			marker = tonumber(elem)
+		elseif i == 1 then
+			ability = tostring(elem)
+		else
+			cycles = tonumber(elem)
+		end
+		i = i + 1
+	end
+
+	if not marker or type(marker) ~= "number" or marker <= 0 or marker > 8 then
+		return UIErrorsFrame:AddMessage("Invalid raid marker.", 1, 0, 0)
+	end
+
+	if ability then
+		local origTarget = UnitName("target")
+		local nearestDistance, nearestRadius = GetCVar("targetNearestDistance"), GetCVar("targetNearestDistanceRadius")
+		SetCVar("targetNearestDistance", 50)
+		SetCVar("targetNearestDistanceRadius", 50)
+
+		for i = 1, cycles or 10 do
+			if GetRaidTargetIndex("target") == marker then
+				Focus:CastSpellByName(ability)
+				break
+			else
+				TargetNearestEnemy()
+			end
+		end
+
+		if origTarget then
+			Focus:TargetWithFixes(origTarget)
+		else
+			ClearTarget()
+		end
+		SetCVar("targetNearestDistance", nearestDistance) -- reset to previous values
+		SetCVar("targetNearestDistanceRadius", nearestRadius)
 	end
 end
