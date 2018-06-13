@@ -189,6 +189,12 @@ SlashCmdList.FMCAST = function(msg)
 		return UIErrorsFrame:AddMessage("Invalid raid marker.", 1, 0, 0)
 	end
 
+	if not UnitInParty("player") then
+		return SlashCmdList.FCAST(ability)
+	elseif not UnitInRaid("player") then
+		return SlashCmdList.FCAST(ability)
+	end
+
 	if ability then
 		local origTarget = UnitName("target")
 		local nearestDistance, nearestRadius = GetCVar("targetNearestDistance"), GetCVar("targetNearestDistanceRadius")
