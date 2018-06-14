@@ -335,11 +335,11 @@ do
 		FocusFrameDebuff11:SetPoint("LEFT", "FocusFrameDebuff10", "RIGHT", 3, 0)
 
 		-- Set anchor for the last row if debuffWrap is 5
-		TargetFrameDebuff11:ClearAllPoints()
+		FocusFrameDebuff11:ClearAllPoints()
 		if debuffWrap == 5 then
-			TargetFrameDebuff11:SetPoint("TOPLEFT", "TargetFrameDebuff6", "BOTTOMLEFT", 0, -2)
+			FocusFrameDebuff11:SetPoint("TOPLEFT", "FocusFrameDebuff6", "BOTTOMLEFT", 0, -2)
 		else
-			TargetFrameDebuff11:SetPoint("LEFT", "TargetFrameDebuff10", "RIGHT", 3, 0)
+			FocusFrameDebuff11:SetPoint("LEFT", "FocusFrameDebuff10", "RIGHT", 3, 0)
 		end
 
 		-- Move castbar based on amount of auras shown
