@@ -425,10 +425,13 @@ do
 
 	-- Scan plate for data
 	local function SavePlateInfo(health, name, level, raidIcon, plate)
+		-- ShaguPlates
 		if plate and plate.nameplate then
 			if plate.raidicon and plate.raidicon:IsVisible() then
 				local ux, uy = plate.raidicon:GetTexCoord()
-				data.raidIcon = RaidIconCoordinate[ux][uy]
+				if ux and uy then
+					data.raidIcon = RaidIconCoordinate[ux][uy]
+				end
 			end
 
 			local hp = plate.healthbar:GetValue() or 0
@@ -443,6 +446,7 @@ do
 			return
 		end
 
+		-- Blizzard plates
 		if raidIcon and raidIcon:IsVisible() then
 			local ux, uy = raidIcon:GetTexCoord()
 			data.raidIcon = RaidIconCoordinate[ux][uy]
