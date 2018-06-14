@@ -10,7 +10,6 @@ if _G.FocusCore then return end
 -- Vars
 local Focus = {}
 local hookEvents = {}
-local enableNameplateScan = true
 local rawData, data
 local focusPlateRan, focusPlateRef
 local focusTargetName
@@ -573,14 +572,6 @@ do
 	-- @tparam[opt="You have no focus"] string msg
 	function Focus:ShowError(msg)
 		UIErrorsFrame:AddMessage("|cffFF003F " .. (msg or "You have no focus.") .. "|r")
-	end
-
-	--- Toggle nameplate scanning.
-	-- @tparam bool state
-	-- @treturn bool true if enabled
-	function Focus:ToggleNameplateScan(state)
-		enableNameplateScan = state
-		log(1, "nameplate disabled: %s", tostring(enableNameplateScan))
 	end
 
 	--- Unit
@@ -1219,7 +1210,7 @@ do
 		if refresh < 0 then
 			if focusTargetName then -- focus exists
 				local plate, childAmount
-				if enableNameplateScan then
+				if FocusFrameDB and not FocusFrameDB.disableNameplateScan then
 					childAmount = WorldFrame:GetNumChildren()
 					if childAmount ~= worldNumChildren then
 						childs = { WorldFrame:GetChildren() }
@@ -1234,7 +1225,7 @@ do
 							-- no unitID available for focus
 							rawData.unit = nil
 							partyUnit = nil
-							if enableNameplateScan then
+							if FocusFrameDB and not FocusFrameDB.disableNameplateScan then
 								NameplateScanner(childs, plate, childAmount)
 							end
 							PartyScanner()

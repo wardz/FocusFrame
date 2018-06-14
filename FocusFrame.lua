@@ -619,8 +619,7 @@ SlashCmdList.FOCUSOPTIONS = function(msg)
 	elseif cmd == "noplates" then
 		local x = FocusFrameDB.disableNameplateScan
 		FocusFrameDB.disableNameplateScan = not x
-		Focus:ToggleNameplateScan(not x)
-		print("Nameplate scanning set to %s.", not x)
+		print("Nameplate scanning set to %s.", x)
 	elseif cmd == "target" then
 		FocusFrameDB.tot = not FocusFrameDB.tot
 		OnFocusTargetUpdated(nil, nil) -- force hide tot frame
