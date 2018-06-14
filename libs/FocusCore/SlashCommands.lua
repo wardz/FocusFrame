@@ -175,7 +175,7 @@ SlashCmdList.FMCAST = function(msg)
 
 	if not ability then return end
 
-	if not UnitInParty("player") and not UnitInRaid("player") then
+	if GetNumPartyMembers() <= 0 and GetNumRaidMembers() <= 0 then
 		return SlashCmdList.FCAST(ability)
 	end
 
