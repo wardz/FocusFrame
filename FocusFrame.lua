@@ -630,6 +630,10 @@ SlashCmdList.FOCUSOPTIONS = function(msg)
 		FocusFrameHealthBar.TextString:SetAlpha(FocusFrameDB.statusText and 0 or 1) -- kinda hacky with alpha but easiest solution
 		FocusFrameManaBar.TextString:SetAlpha(FocusFrameDB.statusText and 0 or 1)
 		print("Status text set to %s.", not FocusFrameDB.statusText)
+	elseif cmd == "tarcycles" and value then
+		local x = value > 0 and value < 50 and value or 15
+		FocusFrameDB.targetCycles = x
+		print("Target cycles set to %d.", x)
 	elseif cmd == "reset" then
 		FocusFrameDB = { scale = 1, unlock = true }
 		FocusFrame:SetScale(1)
@@ -651,6 +655,7 @@ SlashCmdList.FOCUSOPTIONS = function(msg)
 		print("    noplates -|cff00FF7F Toggle nameplate scanning. Disable if you don't use nameplates.")
 		print("    target -|cff00FF7F Toggle focus target's target frame.")
 		print("    statustext -|cff00FF7F Toggle mana/hp status text.")
+		print("    tarcycles -|cff00FF7F Set how many targets to cycle through for /fmcast.")
 		print("    reset -|cff00FF7F Reset to default settings.")
 	end
 end

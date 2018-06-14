@@ -175,7 +175,7 @@ SlashCmdList.FMCAST = function(msg)
 
 	if not ability then return end
 
-	if not UnitInParty("player") and not UnitInRaid("player")  then
+	if not UnitInParty("player") and not UnitInRaid("player") then
 		return SlashCmdList.FCAST(ability)
 	end
 
@@ -185,7 +185,7 @@ SlashCmdList.FMCAST = function(msg)
 	SetCVar("targetNearestDistanceRadius", 50)
 
 	local isEnemy = Focus:GetData("unitIsEnemy") == 1
-	for i = 1, 15 do
+	for i = 1, FocusFrameDB.targetCycles or 15 do
 		if UnitExists("target") and GetRaidTargetIndex("target") == marker then
 			Focus:CastSpellByName(ability)
 			break
