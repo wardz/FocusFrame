@@ -480,7 +480,7 @@ do
 			info.notCheckable = nil
 
 			info.text = "Larger Focus Frame"
-			info.checked = FocusFrameDB.scale >= 1
+			info.checked = FocusFrameDB.scale or 1 >= 1
 			info.func = Rescale
 			UIDropDownMenu_AddButton(info, level)
 			info.checked = nil
@@ -640,7 +640,6 @@ SlashCmdList.FOCUSOPTIONS = function(msg)
 		FocusFrame:SetPoint("TOPLEFT", 250, -300)
 		FocusFrame:StopMovingOrSizing() -- trigger save
 		FSPELLCASTINGCOREstrictAuras = false
-		Focus:ToggleNameplateScan(true)
 		FocusFrameHealthBar.TextString:SetAlpha(1)
 		FocusFrameManaBar.TextString:SetAlpha(1)
 		print("FocusFrame has been reset.")
