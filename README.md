@@ -5,13 +5,16 @@ Provides focus targeting & frame support for **original** vanilla World of Warcr
 
 The focus frame works for both friendly and enemy **players**.
 
+**Update 2019**  
+Development has been ceased due to the official release of WoW Classic. If possible, I'll recreate this addon for Classic, but no promises.
+
 
 ![alt](http://i.imgur.com/OEcWwgU.jpg)
 
 ## Usage & Info
 - [Chat commands/macros](https://github.com/wardz/FocusFrame/wiki/Commands)
 - [Options](https://github.com/wardz/FocusFrame/wiki/Options)
-- [Addon limitations](https://github.com/wardz/FocusFrame/wiki/Limitations) (Important)
+- [Addon limitations](https://github.com/wardz/FocusFrame/wiki/Limitations) (Important, read this!)
 - [Increase combatlog distance (optional)](https://github.com/wardz/FocusFrame/wiki/Combatlog-Distance)
 - [What is focus and why is it useful?](http://wow.gamepedia.com/Focus_target)
 
