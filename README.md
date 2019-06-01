@@ -5,11 +5,18 @@ Provides focus targeting & frame support for **original** vanilla World of Warcr
 
 The focus frame works for both friendly and enemy **players**.
 
-**Update 2019**  
-Development has been ceased due to the official release of WoW Classic. If possible, I'll recreate this addon for Classic, but no promises.
-
-
 ![alt](http://i.imgur.com/OEcWwgU.jpg)
+
+**Update 2019**  
+Development has been ceased due to the official release of WoW Classic. If possible, I'll recreate this addon for Classic, but no promises.  
+**Edit:** Focus in Classic does not seem to be feasible. You can have an addon automatically create a macro for you something like:
+```
+/targetexact name # or /click CustomTargetFocusButton
+/cast spell
+/targetlasttarget
+```
+but the problem is that addons can only create macros outside combat, so you won't be able to switch focus reliably. There's also a delay
+between /target and /cast in the macro system that sometimes makes you cast the spell on your current target instead of the new target. I recommend people to switch to mouseover macros instead, it's way more reliable.
 
 ## Usage & Info
 - [Chat commands/macros](https://github.com/wardz/FocusFrame/wiki/Commands)
