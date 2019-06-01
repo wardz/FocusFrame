@@ -16,7 +16,7 @@ Development has been ceased due to the official release of WoW Classic. If possi
 /targetlasttarget
 ```
 but the problem is that addons can only create macros outside combat, so you won't be able to switch focus reliably. There's also a delay
-between /target and /cast in the macro system that sometimes makes you cast the spell on your current target instead of the new target. I recommend people to switch to mouseover macros instead, it's way more reliable.
+between /target and /cast in the macro system that sometimes makes you cast the spell on your current target instead of the new target. I recommend people to switch to mouseover macros instead, it's way more reliable. If you don't care about focus cast, there should already be several enemy frame addons out there that allow tracking health, auras, casts etc on nearby units.
 
 ## Usage & Info
 - [Chat commands/macros](https://github.com/wardz/FocusFrame/wiki/Commands)
